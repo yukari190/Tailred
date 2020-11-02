@@ -1,0 +1,82 @@
+﻿"Phrases"
+{
+	"Plugin configuration error"
+	{
+		"en"	"Errors were encountered while loading configuration. The plugin may not work as expected."
+	}
+	"Directory does not exist"
+	{
+		"en"	"Directory does not exist."
+	}
+	"On"
+	{
+		"en"	"On"
+	}
+	"Off"
+	{
+		"en"	"Off"
+	}
+	"Vote Requires Parameters"
+	{
+		"#format"	"{1:d}"
+		"en"		"This vote requires {1} parameters."
+	}
+	"Initiated a vote"
+	{
+		"en"	"Initiated a vote."
+	}
+	"Vote Select Anonymous"
+	{
+		"#format"	"{1:s}"
+		"en"		"Vote cast for {1}."
+	}
+	"Results"
+	{
+		"en"		"Results"
+	}
+	"Not Enough Votes"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"No option won the vote ({1} votes required, {2} received)"
+	}
+	"Not Enough Vote Percentage"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"No option won the vote ({1}% required, {2}% received)"
+	}
+	"Option Won The Vote"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"		"\"{1}\" won with {2}%% of the vote ({3} votes)"
+	}
+	"Won The Vote"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"Vote succeeded with {1}%% of the vote ({2} votes)"
+	}
+	"No Admins Found To Approve Vote"
+	{
+		"en"		"No admins found to approve the vote."
+	}
+	"Accept Vote Result"
+	{
+		"#format"	"{1:s}"
+		"en"		"Accept vote result \"{1}\"?"
+	}
+	"No Admins Approved Vote"
+	{
+		"en"		"No admins approved the vote result."
+	}
+	"Vote Rejected"
+	{
+		"en"		"Vote rejected."
+	}
+	"Vote Accepted"
+	{
+		"en"		"Vote accepted."
+	}
+	"Available Votes"
+	{
+		"en"		"Available votes"
+	}
+}

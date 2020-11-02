@@ -1,0 +1,23 @@
+"MatchModes"
+{
+	"tailredcoop"
+	{
+		"name" "Tailred Coop"
+	}
+	"tailred"
+	{
+		"name" "Tailred Versus"
+	}
+	"tailred3v3"
+	{
+		"name" "Tailred Versus 3v3"
+	}
+	"tailred2v2"
+	{
+		"name" "Tailred Versus 2v2"
+	}
+	"tailred1v1"
+	{
+		"name" "Tailred Versus 1v1"
+	}
+}

@@ -1,0 +1,14 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Offsets"
+		{
+			"CLunge_ActivateAbility"
+			{
+				"windows"	"203"
+				"linux"		"204"
+			}
+		}
+	}
+}

@@ -1,0 +1,82 @@
+﻿"Phrases"
+{
+	"Plugin configuration error"
+	{
+		"chi"	"加载配置时遇到错误, 该插件可能无法按预期工作."
+	}
+	"Directory does not exist"
+	{
+		"chi"	"目录不存在."
+	}
+	"On"
+	{
+		"chi"	"开启"
+	}
+	"Off"
+	{
+		"chi"	"关闭"
+	}
+	"Vote Requires Parameters"
+	{
+		"#format"	"{1:d}"
+		"chi"		"此投票需要 {1} 个参数."
+	}
+	"Initiated a vote"
+	{
+		"chi"	"发起了一个投票."
+	}
+	"Vote Select Anonymous"
+	{
+		"#format"	"{1:s}"
+		"chi"		"投 {1} 票."
+	}
+	"Results"
+	{
+		"chi"		"结果"
+	}
+	"Not Enough Votes"
+	{
+		"#format"	"{1:d},{2:d}"
+		"chi"		"没有选项赢得投票 ({1} 所需的投票, {2} 收到)"
+	}
+	"Not Enough Vote Percentage"
+	{
+		"#format"	"{1:d},{2:d}"
+		"chi"		"没有选择赢得了投票 ({1}% 需要, {2}% 收到)"
+	}
+	"Option Won The Vote"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"chi"		"\"{1}\" 赢得 {2}%% 的投票 ({3} 个投票)"
+	}
+	"Won The Vote"
+	{
+		"#format"	"{1:d},{2:d}"
+		"chi"		"投票成功 {1}%% 票数为 ({2})"
+	}
+	"No Admins Found To Approve Vote"
+	{
+		"chi"		"没有找到管理员批准投票."
+	}
+	"Accept Vote Result"
+	{
+		"#format"	"{1:s}"
+		"chi"		"接受投票结果 \"{1}\"?"
+	}
+	"No Admins Approved Vote"
+	{
+		"chi"		"没有管理员批准投票结果."
+	}
+	"Vote Rejected"
+	{
+		"chi"		"投票被拒绝."
+	}
+	"Vote Accepted"
+	{
+		"chi"		"投票接受."
+	}
+	"Available Votes"
+	{
+		"chi"		"可用投票"
+	}
+}
