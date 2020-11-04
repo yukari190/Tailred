@@ -472,7 +472,7 @@ public Action Event_PlayerShoved(Event event, const char[] name, bool dontBroadc
 		if (g_hBoomerShoveTimer != INVALID_HANDLE)
 		{
 			KillTimer(g_hBoomerShoveTimer);
-			if (!g_iBoomerShover || !IsClientInGame(g_iBoomerShover)) g_iBoomerShover = attacker;
+			if (!g_iBoomerShover || !IsValidInGame(g_iBoomerShover)) g_iBoomerShover = attacker;
 		}
 		else
 		{
@@ -725,7 +725,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
     
 	if (g_bHasRoundEnded) return;
 
-	if (!IsClientInGame(attacker))
+	if (!IsValidInGame(attacker))
 	{
 		if (IsValidInfected(victim)) ClearDamage(victim);
 		return;
@@ -758,15 +758,15 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 		else if (zombieclass == ZC_HUNTER && g_bIsPouncing[victim])
 		{
 			int[][] assisters = new int[g_iSurvivorLimit][2];
-			int assister_count, i;
+			int assister_count;
 			int damage = g_iDamageDealt[victim][attacker];
 			int shots = g_iShotsDealt[victim][attacker];
 			char plural[1] = "s";
 			if (shots == 1) plural[0] = 0;
-			for (i = 1; i <= MaxClients; i++)
+			for (int i = 1; i <= MaxClients; i++)
 			{
 				if (i == attacker) continue;
-				if (g_iDamageDealt[victim][i] > 0 && IsClientInGame(i))
+				if (g_iDamageDealt[victim][i] > 0 && IsConnectedAndInGame(i))
 				{
 					assisters[assister_count][0] = i;
 					assisters[assister_count][1] = g_iDamageDealt[victim][i];
@@ -793,7 +793,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 				assisters[0][1],
 				g_iShotsDealt[victim][assisters[0][0]],
 				assist_shots == 1 ? "":"s");
-				for (i = 1; i < assister_count; i++)
+				for (int i = 1; i < assister_count; i++)
 				{
 					assist_shots = g_iShotsDealt[victim][assisters[i][0]];
 					Format(buf, sizeof(buf), ", %N (%d/%d 发%s)",
@@ -827,11 +827,11 @@ public Action Timer_BoomerKilledCheck(Handle timer)
 		return;
 	}
 
-	if (IsClientInGame(g_iBoomerKiller))
+	if (IsValidInGame(g_iBoomerKiller))
 	{
-		if (IsClientInGame(g_iBoomerClient))
+		if (IsValidInGame(g_iBoomerClient))
 		{
-			if (g_iBoomerShover != 0 && IsClientInGame(g_iBoomerShover))
+			if (g_iBoomerShover != 0 && IsValidInGame(g_iBoomerShover))
 			{	
 				if (g_iBoomerShover == g_iBoomerKiller)
 				{
@@ -1125,7 +1125,7 @@ public Action Event_AbilityUse(Event event, const char[] name, bool dontBroadcas
 
 public Action Timer_GroundedCheck(Handle timer, any client)
 {
-	if (!IsClientInGame(client) || IsGrounded(client))
+	if (!IsValidInGame(client) || IsGrounded(client))
 	{
 		g_bIsPouncing[client] = false;
 		KillTimer(timer);
@@ -1419,7 +1419,7 @@ public Action Event_ChokeStop (Event event, const char[] name, bool dontBroadcas
 // car alarm handling
 public Action Event_AlarmCar(Event event, const char[] name, bool dontBroadcast)
 {
-	if (g_iAlarmCarClient && IsClientInGame(g_iAlarmCarClient) && GetClientTeam(g_iAlarmCarClient) == 2)
+	if (g_iAlarmCarClient && IsValidInGame(g_iAlarmCarClient) && GetClientTeam(g_iAlarmCarClient) == 2)
 	{
 		CPrintToChatAll("{O}★{W} {G}%N {W}触发了 {G}警报车", g_iAlarmCarClient);
 		g_iAlarmCarClient = 0;

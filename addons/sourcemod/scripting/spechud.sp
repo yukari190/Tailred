@@ -9,14 +9,12 @@
 #include <l4d2_weapon_stocks>
 #include <colors>
 #undef REQUIRE_PLUGIN
-#include <readyup>
-#include <pause>
 #include <l4d2_hybrid_scoremod>
 #define REQUIRE_PLUGIN
 
 ConVar survivor_limit, z_max_player_zombies, l4d_ready_cfg_name;
 bool bSpecHudActive[MAXPLAYERS+1], bSpecHudHintShown[MAXPLAYERS+1], bTankHudActive[MAXPLAYERS+1], bTankHudHintShown[MAXPLAYERS+1], 
-  bIsInReady, g_bReadyUpAvailable, hybridScoringAvailable;
+  hybridScoringAvailable;
 char sReadyName[64];
 int iSurvivorLimit, iMaxPlayerZombies;
 
@@ -69,34 +67,15 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 
 public void OnAllPluginsLoaded()
 {
-    g_bReadyUpAvailable = LibraryExists("readyup");
     hybridScoringAvailable = LibraryExists("l4d2_hybrid_scoremod");
 }
 public void OnLibraryRemoved(const char[] name)
 {
-    if (StrEqual(name, "readyup")) g_bReadyUpAvailable = false;
     if (StrEqual(name, "l4d2_hybrid_scoremod")) hybridScoringAvailable = false;
 }
 public void OnLibraryAdded(const char[] name)
 {
-    if (StrEqual(name, "readyup")) g_bReadyUpAvailable = true;
     if (StrEqual(name, "l4d2_hybrid_scoremod")) hybridScoringAvailable = true;
-}
-
-public void OnRoundIsLive()
-{
-    bIsInReady = false;
-}
-
-public Action L4D_OnFirstSurvivorLeftSafeArea()
-{
-	if (!g_bReadyUpAvailable) bIsInReady = false;
-	return Plugin_Continue;
-}
-
-public void L4D2_OnRealRoundStart()
-{
-	bIsInReady = true;
 }
 
 public void OnClientAuthorized(int client, const char[] auth)
@@ -121,9 +100,6 @@ public Action ToggleTankHudCmd(int client, int args)
 
 public Action HudDrawTimer(Handle hTimer) 
 {
-	if (bIsInReady || IsInPause())
-		return Plugin_Handled;
-	
 	bool bSpecsOnServer = false;
 	for (int i = 1; i <= MaxClients; i++) 
 	{

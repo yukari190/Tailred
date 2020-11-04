@@ -64,7 +64,6 @@ public void OnPluginStart()
 	SetConVarInt( FindConVar("z_finale_spawn_safety_range"), 0 );
 	
 	HookEvent("survival_round_start", OnSurvivalRoundStart, EventHookMode_PostNoCopy);
-	HookEvent("player_death", PlayerDeath_Event);
 	HookEvent("player_spawn", PlayerSpawn_Event);
 }
 
@@ -254,12 +253,6 @@ public int Vote8SIHandler(Handle vote, MenuAction action, int param1, int param2
                                                                     
 ***********************************************************************************************************************************************************************************/
 
-public Action PlayerDeath_Event(Event event, const char[] name, bool dontBroadcast)
-{
-	int bot = GetClientOfUserId(event.GetInt("userid"));
-	if (IsBotInfected(bot)) CreateTimer(1.0, Timer_KickBot, bot);
-}
-
 public Action PlayerSpawn_Event(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -392,7 +385,7 @@ int CountSpecialInfectedClass(int targetClass)
 	{
         if (IsConnectedAndInGame(i) && GetClientTeam(i) == TEAM_INFECTED && IsFakeClient(i) && IsPlayerAlive(i) && !IsClientInKickQueue(i))
 		{
-            int playerClass = GetEntProp(i, Prop_Send, "m_zombieClass");
+            int playerClass = GetInfectedClass(i);
             if (playerClass == targetClass)
 			{
                 count++;

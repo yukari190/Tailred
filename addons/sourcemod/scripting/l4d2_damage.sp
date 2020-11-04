@@ -26,17 +26,10 @@ enum TankOrSIWeapon
     CHARGERWEAPON
 }
 
-Handle hPuddles;
-Handle hInflictorTrie;
+Handle hPuddles, hInflictorTrie;
 ConVar hCvarPounceInterrupt, tongue_choke_damage_interval, tongue_choke_damage_amount, tongue_drag_damage_amount;
-
-bool bAltTick[MAXPLAYERS + 1];
-bool bIsBridge;
-bool bIgnoreOverkill[MAXPLAYERS + 1];
-
-int iHunterSkeetDamage[MAXPLAYERS+1];
-int iPounceInterrupt = 150;
-int iGameMode;
+bool bAltTick[MAXPLAYERS + 1], bIsBridge, bIgnoreOverkill[MAXPLAYERS + 1], inWait[MAXPLAYERS + 1];
+int iHunterSkeetDamage[MAXPLAYERS+1], iPounceInterrupt = 150, iGameMode;
 
 public Plugin myinfo = 
 {
@@ -138,7 +131,35 @@ public void L4D2_OnRealRoundStart()
 
 public void L4D2_OnPlayerHurtPost(int victim, int attacker, int health, char[] Weapon, int damage, int dmgtype)
 {
-    if (IsValidInfected(victim) && dmgtype == DMG_BURN) ExtinguishEntity(victim);
+	if (!IsValidInfected(victim)) return;
+	
+	if (strcmp(Weapon, "inferno") == 0 || !IsValidInGame(attacker) || strcmp(Weapon, "entityflame") == 0)
+	{
+		if(GetInfectedClass(victim) == ZC_TANK)
+		{
+			ExtinguishEntity(victim);
+		}
+		else
+		{
+			CreateTimer(1.0, Extinguish, victim);
+		}
+	}
+}
+
+public Action Extinguish(Handle timer, any client)
+{
+    if(IsValidInGame(client) && !inWait[client])
+    {
+        ExtinguishEntity(client);
+        inWait[client] = true;
+        CreateTimer(1.2, ExtinguishWait, client);
+    }
+}
+
+public Action ExtinguishWait(Handle timer, any client)
+{
+	if (IsValidInGame(client))
+		inWait[client] = false;
 }
 
 public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int nowteam)

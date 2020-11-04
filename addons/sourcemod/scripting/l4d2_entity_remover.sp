@@ -44,7 +44,7 @@ void ER_KV_Load()
 	char sNameBuff[PLATFORM_MAX_PATH], sDescBuff[256], sValBuff[32];
 	
 	kERData = CreateKeyValues("EntityRemover");
-	Format(sNameBuff, sizeof(sNameBuff), "configs/entityremove.txt"); //Build our filepath
+	BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), "configs/entityremove.txt"); //Build our filepath
 	if (!FileToKeyValues(kERData, sNameBuff))
 	{
 		LogError("[ER] Couldn't load EntityRemover data!");
