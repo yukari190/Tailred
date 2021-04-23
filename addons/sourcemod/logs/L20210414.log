@@ -1,0 +1,390 @@
+L 04/14/2021 - 03:36:17: SourceMod log file session started (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\L20210414.log") (Version "1.10.0.6502")
+L 04/14/2021 - 03:36:17: [GEOIP] GeoIP database info: GEO-106FREE 20180327 Build 1 Copyright (c) 2018 MaxMind Inc All Rights Reserved
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:36:25: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 03:36:34: [SM] Changed map to "c2m1_highway"
+L 04/14/2021 - 03:36:36: -------- Mapchange to c2m1_highway --------
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:36:42: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 03:40:02: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:02: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 03:40:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 03:40:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 03:40:42: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:43: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:47: [playercommands.smx] "古林蘭<2><STEAM_1:1:42151242><>" slayed "Tank<6><BOT><>"
+L 04/14/2021 - 03:40:49: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:51: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:53: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:54: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:57: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:57: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:40:58: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:00: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:01: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:01: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:02: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:02: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:02: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:03: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:04: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:05: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:10: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:12: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a witch
+L 04/14/2021 - 03:41:14: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:41:16: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 03:43:33: SourceMod log file session started (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\L20210414.log") (Version "1.10.0.6502")
+L 04/14/2021 - 03:43:33: [GEOIP] GeoIP database info: GEO-106FREE 20180327 Build 1 Copyright (c) 2018 MaxMind Inc All Rights Reserved
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:43:40: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 03:43:49: [SM] Changed map to "c2m1_highway"
+L 04/14/2021 - 03:43:51: -------- Mapchange to c2m1_highway --------
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:43:55: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 03:59:27: SourceMod log file session started (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\L20210414.log") (Version "1.11.0.6675")
+L 04/14/2021 - 03:59:27: [GEOIP] GeoIP database info: GEO-106FREE 20180327 Build 1 Copyright (c) 2018 MaxMind Inc All Rights Reserved
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:59:34: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 03:59:44: [SM] Changed map to "c2m1_highway"
+L 04/14/2021 - 03:59:45: -------- Mapchange to c2m1_highway --------
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 03:59:49: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 04:00:33: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:34: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:00:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:36: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:00:37: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:38: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:38: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:38: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:38: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:39: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:39: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:00:39: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:01:42: SourceMod log file session started (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\L20210414.log") (Version "1.11.0.6675")
+L 04/14/2021 - 04:01:42: [GEOIP] GeoIP database info: GEO-106FREE 20180327 Build 1 Copyright (c) 2018 MaxMind Inc All Rights Reserved
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 04:01:50: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 04:01:59: [SM] Changed map to "c2m1_highway"
+L 04/14/2021 - 04:02:01: -------- Mapchange to c2m1_highway --------
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 04:02:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 04:02:46: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a sniper_military
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:55: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:02:56: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a pistol_magnum
+L 04/14/2021 - 04:04:24: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:05:07: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:13: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:15: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:32: [playercommands.smx] "古林蘭<2><STEAM_1:1:42151242><>" slayed "Charger<131><BOT><>"
+L 04/14/2021 - 04:06:32: [playercommands.smx] "古林蘭<2><STEAM_1:1:42151242><>" slayed "Spitter<22><BOT><>"
+L 04/14/2021 - 04:06:35: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:36: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:37: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:38: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:39: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:39: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:40: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:41: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:42: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:43: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:44: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:06:44: [[TR]server_function.smx] [NOTICE]: (古林蘭<2><STEAM_1:1:42151242><>) has spawned a tank
+L 04/14/2021 - 04:13:01: -------- Mapchange to c2m2_fairgrounds --------
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 04:13:05: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")
+L 04/14/2021 - 04:18:58: -------- Mapchange to c2m3_coaster --------
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_region") (value "4")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_tags") (value "hidden")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_allow_wait_command") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minrate") (value "30000")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxrate") (value "60000")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_minupdaterate") (value "30")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxupdaterate") (value "60")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_mincmdrate") (value "30")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxcmdrate") (value "60")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_min_interp_ratio") (value "-1")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_max_interp_ratio") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "nb_update_frequency") (value "0.014")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "net_splitpacket_maxrate") (value "40000")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "fps_max") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "mp_autoteambalance") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_unlag_fixstuck") (value "1")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "z_brawl_chance") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_maxunlag") (value "1")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_forcepreload") (value "1")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_predict") (value "1")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_client_cmdrate_difference") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec_global") (value "10")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_sec") (value "3")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_max_queries_window") (value "10")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_player_stuck_tolerance") (value "5")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_stats") (value "0")
+L 04/14/2021 - 04:19:02: [basecommands.smx] "Console<0><Console><Console>" changed cvar (cvar "sv_clockcorrection_msecs") (value "25")

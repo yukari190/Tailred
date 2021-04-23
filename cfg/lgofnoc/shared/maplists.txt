@@ -1,0 +1,144 @@
+//"請使用專業代碼修改軟件進行修改本文檔,文檔格式爲:UTF-8 without BOM(Please using the professional software to modify this document,File type:UTF-8 without BOM)"		"軟件下載地址(Download URL): http://notepad-plus-plus.org/"
+"MapLists"
+{
+	"c1m1_hotel"
+	{
+		"name" "死亡中心"
+		"nextmap" "c6m1_riverbank"
+	}
+	"c6m1_riverbank"
+	{
+		"name" "短暂时刻"
+		"nextmap" "c2m1_highway"
+	}
+	"c2m1_highway"
+	{
+		"name" "黑色嘉年华"
+		"nextmap" "c3m1_plankcountry"
+	}
+	"c3m1_plankcountry"
+	{
+		"name" "沼泽激战"
+		"nextmap" "c4m1_milltown_a"
+	}
+	"c4m1_milltown_a"
+	{
+		"name" "暴风骤雨"
+		"nextmap" "c5m1_waterfront"
+	}
+	"c5m1_waterfront"
+	{
+		"name" "教区"
+		"nextmap" "c13m1_alpinecreek"
+	}
+	"c13m1_alpinecreek"
+	{
+		"name" "刺骨寒溪"
+		"nextmap" "c8m1_apartment"
+	}
+	"c8m1_apartment"
+	{
+		"name" "毫不留情"
+		"nextmap" "c9m1_alleys"
+	}
+	"c9m1_alleys"
+	{
+		"name" "坠机险途"
+		"nextmap" "c10m1_caves"
+	}
+	"c10m1_caves"
+	{
+		"name" "死亡丧钟"
+		"nextmap" "c11m1_greenhouse"
+	}
+	"c11m1_greenhouse"
+	{
+		"name" "静寂时分"
+		"nextmap" "c12m1_hilltop"
+	}
+	"c12m1_hilltop"
+	{
+		"name" "血腥收获"
+		"nextmap" "c7m1_docks"
+	}
+	"c7m1_docks"
+	{
+		"name" "牺牲"
+		"nextmap" "c14m1_junkyard"
+	}
+	"c14m1_junkyard"
+	{
+		"name" "临死一搏"
+		"nextmap" "c1m1_hotel"
+	}
+	"msd1_town"
+	{
+		"name" "再见了晨茗"
+		"nextmap" "c1m1_hotel"
+	}
+	"l4d2_city17_01"
+	{
+		"name" "17号城市"
+		"nextmap" "c1m1_hotel"
+	}
+	"wfp1_track"
+	{
+		"name" "白森林"
+		"nextmap" "c1m1_hotel"
+	}
+	"cdta_01detour"
+	{
+		"name" "迂回前进"
+		"nextmap" "c1m1_hotel"
+	}
+	"dprm1_milltown_a"
+	{
+		"name" "暴风骤雨:暴雨"
+		"nextmap" "c1m1_hotel"
+	}
+	"l4d2_deathwoods01_stranded"
+	{
+		"name" "死亡丛林"
+		"nextmap" "c1m1_hotel"
+	}
+	"deadbeat01_forest"
+	{
+		"name" "无缝逃离"
+		"nextmap" "c1m1_hotel"
+	}
+	"l4d2_diescraper1_apartment_36"
+	{
+		"name" "喋血蜃楼"
+		"nextmap" "c1m1_hotel"
+	}
+	"c5m1_darkwaterfront"
+	{
+		"name" "黑暗教区"
+		"nextmap" "c1m1_hotel"
+	}
+	"l4d_yama_1"
+	{
+		"name" "摩耶山危机"
+		"nextmap" "c1m1_hotel"
+	}
+	"srocchurch"
+	{
+		"name" "巴塞罗那"
+		"nextmap" "c1m1_hotel"
+	}
+	"saltwell_1_d"
+	{
+		"name" "盐井地狱公园"
+		"nextmap" "c1m1_hotel"
+	}
+	"l4d2_stadium1_apartment"
+	{
+		"name" "闪电突袭2"
+		"nextmap" "c1m1_hotel"
+	}
+	"cwm1_intro"
+	{
+		"name" "绝境逢生"
+		"nextmap" "c1m1_hotel"
+	}
+}
