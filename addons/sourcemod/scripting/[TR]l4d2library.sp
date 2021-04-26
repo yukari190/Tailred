@@ -242,7 +242,7 @@ char LongWeaponNames[view_as<int>(WEPID_UPGRADE_ITEM)+1][] =
     "ammo", "upgrade_item" // 54
 };
 
-char MeleeWeaponNames[view_as<int>(WEPID_TONFA)+1][] =
+char MeleeWeaponNames[view_as<int>(WEPID_PITCHFORK)+1][] =
 {
     "",
     "knife",
@@ -258,7 +258,9 @@ char MeleeWeaponNames[view_as<int>(WEPID_TONFA)+1][] =
     "katana",
     "machete",
     "riotshield",
-    "tonfa"
+    "tonfa",
+    "shovel",
+    "pitchfork"
 };
 
 char WeaponModels[view_as<int>(WEPID_UPGRADE_ITEM)+1][] =
@@ -321,7 +323,7 @@ char WeaponModels[view_as<int>(WEPID_UPGRADE_ITEM)+1][] =
     ""
 };
 
-char MeleeWeaponModels[view_as<int>(WEPID_TONFA)+1][] =
+char MeleeWeaponModels[view_as<int>(WEPID_PITCHFORK)+1][] =
 {
     "",
     "/w_models/weapons/w_knife_t.mdl",
@@ -337,7 +339,30 @@ char MeleeWeaponModels[view_as<int>(WEPID_TONFA)+1][] =
     "/weapons/melee/w_katana.mdl",
     "/weapons/melee/w_machete.mdl",
     "/weapons/melee/w_riotshield.mdl",
-    "/weapons/melee/w_tonfa.mdl"
+    "/weapons/melee/w_tonfa.mdl",
+    "/weapons/melee/v_shovel.mdl",
+    "/weapons/melee/v_pitchfork.mdl"
+};
+
+char LongMeleeWeaponNames[view_as<int>(WEPID_PITCHFORK)+1][] =
+{
+    "None",
+    "Knife",
+    "Baseball Bat",
+    "Chainsaw",
+    "Cricket Bat",
+    "Crowbar",
+    "didgeridoo", // derp
+    "Guitar",
+    "Axe",
+    "Frying Pan",
+    "Golf Club",
+    "Katana",
+    "Machete",
+    "Riot Shield",
+    "Tonfa",
+    "Shovel",
+    "Pitchfork"
 };
 
 int WeaponSlots[view_as<int>(WEPID_UPGRADE_ITEM)+1] =
@@ -525,9 +550,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	//CreateNative("L4D2_IsPlayerInSaferoom", _native_IsPlayerInSaferoom);
 	CreateNative("L4D2_GetSlotFromWeaponId", _native_GetSlotFromWeaponId);
 	CreateNative("L4D2_HasValidWeaponModel", _native_HasValidWeaponModel);
+	CreateNative("L4D2_HasValidMeleeWeaponModel", _native_HasValidMeleeWeaponModel);
 	CreateNative("L4D2_WeaponNameToId", _native_WeaponNameToId);
 	CreateNative("L4D2_GetWeaponName", _native_GetWeaponName);
 	CreateNative("L4D2_GetLongWeaponName", _native_GetLongWeaponName);
+	CreateNative("L4D2_GetLongMeleeWeaponName", _native_GetLongMeleeWeaponName);
 	CreateNative("L4D2_GetWeaponModel", _native_GetWeaponModel);
 	CreateNative("L4D2_IdentifyWeapon", _native_IdentifyWeapon);
 	CreateNative("L4D2_GetMeleeWeaponNameFromEntity", _native_GetMeleeWeaponNameFromEntity);
@@ -1849,6 +1876,12 @@ public int _native_HasValidWeaponModel(Handle plugin, int numParams)
 	return HasValidWeaponModel(wepid);
 }
 
+public int _native_HasValidMeleeWeaponModel(Handle plugin, int numParams)
+{
+	MeleeWeaponId wepid = GetNativeCell(1);
+	return L4D2_IsValidMeleeWeaponId(wepid) && MeleeWeaponModels[wepid][0] != '\0';
+}
+
 public int _native_WeaponNameToId(Handle plugin, int numParams)
 {
 	int len;
@@ -1909,6 +1942,15 @@ public int _native_GetLongWeaponName(Handle plugin, int numParams)
 	int len = GetNativeCell(3);
 	char[] nameBuffer = new char[len];
 	strcopy(nameBuffer, len, (L4D2_IsValidWeaponId(view_as<WeaponId>(wepid)) ? (LongWeaponNames[view_as<int>(wepid)]) : ""));
+	SetNativeString(2, nameBuffer, len);
+}
+
+public int _native_GetLongMeleeWeaponName(Handle plugin, int numParams)
+{
+	MeleeWeaponId wepid = GetNativeCell(1);
+	int len = GetNativeCell(3);
+	char[] nameBuffer = new char[len];
+	strcopy(nameBuffer, len, (L4D2_IsValidMeleeWeaponId(view_as<MeleeWeaponId>(wepid)) ? (LongMeleeWeaponNames[view_as<int>(wepid)]) : ""));
 	SetNativeString(2, nameBuffer, len);
 }
 

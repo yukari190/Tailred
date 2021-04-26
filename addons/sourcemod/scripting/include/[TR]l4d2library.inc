@@ -1169,7 +1169,9 @@ enum MeleeWeaponId
     WEPID_KATANA,
     WEPID_MACHETE,
     WEPID_RIOT_SHIELD,
-    WEPID_TONFA
+    WEPID_TONFA,
+    WEPID_SHOVEL,
+    WEPID_PITCHFORK
 }
 
 enum L4D2WeaponSlot
@@ -1213,6 +1215,14 @@ native int L4D2_GetSlotFromWeaponId(WeaponId wepid);
 native bool L4D2_HasValidWeaponModel(WeaponId wepid);
 
 /**
+ * Checks to see if a given meleeweaponid has a known WeaponModel in this file's model array
+ *
+ * @param wepid        MeleeWeaponId to check for a known weapon model for.
+ * @return True if a valid weapon model exists for wepid, false otherwise.
+ */
+native bool L4D2_HasValidMeleeWeaponModel(MeleeWeaponId wepid);
+
+/**
  * Tries to look up a WeaponId for a given Weapon Name.
  *
  * @param weaponName    Weapon name string to look up Id from
@@ -1239,7 +1249,29 @@ native void L4D2_GetWeaponName(WeaponId wepid, char[] nameBuffer, int length);
  * @return                Number of bytes written to buffer, or 0 for invalid weaponId.
  */
 native void L4D2_GetLongWeaponName(WeaponId wepid, char[] nameBuffer, int length);
-  
+
+/**
+ * Tries to look up L4D2's internal weapon name for a given MeleeWeaponId.
+ *
+ * @param wepid            MeleeWeaponId To get name of.
+ * @param nameBuffer    String buffer to write the weapon name to.
+ * @param length        Max length which can be written to the buffer.
+ * @return                Number of bytes written to buffer, or 0 for invalid weaponId.
+ */
+native void L4D2_GetLongMeleeWeaponName(MeleeWeaponId wepid, char[] nameBuffer, int length);
+
+/**
+ * Performs bounds checking to determine if a MeleeWeaponId is valid
+ * @remark Simple check to see if wepid has a garbage value
+ *
+ * @param wepid        MeleeWeaponId to check for validity
+ * @return True if wepid is valid, false otherwise.
+ */
+stock bool L4D2_IsValidMeleeWeaponId(MeleeWeaponId wepid)
+{
+    return wepid >= WEPID_MELEE_NONE && wepid <= WEPID_PITCHFORK;
+}
+
 /**
  * Tries to look up the weapon model for a given WeaponId.
  * @remarks You should use HasValidWeaponModel to make sure the WeaponId you're looking up has a valid model associated with it.
@@ -1385,9 +1417,11 @@ public void __pl_l4d2library_SetNTVOptional()
 	// =========================
 	MarkNativeAsOptional("L4D2_GetSlotFromWeaponId");
 	MarkNativeAsOptional("L4D2_HasValidWeaponModel");
+	MarkNativeAsOptional("L4D2_HasValidMeleeWeaponModel");
 	MarkNativeAsOptional("L4D2_WeaponNameToId");
 	MarkNativeAsOptional("L4D2_GetWeaponName");
 	MarkNativeAsOptional("L4D2_GetLongWeaponName");
+	MarkNativeAsOptional("L4D2_GetLongMeleeWeaponName");
 	MarkNativeAsOptional("L4D2_GetWeaponModel");
 	MarkNativeAsOptional("L4D2_IdentifyWeapon");
 	MarkNativeAsOptional("L4D2_GetMeleeWeaponNameFromEntity");

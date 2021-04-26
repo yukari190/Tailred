@@ -424,7 +424,7 @@ void GetWeaponInfo(int client, char[] info, int length)
 		if (activeWepId == WEPID_MELEE || activeWepId == WEPID_CHAINSAW)
 		{
 			MeleeWeaponId meleeWepId = L4D2_IdentifyMeleeWeapon(activeWep);
-			GetLongMeleeWeaponName(meleeWepId, info, length);
+			L4D2_GetLongMeleeWeaponName(meleeWepId, info, length);
 		}
 	}
 	else
