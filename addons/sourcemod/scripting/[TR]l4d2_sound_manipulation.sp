@@ -3,8 +3,8 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define MAX_JOCKEYSOUND         1
 #define SOUND_CHECK_INTERVAL    3.0

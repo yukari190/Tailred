@@ -3,7 +3,7 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[TR]l4d2library>
+#include <[LIB]l4d2library>
 
 ConVar cRemoveInfClips;
 ConVar cRemoveC5m4Hurts;

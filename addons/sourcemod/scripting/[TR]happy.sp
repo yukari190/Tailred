@@ -3,8 +3,8 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[TR]l4d2library>
-#include <[TR]readyup>
+#include <[LIB]l4d2library>
+#include <[LIB]readyup>
 
 int g_Sprite;
 int g_HaloSprite;

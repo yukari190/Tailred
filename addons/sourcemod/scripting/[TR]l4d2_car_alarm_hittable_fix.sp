@@ -4,7 +4,7 @@
 #include <sourcemod> 
 #include <sdkhooks> 
 #include <sdktools> 
-#include <[TR]l4d2library>
+#include <[LIB]l4d2library>
 
 public Plugin myinfo = 
 {

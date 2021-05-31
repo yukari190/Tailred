@@ -4,8 +4,8 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define BRIDGE_CAR_DMG 6.0
 #define CAR_STANDING_DMG 100.0

@@ -3,9 +3,9 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[TR]dhooks>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]dhooks>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 Handle hCLunge_ActivateAbility;
 Handle hTongueParalyzeTimer;

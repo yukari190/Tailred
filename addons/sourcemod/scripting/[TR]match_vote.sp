@@ -2,8 +2,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <[TR]l4d2library>
-#include <[TR]builtinvotes_native>
+#include <[LIB]l4d2library>
+#include <[LIB]builtinvotes_native>
 
 KeyValues g_hModesKV;
 char g_sCfg[32];

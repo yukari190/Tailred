@@ -4,7 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[TR]l4d2library>
+#include <[LIB]l4d2library>
 
 bool inCharge[MAXPLAYERS + 1];
 

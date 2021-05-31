@@ -3,8 +3,8 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define NO_HORDES 3600.0
 #define HORDE_SOUND	"/npc/mega_mob/mega_mob_incoming.wav"

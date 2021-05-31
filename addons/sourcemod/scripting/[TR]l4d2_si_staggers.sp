@@ -22,8 +22,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 int FLAGS[3] = {
     1 << 0, // boomer

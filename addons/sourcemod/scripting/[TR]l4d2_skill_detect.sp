@@ -4,8 +4,8 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define IS_VALID_SURVIVOR(%1)   (L4D2_IsValidClient(%1) && L4D2_IsSurvivor(%1))
 #define IS_VALID_INFECTED(%1)   (L4D2_IsValidClient(%1) && L4D2_IsInfected(%1))

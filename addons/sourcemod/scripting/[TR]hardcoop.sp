@@ -4,9 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
-#include <[TR]readyup>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
+#include <[LIB]readyup>
 
 #define VANILLA_COOP_SI_LIMIT 2
 #define VEL_MAX          450.0
@@ -46,25 +46,24 @@ public Plugin myinfo =
 	url = ""
 };
 
-Handle hSpawnInfectedAuto;
-ConVar hSpawnTimeMin;
-ConVar hSpawnTimeMax;
+//Handle hSpawnInfectedAuto;
+//ConVar hSpawnTimeMin;
+//ConVar hSpawnTimeMax;
 ConVar vs_tank_damage;
 ConVar tongue_range;
 ConVar z_vomit_range;
 ConVar tank_attack_range;
-ConVar hTankLotterySelectionTime;
 
-bool g_bIsSpawnerActive;
-bool g_bDelaying;
+//bool g_bIsSpawnerActive;
+//bool g_bDelaying;
 bool SurvivorNearTank[MAXPLAYERS + 1];
 
-int iSpawnTimeMin;
-int iSpawnTimeMax;
-int g_iTimeLOS[MAXPLAYERS+1];
-int SpawnerDelayCount;
+//int iSpawnTimeMin;
+//int iSpawnTimeMax;
+//int g_iTimeLOS[MAXPLAYERS+1];
+//int SpawnerDelayCount;
 int hSpawnLimits[7];
-L4D2_Infected g_iClass[MAXPLAYERS+1];
+//L4D2_Infected g_iClass[MAXPLAYERS+1];
 
 float s_tounge_range;
 float s_vomit_range;
@@ -72,9 +71,6 @@ float s_tank_attack_range;
 float tankDamage;
 float g_L4D2Infected_attack_time;
 float throwForce[MAXPLAYERS + 1][3];
-
-float iTankPos[3];
-float fTankLotterySelectionTime;
 
 /***********************************************************************************************************************************************************************************
      					All credit for the spawn timer, quantities and queue modules goes to the developers of the 'l4d2_autoIS' plugin                            
@@ -85,21 +81,19 @@ float fTankLotterySelectionTime;
 
 public void OnPluginStart()
 {
-	hSpawnTimeMin = CreateConVar("ss_time_min", "12", "受感染的最小自动产卵时间 (秒)", FCVAR_SS_ADDED, true, 1.0);
-	hSpawnTimeMax = CreateConVar("ss_time_max", "15", "受感染的最大自动产卵时间 (秒)", FCVAR_SS_ADDED, true, hSpawnTimeMin.FloatValue);
+	//hSpawnTimeMin = CreateConVar("ss_time_min", "12", "受感染的最小自动产卵时间 (秒)", FCVAR_SS_ADDED, true, 1.0);
+	//hSpawnTimeMax = CreateConVar("ss_time_max", "15", "受感染的最大自动产卵时间 (秒)", FCVAR_SS_ADDED, true, hSpawnTimeMin.FloatValue);
 	vs_tank_damage = FindConVar("vs_tank_damage");
 	tongue_range = FindConVar("tongue_range");
 	z_vomit_range = FindConVar("z_vomit_range");
 	tank_attack_range = FindConVar("tank_attack_range");
-	hTankLotterySelectionTime = FindConVar("director_tank_lottery_selection_time");
 	
-	hSpawnTimeMin.AddChangeHook(ConVarChange);
-	hSpawnTimeMax.AddChangeHook(ConVarChange);
+	//hSpawnTimeMin.AddChangeHook(ConVarChange);
+	//hSpawnTimeMax.AddChangeHook(ConVarChange);
 	vs_tank_damage.AddChangeHook(ConVarChange);
 	tongue_range.AddChangeHook(ConVarChange);
 	z_vomit_range.AddChangeHook(ConVarChange);
 	tank_attack_range.AddChangeHook(ConVarChange);
-	hTankLotterySelectionTime.AddChangeHook(ConVarChange);
 	
 	ConVarChange(view_as<ConVar>(INVALID_HANDLE), "", "");
 	
@@ -124,13 +118,12 @@ public void OnPluginEnd()
 
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	iSpawnTimeMin = hSpawnTimeMin.IntValue;
-	iSpawnTimeMax = hSpawnTimeMax.IntValue;
+	//iSpawnTimeMin = hSpawnTimeMin.IntValue;
+	//iSpawnTimeMax = hSpawnTimeMax.IntValue;
 	tankDamage = vs_tank_damage.FloatValue;
 	s_tounge_range = tongue_range.FloatValue;
 	s_vomit_range = z_vomit_range.FloatValue;
 	s_tank_attack_range = tank_attack_range.FloatValue;
-	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
 }
 
 public Action TeamCmd(int client, const char[] command, int argc)
@@ -143,13 +136,8 @@ public Action ResetSurvivors(Event event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client))
 	{
-		L4D2_SetPlayerRespawn(client);
-		for (int i = 0; i < 5; i++)
-		{
-			int item = GetPlayerWeaponSlot(client, i);
-			if (item > 0) RemovePlayerItem(client, item);	
-		}	
-		L4D2_CheatCommand(client, "give", "pistol");
+		L4D2_RestoreHealth(client);
+		L4D2_ResetInventory(client);
 	}
 }
 
@@ -185,10 +173,10 @@ public void OnRoundIsLive()
 
 public Action L4D_OnFirstSurvivorLeftSafeArea()
 {
-	if (hSpawnInfectedAuto == INVALID_HANDLE)
+	/*if (hSpawnInfectedAuto == INVALID_HANDLE)
 	{
 		hSpawnInfectedAuto = CreateTimer(1.0, SpawnInfectedAuto, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	}
+	}*/
 	CreateTimer(2.0, Timer_ForceInfectedAssault, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }
 
@@ -207,19 +195,19 @@ public void L4D2_OnRealRoundStart()
 		throwForce[i][2] = 0.0;
 	}
 	
-	g_bIsSpawnerActive = true;
-	SpawnerDelayCount = 0;
-	g_bDelaying = false;
-	RandomClass();
+	//g_bIsSpawnerActive = true;
+	//SpawnerDelayCount = 0;
+	//g_bDelaying = false;
+	//RandomClass();
 }
 
 public void L4D2_OnRealRoundEnd()
 {
-	if (hSpawnInfectedAuto != INVALID_HANDLE)
+	/*if (hSpawnInfectedAuto != INVALID_HANDLE)
 	{
 		KillTimer(hSpawnInfectedAuto);
 		hSpawnInfectedAuto = INVALID_HANDLE;
-	}
+	}*/
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		if (IsClientInGame(i) && !L4D2_IsSurvivor(i) && IsFakeClient(i))
@@ -261,7 +249,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	return Plugin_Continue;
 }
 
-public void L4D2_OnInfectedSpawn(int client, L4D2_Infected class)
+/*public void L4D2_OnInfectedSpawn(int client, L4D2_Infected class)
 {
 	g_iTimeLOS[client] = 0;
 	g_iClass[client] = class;
@@ -286,33 +274,17 @@ public Action Timer_StarvationLOS(Handle timer, any client)
 	if (!IsInfectedBot(client)) return Plugin_Stop;
 	if (g_iTimeLOS[client] > 15)
 	{
-		if (g_iClass[client] == L4D2_GetInfectedClass(client))
-		{
-			ForcePlayerSuicide(client);
-		}
+		ForcePlayerSuicide(client);
 		return Plugin_Stop;
 	}
 	if (L4D2_HasVisibleThreats(client) || L4D2_GetInfectedVictim(client)) g_iTimeLOS[client] = 0;
 	else g_iTimeLOS[client]++;
 	return Plugin_Continue;
-}
+}*/
 
 public void L4D2_OnTankFirstSpawn(int tankClient)
 {
-	L4D2_PauseClient(tankClient, true);
-	GetClientAbsOrigin(tankClient, iTankPos);
-	float activePos[3];
-	GetClientAbsOrigin(L4D2_GetRandomSurvivor(), activePos);
-	TeleportEntity(tankClient, activePos, NULL_VECTOR, NULL_VECTOR);
-	CreateTimer(fTankLotterySelectionTime, Timer_ActiveTank, tankClient, TIMER_FLAG_NO_MAPCHANGE);
 	CreateTimer(0.1, Tank_Distance, tankClient, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_ActiveTank(Handle timer, any client)
-{
-	TeleportEntity(client, iTankPos, NULL_VECTOR, NULL_VECTOR);
-	L4D2_PauseClient(client, false);
-	CreateTimer(1.0, Timer_StarvationLOSTank, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Tank_Distance(Handle timer, any client)
@@ -342,22 +314,6 @@ public Action Tank_Distance(Handle timer, any client)
 			throwForce[index][2] = 0.0;
 		}
 	}
-	return Plugin_Continue;
-}
-
-public Action Timer_StarvationLOSTank(Handle timer, any client)
-{
-	if (!IsInfectedBot(client)) return Plugin_Stop;
-	if (g_iTimeLOS[client] > 15)
-	{
-		if (L4D2_RepositionGrid(client))
-		{
-			PrintToServer("\x03%N\x01 失去目标, 传送到一个新的位置", client);
-		}
-		return Plugin_Stop;
-	}
-	if (L4D2_HasVisibleThreats(client)) g_iTimeLOS[client] = 0;
-	else g_iTimeLOS[client]++;
 	return Plugin_Continue;
 }
 
@@ -639,7 +595,7 @@ public Action L4D2_OnChargerRunCmd(int client, int &buttons, float vel[3], float
                                                                     
 ***********************************************************************************************************************************************************************************/
 
-public Action SpawnInfectedAuto(Handle timer)
+/*public Action SpawnInfectedAuto(Handle timer)
 {
 	if (IsInReady() || !L4D_HasAnySurvivorLeftSafeArea()) return Plugin_Continue;
 	if (g_bIsSpawnerActive)
@@ -678,42 +634,30 @@ void SpawnWave()
 	{
 		for (int SpawnCounts = 0; SpawnCounts < hSpawnLimits[i]; SpawnCounts++)
 		{
-			CreateTimer(0.5, Timer_SpawnSpecialInfected, i, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+			//CreateTimer(0.5, Timer_SpawnSpecialInfected, i, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+			AttemptSpawnAuto(i);
 		}
 	}
-}
+}*/
+
+/*int iClassCount = 0;
 
 public Action Timer_SpawnSpecialInfected(Handle timer, any targetClass)
 {
-	if (IsClassLimitReached(targetClass))
+	if (iClassCount >= hSpawnLimits[targetClass])
 	  return Plugin_Stop;
 	AttemptSpawnAuto(targetClass);
+	iClassCount++;
 	return Plugin_Continue;
-}
+}*/
 
 /***********************************************************************************************************************************************************************************
 
                                                                     	UTILITY
                                                                     
 ***********************************************************************************************************************************************************************************/
-bool IsClassLimitReached(L4D2_Infected targetClass)
-{
-	int iClassLimit = hSpawnLimits[targetClass];
-    int iClassCount = 0;
-    for (int i = 1; i <= MaxClients; i++)
-	{
-        if (IsClientInGame(i) && L4D2_IsInfected(i) && IsPlayerAlive(i) && !IsClientInKickQueue(i))
-		{
-            if (L4D2_GetInfectedClass(i) == targetClass)
-			{
-                iClassCount++;
-            }
-        }
-    }
-	return iClassCount < iClassLimit ? false : true;
-}
 
-void AttemptSpawnAuto(L4D2_Infected classIndex)
+/*void AttemptSpawnAuto(L4D2_Infected classIndex)
 {
 	char zombieClassName[16];
 	L4D2_GetInfectedClassName(classIndex, zombieClassName, sizeof(zombieClassName));
@@ -725,14 +669,13 @@ void AttemptSpawnAuto(L4D2_Infected classIndex)
 	    if (bot != 0)
 		{
 	        ChangeClientTeam(bot, 3);
-	        CreateTimer(0.1, Timer_KickBot, bot, TIMER_FLAG_NO_MAPCHANGE);
+	        CreateTimer(0.1, Timer_KickBot, bot);
 	    }
 	}
-	L4D2_CheatCommand(0, "z_spawn", zombieClassName);
-	//L4D2_SpawnSpecial(classIndex, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0});
-}
+	L4D2_SpawnSpecial(classIndex, NULL_VECTOR, NULL_VECTOR);
+}*/
 
-bool AnySpecialInfectedInPlay()
+stock bool AnySpecialInfectedInPlay()
 {
     for (int i = 1; i <= MaxClients; i++)
 	{
@@ -748,7 +691,7 @@ bool AnySpecialInfectedInPlay()
     return false;
 }
 
-int CountSpecialInfected()
+stock int CountSpecialInfected()
 {
     int count = 0;
     for (int i = 1; i <= MaxClients; i++)
@@ -761,7 +704,7 @@ int CountSpecialInfected()
     return count;
 }
 
-bool IsInfectedBot(int i)
+stock bool IsInfectedBot(int i)
 {
 	return L4D2_IsValidClient(i) && IsFakeClient(i) && L4D2_IsInfected(i) && IsPlayerAlive(i);
 }
@@ -803,7 +746,7 @@ public bool traceFilter(int entity, int mask, any self)
 	}
 }*/
 
-void RandomClass()
+/*void RandomClass()
 {
 	switch (GetRandomInt(0, 38))
 	{
@@ -1159,4 +1102,4 @@ void RandomClass()
 			hSpawnLimits[6] = 1;
 		}
 	}
-}
+}*/

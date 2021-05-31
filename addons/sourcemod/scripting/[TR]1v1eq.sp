@@ -4,9 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[SilverShot]left4dhooks>
-#include <[TR]readyup>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]readyup>
+#include <[LIB]l4d2library>
 
 #define MELEE_TIME              0.25
 #define POUNCE_TIMER            0.1

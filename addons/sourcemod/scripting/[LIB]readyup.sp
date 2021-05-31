@@ -3,10 +3,10 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]builtinvotes>
-#include <[TR]builtinvotes_native>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]builtinvotes>
+#include <[LIB]builtinvotes_native>
+#include <[LIB]l4d2library>
 
 #define MAX_FOOTERS 10
 #define MAX_FOOTER_LEN 65

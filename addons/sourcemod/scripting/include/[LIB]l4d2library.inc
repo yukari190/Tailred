@@ -308,6 +308,22 @@ native void L4D2_FillBots();
  * @param 
  * @return 
  */
+native void L4D2_RestoreHealth(int client);
+
+/**
+ * 
+ *
+ * @param 
+ * @return 
+ */
+native void L4D2_ResetInventory(int client);
+
+/**
+ * 
+ *
+ * @param 
+ * @return 
+ */
 native bool L4D2_IsLanIP(char[] src);
 
 /**
@@ -325,14 +341,6 @@ native void L4D2_SetAnimFling(int client, int attacker, float vector[3]);
  * @return 
  */
 native void L4D2_SetPlayerRespawn(int client);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-native bool L4D2_RepositionGrid(int client);
 
 /**
  * 
@@ -1040,7 +1048,7 @@ stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argume
 {
     if (GetCommandFlags(commandName) != INVALID_FCVAR_FLAGS)
 	{
-		if (commandDummy <= 0 || commandDummy > MaxClients || !IsClientInGame(commandDummy))
+		if (!L4D2_IsValidClient(commandDummy))
 		{
 			for (int i = 1; i <= MaxClients; i++)
 			{
@@ -1051,14 +1059,14 @@ stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argume
 					if (StrContains(clientName, "[CommandBot]") != -1) commandDummy = i;
 				}  		
 			}
-			if (commandDummy <= 0 || commandDummy > MaxClients || !IsClientInGame(commandDummy) || IsClientInKickQueue(commandDummy))
+			if (!L4D2_IsValidClient(commandDummy) || IsClientInKickQueue(commandDummy))
 			{
 				commandDummy = CreateFakeClient("[CommandBot]");
-				if (commandDummy > 0 && commandDummy <= MaxClients && IsClientInGame(commandDummy))
+				if (L4D2_IsValidClient(commandDummy))
 				  ChangeClientTeam(commandDummy, 1);
 			}
 		}
-		if (commandDummy > 0 && commandDummy <= MaxClients && IsClientInGame(commandDummy))
+		if (L4D2_IsValidClient(commandDummy))
 		{
 		    int originalUserFlags = GetUserFlagBits(commandDummy);
 		    int originalCommandFlags = GetCommandFlags(commandName);            
@@ -1071,18 +1079,38 @@ stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argume
 		else
 		{
 			char pluginName[128];
-			GetPluginFilename( INVALID_HANDLE, pluginName, sizeof(pluginName) );        
-			LogError( "%s could not find or create a client through which to execute cheat command %s", pluginName, commandName );
+			GetPluginFilename(INVALID_HANDLE, pluginName, sizeof(pluginName));        
+			LogError("%s could not find or create a client through which to execute cheat command %s", pluginName, commandName);
 		}
-		if (commandDummy > 0 && commandDummy <= MaxClients && IsClientInGame(commandDummy) && !IsClientInKickQueue(commandDummy) && IsFakeClient(commandDummy) && GetClientTeam(commandDummy) <= 1)
-		  CreateTimer(0.1, Timer_KickBot, commandDummy, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.1, Timer_KickBot, commandDummy);
     }
 }
 public Action Timer_KickBot(Handle timer, any client)
 {
-	if (IsClientInGame(client) && !IsClientInKickQueue(client) && IsFakeClient(client))
+	if (L4D2_IsValidClient(client) && !IsClientInKickQueue(client) && IsFakeClient(client))
 	{
 		KickClient(client, "");
+	}
+}
+
+/**
+ * Returns the flow distance of a given point
+ */
+stock int GetFlow(const float o[3])
+{
+	float origin[3]; //non constant var
+	origin[0] = o[0];
+	origin[1] = o[1];
+	origin[2] = o[2];
+	Address pNavArea;
+	pNavArea = L4D2Direct_GetTerrorNavArea(origin);
+	if (pNavArea != Address_Null)
+	{
+		return RoundToNearest(L4D2Direct_GetTerrorNavAreaFlow(pNavArea));
+	}
+	else
+	{
+		return -1;
 	}
 }
 
@@ -1368,10 +1396,11 @@ public void __pl_l4d2library_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_SetMaxPlayers");
 	MarkNativeAsOptional("L4D2_ChangeClientTeam");
 	MarkNativeAsOptional("L4D2_FillBots");
+	MarkNativeAsOptional("L4D2_RestoreHealth");
+	MarkNativeAsOptional("L4D2_ResetInventory");
 	MarkNativeAsOptional("L4D2_IsLanIP");
 	MarkNativeAsOptional("L4D2_SetAnimFling");
 	MarkNativeAsOptional("L4D2_SetPlayerRespawn");
-	MarkNativeAsOptional("L4D2_RepositionGrid");
 	MarkNativeAsOptional("L4D2_PauseClient");
 	MarkNativeAsOptional("L4D2_IsClientCaster");
 	MarkNativeAsOptional("L4D2_IsIDCaster");

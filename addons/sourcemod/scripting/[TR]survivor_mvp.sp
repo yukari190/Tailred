@@ -4,10 +4,10 @@
 #include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 #undef REQUIRE_PLUGIN
-#include <[TR]readyup>
+#include <[LIB]readyup>
 #define REQUIRE_PLUGIN
 
 public Plugin myinfo =

@@ -386,8 +386,8 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[TR]dhooks>
-#include <[SilverShot]left4dhooks>
+#include <[LIB]dhooks>
+#include <[LIB]left4dhooks>
 
 #if DEBUG
 #include <profiler>

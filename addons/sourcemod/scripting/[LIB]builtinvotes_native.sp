@@ -2,8 +2,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <[TR]builtinvotes>
-#include <[TR]l4d2library>
+#include <[LIB]builtinvotes>
+#include <[LIB]l4d2library>
 
 #define PLAYER_LIMIT 1
 

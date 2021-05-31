@@ -3,11 +3,11 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
-#include <[TR]builtinvotes>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
+#include <[LIB]builtinvotes>
 #undef REQUIRE_PLUGIN
-#include <[TR]readyup>
+#include <[LIB]readyup>
 //#include <pause>
 //#include <l4d2_boss_percents>
 //#include <l4d2_hybrid_scoremod>
@@ -29,9 +29,9 @@ public Plugin myinfo =
 	url = "https://github.com/Target5150/MoYu_Server_Stupid_Plugins"
 };
 
-ConVar survivor_limit, z_max_player_zombies, versus_boss_buffer, sv_maxplayers, tank_burn_duration, pain_pills_decay_rate;
+ConVar survivor_limit, z_max_player_zombies, sv_maxplayers, tank_burn_duration;
 int iSurvivorLimit, iMaxPlayerZombies, iMaxPlayers;
-float fVsBossBuffer, fTankBurnDuration, fPainPillsDecayRate;
+float fTankBurnDuration;
 
 ConVar cVarMinUpdateRate, cVarMaxUpdateRate, cVarMinInterpRatio, cVarMaxInterpRatio;
 float fMinUpdateRate, fMaxUpdateRate, fMinInterpRatio, fMaxInterpRatio;
@@ -45,7 +45,7 @@ int iSurvivorArray[MAXPLAYERS+1];
 StringMap hFirstTankSpawningScheme, hSecondTankSpawningScheme;		// eq_finale_tanks (Zonemod, Acemod, etc.)
 
 int iTankCount;
-bool bRoundHasFlowTank, bRoundHasFlowWitch, bFlowTankActive;
+bool bRoundHasFlowTank, bFlowTankActive;
 
 //bool bScoremod, bHybridScoremod, bNextScoremod;
 
@@ -70,10 +70,8 @@ public void OnPluginStart()
 {
 	survivor_limit			= FindConVar("survivor_limit");
 	z_max_player_zombies	= FindConVar("z_max_player_zombies");
-	versus_boss_buffer		= FindConVar("versus_boss_buffer");
 	sv_maxplayers			= FindConVar("sv_maxplayers");
 	tank_burn_duration		= FindConVar("tank_burn_duration");
-	pain_pills_decay_rate	= FindConVar("pain_pills_decay_rate");
 	
 	l4d2_allow_tank_spawn		= FindConVar("l4d2_allow_tank_spawn");
 	l4d_ready_cfg_name		= FindConVar("l4d_ready_cfg_name");
@@ -94,15 +92,12 @@ public void OnPluginStart()
 	
 	iSurvivorLimit		= survivor_limit.IntValue;
 	iMaxPlayerZombies	= z_max_player_zombies.IntValue;
-	fVsBossBuffer	= versus_boss_buffer.FloatValue;
 
 	iMaxPlayers			= sv_maxplayers.IntValue;
 	fTankBurnDuration	= tank_burn_duration.FloatValue;
-	fPainPillsDecayRate	= pain_pills_decay_rate.FloatValue;
 	
 	survivor_limit.AddChangeHook(OnGameConVarChanged);
 	z_max_player_zombies.AddChangeHook(OnGameConVarChanged);
-	versus_boss_buffer.AddChangeHook(OnGameConVarChanged);
 	sv_maxplayers.AddChangeHook(OnGameConVarChanged);
 	
 	fMinUpdateRate		= cVarMinUpdateRate.FloatValue;
@@ -139,11 +134,9 @@ public void OnGameConVarChanged(ConVar convar, const char[] oldValue, const char
 {
 	iSurvivorLimit		= survivor_limit.IntValue;
 	iMaxPlayerZombies	= z_max_player_zombies.IntValue;
-	fVsBossBuffer	= versus_boss_buffer.FloatValue;
 	
 	iMaxPlayers			= sv_maxplayers.IntValue;
 	fTankBurnDuration	= tank_burn_duration.FloatValue;
-	fPainPillsDecayRate	= pain_pills_decay_rate.FloatValue;
 }
 
 public void OnNetworkConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -222,7 +215,6 @@ public void OnRoundIsLive()
 	if (L4D2_IsVersus())
 	{
 		bRoundHasFlowTank = L4D2_GetTankToSpawn();
-		bRoundHasFlowWitch = false;
 		
 		iTankCount = 0;
 		

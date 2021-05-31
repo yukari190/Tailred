@@ -25,10 +25,12 @@
 #pragma tabsize 0
 #pragma semicolon 1
 #pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <sdkhooks>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define MAX_MESSAGE_LENGTH 250
 #define MAX_COLORS 6
@@ -90,9 +92,8 @@ float g_move_grad[MAXPLAYERS+1][3];
 float g_move_speed[MAXPLAYERS+1];
 float g_pos[MAXPLAYERS+1][3];
 float g_delay[MAXPLAYERS+1][8];
-float spawnGrid[4];
+float fTankLotterySelectionTime;
 int iGameMode;
-int iTankSpawnAttemptCount;
 int g_state[MAXPLAYERS+1][8];
 int iSurvivorLimit;
 int iMaxPlayerZombies;
@@ -107,6 +108,7 @@ ConVar hMaxPlayers;
 ConVar hVisibleMaxPlayers;
 ConVar hSurvivorLimit;
 ConVar hMaxPlayerZombies;
+ConVar hTankLotterySelectionTime;
 char g_sMapname[64];
 char SurvivorNames[8][128] =
 {
@@ -505,10 +507,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_SetMaxPlayers", _native_SetMaxPlayers);
 	CreateNative("L4D2_ChangeClientTeam", _native_ChangeClientTeam);
 	CreateNative("L4D2_FillBots", _native_FillBots);
+	CreateNative("L4D2_RestoreHealth", _native_RestoreHealth);
+	CreateNative("L4D2_ResetInventory", _native_ResetInventory);
 	CreateNative("L4D2_IsLanIP", _native_IsLanIP);
 	CreateNative("L4D2_SetAnimFling", _native_SetAnimFling);
 	CreateNative("L4D2_SetPlayerRespawn", _native_SetPlayerRespawn);
-	CreateNative("L4D2_RepositionGrid", _native_RepositionGrid);
 	CreateNative("L4D2_PauseClient", _native_PauseClient);
 	CreateNative("L4D2_IsClientCaster", _native_IsClientCaster);
 	CreateNative("L4D2_IsIDCaster", _native_IsIDCaster);
@@ -634,12 +637,14 @@ public void OnPluginStart()
 	hVisibleMaxPlayers = FindConVar("sv_visiblemaxplayers");
 	hSurvivorLimit = FindConVar("survivor_limit");
 	hMaxPlayerZombies = FindConVar("z_max_player_zombies");
+	hTankLotterySelectionTime = FindConVar("director_tank_lottery_selection_time");
 	
 	hGameMode.AddChangeHook(ConVarChange);
 	g_hVsBossBuffer.AddChangeHook(ConVarChange);
 	hDecayRate.AddChangeHook(ConVarChange);
 	hSurvivorLimit.AddChangeHook(ConVarChange);
 	hMaxPlayerZombies.AddChangeHook(ConVarChange);
+	hTankLotterySelectionTime.AddChangeHook(ConVarChange);
 	
 	ConVarChange(view_as<ConVar>(INVALID_HANDLE), "", "");
 	
@@ -679,6 +684,7 @@ public int ConVarChange(ConVar convar, char[] oldValue, char[] newValue)
 	fDecayRate = hDecayRate.FloatValue;
 	iSurvivorLimit = hSurvivorLimit.IntValue;
 	iMaxPlayerZombies = hMaxPlayerZombies.IntValue;
+	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
 	
 	char gmode[20];
 	hGameMode.GetString(gmode, sizeof(gmode));
@@ -975,35 +981,18 @@ public Action TankSpawnPercentCheck(Handle timer)
 {
 	if (L4D_HasAnySurvivorLeftSafeArea() && bTankSpawn && GetBossProximity() >= fTankFlow)
 	{
-		SpawnTankOnCoop(10);
+		float spawnPos[3];
+		int client = L4D_GetHighestFlowSurvivor();
+		if (client && L4D_GetRandomPZSpawnPosition(client, 8, 100, spawnPos))
+		{
+			L4D2_SpawnTank(spawnPos, NULL_VECTOR);
+		}
+		else
+		{
+			PrintToChatAll("[SM] Failed to find a spawn for tank in maximum allowed attempts");
+		}
 		return Plugin_Stop;
 	}
-	return Plugin_Continue;
-}
-
-void SpawnTankOnCoop(int iCount)
-{
-	if (iGameMode == 0)
-	{
-		iTankSpawnAttemptCount = 0;
-		CreateTimer(0.1, Timer_SpawnTank, iCount, TIMER_FLAG_NO_MAPCHANGE);
-	}
-}
-
-public Action Timer_SpawnTank(Handle timer, any iCount)
-{
-	if (L4D2Direct_GetTankCount() > 0)
-	{
-		return Plugin_Stop;
-	}
-	if (iTankSpawnAttemptCount >= iCount)
-	{
-		PrintToChatAll("[SM] Failed to find a spawn for tank in maximum allowed attempts");
-		return Plugin_Stop;
-	}
-	L4D2_CheatCommand(0, "z_spawn_old", "tank", "auto");
-	iTankSpawnAttemptCount += 1;
-	CreateTimer(1.0, Timer_SpawnTank, iCount, TIMER_FLAG_NO_MAPCHANGE);
 	return Plugin_Continue;
 }
 
@@ -1023,9 +1012,32 @@ public Action TankSpawn_Event(Event event, char[] name, bool dontBroadcast)
 		return;
 	}
 	
+	if (IsFakeClient(iTank))
+	{
+		PauseClient(iTank, true);
+		CreateTimer(fTankLotterySelectionTime, ResumeTankTimer, iTank);
+	}
+	
 	Call_StartForward(hFwdFirstTankSpawn);
 	Call_PushCell(iTank);
 	Call_Finish();
+}
+
+public Action ResumeTankTimer(Handle timer, any client)
+{
+	PauseClient(client, false);
+	
+	int survivors[NUM_OF_SURVIVORS];
+	int numSurvivors = 0;
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int index = iSurvivorIndex[i];
+		if (index == 0 || !IsPlayerAlive(index)) continue;
+	    survivors[numSurvivors] = index;
+	    numSurvivors++;
+	}
+	int attacker = survivors[GetRandomInt(0, numSurvivors - 1)];
+	SDKHooks_TakeDamage(client, attacker, attacker, 0.0, DMG_BULLET);
 }
 
 public Action ItemPickup_Event(Event event, char[] name, bool dontBroadcast)
@@ -1408,9 +1420,48 @@ public int _native_ChangeClientTeam(Handle plugin, int numParams)
 
 public int _native_FillBots(Handle plugin, int numParams)
 {
-	while (GetTeamClientCount(view_as<int>(L4D2Team_Survivor)) < iSurvivorLimit) 
+	CreateTimer(0.1, Timer_FillBots, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Timer_FillBots(Handle timer)
+{
+	if (GetTeamClientCount(view_as<int>(L4D2Team_Survivor)) < iSurvivorLimit) 
 	{
 		ServerCommand("sb_add");
+		return Plugin_Continue;
+	}
+	else
+	{
+		return Plugin_Stop;
+	}
+}
+
+public int _native_RestoreHealth(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client))
+	{
+		L4D2_CheatCommand(client, "give", "health");
+		SetEntPropFloat(client, Prop_Send, "m_healthBuffer", 0.0);		
+		SetEntProp(client, Prop_Send, "m_currentReviveCount", 0); //reset incaps
+		SetEntProp(client, Prop_Send, "m_bIsOnThirdStrike", false);
+	}
+}
+
+public int _native_ResetInventory(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client))
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			int item = GetPlayerWeaponSlot(client, j);
+			if (item > 0)
+			{
+				RemovePlayerItem(client, item);
+			}
+		}	
+		L4D2_CheatCommand(client, "give", "pistol");
 	}
 }
 
@@ -1449,87 +1500,11 @@ public int _native_SetPlayerRespawn(Handle plugin, int numParams)
 	SDKCall(hRoundRespawn, client);
 }
 
-public int _native_RepositionGrid(Handle plugin, int numParams)
-{
-	int infectedBot = GetNativeCell(1);
-	float spawnPos[3];
-	int survivors[NUM_OF_SURVIVORS];
-	int numSurvivors = 0;
-	spawnGrid[X_MIN] = UNINITIALISED_FLOAT, spawnGrid[Y_MIN] = UNINITIALISED_FLOAT;
-	spawnGrid[X_MAX] = UNINITIALISED_FLOAT, spawnGrid[Y_MAX] = UNINITIALISED_FLOAT;
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-	    survivors[numSurvivors] = index;
-	    numSurvivors++;
-		float pos[3];
-		GetClientAbsOrigin(index, pos);
-		spawnGrid[X_MIN] = CheckMinCoord(spawnGrid[X_MIN], pos[COORD_X]);
-		spawnGrid[Y_MIN] = CheckMinCoord(spawnGrid[Y_MIN], pos[COORD_Y]);
-		spawnGrid[X_MAX] = CheckMaxCoord(spawnGrid[X_MAX], pos[COORD_X]);
-		spawnGrid[Y_MAX] = CheckMaxCoord(spawnGrid[Y_MAX], pos[COORD_Y]);
-	}
-	if (L4D_GetRandomPZSpawnPosition(survivors[GetRandomInt(0, numSurvivors - 1)], 8, 32, spawnPos))
-	{
-		TeleportEntity(infectedBot, spawnPos, NULL_VECTOR, NULL_VECTOR);
-		return true;
-	}
-	float borderWidth = 650.0;
-	spawnGrid[X_MIN] -= borderWidth;
-	spawnGrid[Y_MIN] -= borderWidth;
-	spawnGrid[X_MAX] += borderWidth;
-	spawnGrid[Y_MAX] += borderWidth;
-	
-	float gridPos[3];
-	gridPos[COORD_X] = GetRandomFloat(spawnGrid[X_MIN], spawnGrid[X_MAX]);
-	gridPos[COORD_Y] = GetRandomFloat(spawnGrid[Y_MIN], spawnGrid[Y_MAX]);
-	int closestSurvivor = GetClosestSurvivor2D(gridPos);
-	float survivorPos[3];
-	GetClientAbsOrigin(closestSurvivor, survivorPos);
-	gridPos[COORD_Z] = survivorPos[COORD_Z] + 300.0;
-	if(L4D2_IsValidClient(closestSurvivor) && L4D2_IsSurvivor(closestSurvivor) && IsPlayerAlive(closestSurvivor))
-	{
-		float direction[3];
-		direction[PITCH] = MAX_ANGLE;
-		direction[YAW] = 0.0;
-		direction[ROLL] = 0.0;
-		TR_TraceRay(gridPos, direction, MASK_ALL, RayType_Infinite);
-		if(TR_DidHit())
-		{
-			float traceImpact[3];
-			TR_GetEndPosition(traceImpact); 
-			spawnPos = traceImpact;
-			spawnPos[COORD_Z] += NAV_MESH_HEIGHT;
-			if(IsOnValidMesh(spawnPos) && !IsPlayerStuck(spawnPos, infectedBot))
-			{
-				if(!HasSurvivorLOS(spawnPos) || GetSurvivorProximity(spawnPos) > 500)
-				{
-					TeleportEntity(infectedBot, spawnPos, NULL_VECTOR, NULL_VECTOR);
-					return true;
-				}
-			}
-		} 
-	}
-	return false;
-}
-
 public int _native_PauseClient(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
 	bool b = GetNativeCell(2);
-	bPause[client] = b;
-	if (!IsValidEntity(client)) return;
-	if (b)
-	{
-		SetEntityMoveType(client, MOVETYPE_NONE);
-		SetEntProp(client, Prop_Send, "m_isGhost", 1);
-	}
-	else
-	{
-		SetEntityMoveType(client, MOVETYPE_CUSTOM);
-		SetEntProp(client, Prop_Send, "m_isGhost", 0);
-	}
+	PauseClient(client, b);
 }
 
 public int _native_IsClientCaster(Handle plugin, int numParams)
@@ -2370,116 +2345,18 @@ bool IsIDCaster(const char[] AuthID)
 	return casterTrie.GetValue(AuthID, dummy);
 }
 
-bool IsOnValidMesh(float position[3])
+void PauseClient(int client, bool b)
 {
-	float pos[3];
-	pos[0] = position[0];
-	pos[1] = position[1];
-	pos[2] = position[2];
-	Address pNavArea;
-	pNavArea = L4D2Direct_GetTerrorNavArea(pos);
-	if (pNavArea != Address_Null) return true;
-	else return false;
-}
-
-bool IsPlayerStuck(float pos[3], int client)
-{
-	bool isStuck = true;
-	if (client > 0 && client <= MaxClients && IsClientInGame(client))
+	bPause[client] = b;
+	if (!IsValidEntity(client)) return;
+	if (b)
 	{
-		float mins[3], maxs[3];		
-		GetClientMins(client, mins);
-		GetClientMaxs(client, maxs);
-		for (int i = 0; i < sizeof(mins); i++)
-		{
-		    mins[i] -= 3;
-		    maxs[i] += 3;
-		}
-		TR_TraceHullFilter(pos, pos, mins, maxs, MASK_ALL, TraceEntityFilterPlayer, client);
-		isStuck = TR_DidHit();
+		SetEntityMoveType(client, MOVETYPE_NONE);
+		SetEntProp(client, Prop_Send, "m_isGhost", 1);
 	}
-	return isStuck;
-}
-
-public bool TraceEntityFilterPlayer(int entity, int contentsMask)
-{
-    return entity <= 0 || entity > MaxClients;
-}
-
-bool HasSurvivorLOS(float pos[3])
-{
-	bool hasLOS = false;
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	else
 	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		float origin[3];
-		GetClientAbsOrigin(index, origin);
-		TR_TraceRay(pos, origin, MASK_ALL, RayType_EndPoint);
-		if(!TR_DidHit())
-		{
-			hasLOS = true;
-			break;
-		}
+		SetEntityMoveType(client, MOVETYPE_CUSTOM);
+		SetEntProp(client, Prop_Send, "m_isGhost", 0);
 	}
-	return hasLOS;
-}
-
-int GetSurvivorProximity(float referencePos[3])
-{
-	int targetSurvivor = -1;
-	float targetSurvivorPos[3];
-	float survivorPos[3];
-	int iClosestAbsDisplacement = -1; 
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		GetClientAbsOrigin(index, survivorPos);
-		int iAbsDisplacement = RoundToNearest(GetVectorDistance(referencePos, survivorPos));			
-		if (iClosestAbsDisplacement < 0)
-		{
-			iClosestAbsDisplacement = iAbsDisplacement;
-			targetSurvivor = index;
-		}
-		else if(iAbsDisplacement < iClosestAbsDisplacement)
-		{
-			iClosestAbsDisplacement = iAbsDisplacement;
-			targetSurvivor = index;
-		}			
-	}
-	GetEntPropVector(targetSurvivor, Prop_Send, "m_vecOrigin", targetSurvivorPos);
-	return RoundToNearest(GetVectorDistance(referencePos, targetSurvivorPos));
-}
-
-int GetClosestSurvivor2D(float gridPos[3])
-{
-	float proximity = UNINITIALISED_FLOAT;
-	int closestSurvivor = -1;
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		float survivorPos[3];
-		GetClientAbsOrigin(index, survivorPos);
-		float survivorDistance = SquareRoot( Pow(survivorPos[COORD_X] - gridPos[COORD_X], 2.0) + Pow(survivorPos[COORD_Y] - gridPos[COORD_Y], 2.0) );
-		if(survivorDistance < proximity || proximity == UNINITIALISED_FLOAT)
-		{
-			proximity = survivorDistance;
-			closestSurvivor = index;
-		}
-	}
-	return closestSurvivor;
-}
-
-float CheckMinCoord(float oldMin, float checkValue)
-{
-	if(checkValue < oldMin || oldMin == UNINITIALISED_FLOAT) return checkValue;
-	else return oldMin;
-}
-
-float CheckMaxCoord(float oldMax, float checkValue)
-{
-	if(checkValue > oldMax || oldMax == UNINITIALISED_FLOAT) return checkValue;
-	else return oldMax;
 }

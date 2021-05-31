@@ -6,9 +6,10 @@
 #include <sdkhooks>
 #include <geoip>
 #include <adminmenu>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
-#include <[TR]builtinvotes_native>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
+#include <[LIB]builtinvotes_native>
+#include <[LIB]NavMesh_DirectInfectedSpawn>
 
 #define PLUGIN_TAG					"[A4D] "
 #define MENU_DISPLAY_TIME		20
@@ -56,7 +57,6 @@ ConVar sv_minupdaterate;
 ConVar sv_maxupdaterate;
 ConVar sv_mincmdrate;
 ConVar sv_maxcmdrate;
-ConVar l4d_ready_cfg_name;
 
 float g_pos[3];
 
@@ -93,7 +93,6 @@ public void OnPluginStart()
 	sv_maxupdaterate = FindConVar("sv_maxupdaterate");
 	sv_mincmdrate = FindConVar("sv_mincmdrate");
 	sv_maxcmdrate = FindConVar("sv_maxcmdrate");
-	l4d_ready_cfg_name = FindConVar("l4d_ready_cfg_name");
 	
 	sv_minrate.AddChangeHook(ConVarChange);
 	sv_maxrate.AddChangeHook(ConVarChange);
@@ -586,10 +585,7 @@ void RestoreHealth()
 		int index = L4D2_GetSurvivorOfIndex(i);
 		if (index != 0)
 		{
-			L4D2_CheatCommand(index, "give", "health");
-			SetEntPropFloat(index, Prop_Send, "m_healthBuffer", 0.0);		
-			SetEntProp(index, Prop_Send, "m_currentReviveCount", 0); //reset incaps
-			SetEntProp(index, Prop_Send, "m_bIsOnThirdStrike", false);
+			L4D2_RestoreHealth(index);
 		}
 	}
 }

@@ -3,8 +3,8 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
 
 #define SURVIVOR_RUNSPEED		220.0
 #define SURVIVOR_WATERSPEED_VS	170.0

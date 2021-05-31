@@ -3,11 +3,11 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
-#include <[TR]builtinvotes_native>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
+#include <[LIB]builtinvotes_native>
 #undef REQUIRE_PLUGIN
-#include <[TR]readyup>
+#include <[LIB]readyup>
 //#include <l4d2_hybrid_scoremod>
 #define REQUIRE_PLUGIN
 

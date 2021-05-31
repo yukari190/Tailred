@@ -4,9 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[SilverShot]left4dhooks>
-#include <[TR]l4d2library>
-#include <[TR]readyup>
+#include <[LIB]left4dhooks>
+#include <[LIB]l4d2library>
+#include <[LIB]readyup>
 
 public Plugin myinfo =
 {
@@ -20,7 +20,6 @@ public Plugin myinfo =
 ArrayList hFirstRoundCars;
 ArrayList hSecondRoundCars;
 
-ConVar hTankLotterySelectionTime;
 ConVar g_hSpitterLimit;
 ConVar hSpitterLimit;
 
@@ -35,16 +34,10 @@ bool bActivated;
 bool bPatched;
 bool FS_bIsFinale;
 
-float fTankLotterySelectionTime;
-
 public void OnPluginStart()
 {
     hFirstRoundCars = new ArrayList(128);
     hSecondRoundCars = new ArrayList(128);
-	
-	hTankLotterySelectionTime = FindConVar("director_tank_lottery_selection_time");
-	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
-	hTankLotterySelectionTime.AddChangeHook(CvarChangeCallback);
 	
 	g_hSpitterLimit = FindConVar("z_versus_spitter_limit");
 	hSpitterLimit = FindConVar("z_spitter_limit");
@@ -64,11 +57,6 @@ public void OnPluginStart()
 public void OnPluginEnd()
 {
 	ResetConVar(g_hSpitterLimit);
-}
-
-public int CvarChangeCallback(Handle convar, const char[] oldValue, const char[] newValue)
-{
-	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
 }
 
 public int Cvar_SpitterLimit(Handle convar, const char[] oldValue, const char[] newValue)
@@ -208,16 +196,6 @@ public void L4D2_OnTankFirstSpawn(int tankClient)
 	g_bIsTankInPlay = true;
 	SetConVarInt(g_hSpitterLimit, 0);
 	SetConVarInt(hSpitterLimit, 0);
-	if (IsFakeClient(tankClient))
-	{
-		L4D2_PauseClient(tankClient, true);
-		CreateTimer(fTankLotterySelectionTime, ResumeTankTimer, tankClient);
-	}
-}
-
-public Action ResumeTankTimer(Handle timer, any tankClient)
-{
-	L4D2_PauseClient(tankClient, false);
 }
 
 public void L4D2_OnTankDeath()
