@@ -49,7 +49,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[TR]dhooks>
+#include <[LIB]dhooks>
 
 #define GAMEDATA		"l4d_reload_fix"
 #define CLIP_BUG		15

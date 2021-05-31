@@ -25,7 +25,7 @@
 
 #include <sourcemod>
 #include <sdktools>
-#include <[SilverShot]left4dhooks>
+#include <[LIB]left4dhooks>
 
 bool g_bLeft4Dead2;
 ConVar g_hCvarWho;

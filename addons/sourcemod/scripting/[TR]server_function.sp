@@ -9,7 +9,6 @@
 #include <[LIB]left4dhooks>
 #include <[LIB]l4d2library>
 #include <[LIB]builtinvotes_native>
-#include <[LIB]NavMesh_DirectInfectedSpawn>
 
 #define PLUGIN_TAG					"[A4D] "
 #define MENU_DISPLAY_TIME		20
@@ -583,10 +582,8 @@ void RestoreHealth()
 	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index != 0)
-		{
-			L4D2_RestoreHealth(index);
-		}
+		if (index == 0 || !IsPlayerAlive(index)) continue;
+		L4D2_RestoreHealth(index);
 	}
 }
 

@@ -1074,7 +1074,9 @@ stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argume
 		    SetCommandFlags(commandName, originalCommandFlags ^ FCVAR_CHEAT);               
 		    FakeClientCommand(commandDummy, "%s %s %s", commandName, argument1, argument2);
 		    SetCommandFlags(commandName, originalCommandFlags);
-		    SetUserFlagBits(commandDummy, originalUserFlags);            
+		    SetUserFlagBits(commandDummy, originalUserFlags);
+			if (L4D2_IsSpectator(commandDummy))
+			  CreateTimer(0.1, Timer_KickBot, commandDummy);
 		}
 		else
 		{
@@ -1082,7 +1084,6 @@ stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argume
 			GetPluginFilename(INVALID_HANDLE, pluginName, sizeof(pluginName));        
 			LogError("%s could not find or create a client through which to execute cheat command %s", pluginName, commandName);
 		}
-		CreateTimer(0.1, Timer_KickBot, commandDummy);
     }
 }
 public Action Timer_KickBot(Handle timer, any client)

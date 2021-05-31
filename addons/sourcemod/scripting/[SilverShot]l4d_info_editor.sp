@@ -109,7 +109,7 @@
 
 #include <sourcemod>
 #include <sdktools>
-#include <[TR]dhooks>
+#include <[LIB]dhooks>
 
 #define GAMEDATA				"l4d_info_editor"
 #define CONFIG_MISSION			"data/l4d_info_editor_mission.cfg"

@@ -46,7 +46,7 @@
 
 #include <sourcemod>
 #include <sdktools>
-#include <[TR]dhooks>
+#include <[LIB]dhooks>
 
 #define GAMEDATA			"command_buffer.games"
 #define ARGS_BUFFER_LENGTH	8192
