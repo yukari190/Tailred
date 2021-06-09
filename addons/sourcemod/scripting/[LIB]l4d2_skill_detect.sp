@@ -1564,8 +1564,6 @@ public Action Event_ChargeCarryStart(Event event, const char[] name, bool dontBr
     int victim = GetClientOfUserId(event.GetInt("victim"));
     if (!IS_VALID_INFECTED(client)) return;
 
-    PrintDebug("Charge carry start: %i - %i -- time: %.2f", client, victim, GetGameTime());
-    
     g_fChargeTime[client] = GetGameTime();
     g_fPinTime[client][0] = g_fChargeTime[client];
     g_fPinTime[client][1] = 0.0;
@@ -1652,8 +1650,6 @@ public Action Timer_ChargeCheck(Handle timer, any client)
 public Action Timer_DeathChargeCheck(Handle timer, any client)
 {
     if (!L4D2_IsValidClient(client)) { return; }
-    
-    PrintDebug("Checking charge victim: %i - %i - flags: %i (alive? %i)", g_iVictimCharger[client], client, g_iVictimFlags[client], IsPlayerAlive(client));
     
     int flags = g_iVictimFlags[client];
     
@@ -2039,7 +2035,6 @@ void CheckWitchCrown(int witch, int attacker, bool bOneShot = false)
     int witch_dmg_array[MAXPLAYERS+DMGARRAYEXT];
     if (!g_hWitchTrie.GetArray(witch_key, witch_dmg_array, MAXPLAYERS+DMGARRAYEXT))
 	{
-        PrintDebug("Witch Crown Check: Error: Trie entry missing (entity: %i, oneshot: %i)", witch, bOneShot);
         return;
     }
     
@@ -2053,26 +2048,8 @@ void CheckWitchCrown(int witch, int attacker, bool bOneShot = false)
     
     if (witch_dmg_array[MAXPLAYERS+WTCH_GOTSLASH] || !witch_dmg_array[MAXPLAYERS+WTCH_CROWNTYPE])
     {
-        PrintDebug("Witch Crown Check: Failed: bungled: %i / crowntype: %i (entity: %i)",
-                witch_dmg_array[MAXPLAYERS+WTCH_GOTSLASH],
-                witch_dmg_array[MAXPLAYERS+WTCH_CROWNTYPE],
-                witch
-           );
-        PrintDebug("Witch Crown Check: Further details: attacker: %N, attacker dmg: %i, teamless dmg: %i",
-                attacker,
-                witch_dmg_array[attacker],
-                witch_dmg_array[0]
-           );
         return;
     }
-    
-    PrintDebug("Witch Crown Check: crown shot: %i, harrassed: %i (full health: %i / drawthresh: %i / oneshot %i)", 
-            witch_dmg_array[MAXPLAYERS+WTCH_CROWNSHOT],
-            witch_dmg_array[MAXPLAYERS+WTCH_STARTLED],
-            iWitchHealth,
-            DRAW_CROWN_THRESH,
-            bOneShot
-       );
     
     if (!witch_dmg_array[MAXPLAYERS+WTCH_STARTLED] && (bOneShot || witch_dmg_array[MAXPLAYERS+WTCH_CROWNSHOT] >= iWitchHealth))
     {
@@ -2225,7 +2202,7 @@ public Action Event_ChokeStop(Event event, const char[] name, bool dontBroadcast
 
 public void Hook_CarAlarmStart(const char[] output, int caller, int activator, float delay)
 {
-    PrintDebug("calarm trigger: caller %i / activator %i / delay: %.2f", caller, activator, delay);
+    
 }
 public Action Event_CarAlarmGoesOff(Event event, const char[] name, bool dontBroadcast)
 {
@@ -2504,7 +2481,6 @@ void HandleClear(int attacker, int victim, int pinVictim, L4D2_Infected zombieCl
     
 	char sBuffer[16];
 	L4D2_GetInfectedClassName(zombieClass, sBuffer, 16);
-    PrintDebug("Clear: %i freed %i from %i: time: %.2f / %.2f -- class: %s (with shove? %i)", attacker, pinVictim, victim, clearTimeA, clearTimeB, sBuffer, bWithShove);
     
     if (attacker != pinVictim)
     {
@@ -2607,13 +2583,6 @@ int ShiftTankThrower()
     g_iRocksBeingThrownCount--;
     
     return tank;
-}
-
-void PrintDebug(const char[] Message, any ...)
-{
-    char DebugBuff[256];
-    VFormat(DebugBuff, sizeof(DebugBuff), Message, 3);
-    LogMessage(DebugBuff);
 }
 
 bool IsWitch(int entity)

@@ -1037,7 +1037,7 @@ public Action ResumeTankTimer(Handle timer, any client)
 	    numSurvivors++;
 	}
 	int attacker = survivors[GetRandomInt(0, numSurvivors - 1)];
-	SDKHooks_TakeDamage(client, attacker, attacker, 0.0, DMG_BULLET);
+	SDKHooks_TakeDamage(client, attacker, attacker, 0.1, DMG_BULLET);
 }
 
 public Action ItemPickup_Event(Event event, char[] name, bool dontBroadcast)

@@ -1,46 +1,5 @@
 "Games"
 {
-	"left4dead"
-	{
-		"Signatures"
-		{
-			"Infected::AttackSurvivorTeam"
-			{
-				"library"	"server"
-				"linux"	"@_ZN8Infected18AttackSurvivorTeamEv"
-				"windows"	"\x80\xB9\x99"
-				"mac"		"@_ZN8Infected18AttackSurvivorTeamEv"
-			}
-			"NextBotCreatePlayerBot<Smoker>"
-			{
-				"library"	"server"
-				"linux"	"@_Z22NextBotCreatePlayerBotI6SmokerEPT_PKc"
-				"windows"	"\x83\x2A\x2A\x56\x57\x68\x20\xED"
-				"mac"		"@_Z22NextBotCreatePlayerBotI6SmokerEPT_PKc"
-			}
-			"NextBotCreatePlayerBot<Boomer>"
-			{
-				"library"	"server"
-				"linux"	"@_Z22NextBotCreatePlayerBotI6BoomerEPT_PKc"
-				"windows"	"\x83\x2A\x2A\x56\x57\x68\x10"
-				"mac"		"@_Z22NextBotCreatePlayerBotI6BoomerEPT_PKc"
-			}
-			"NextBotCreatePlayerBot<Hunter>"
-			{
-				"library"	"server"
-				"linux"	"@_Z22NextBotCreatePlayerBotI6HunterEPT_PKc"
-				"windows"	"\x83\x2A\x2A\x56\x57\x68\x20\x35"
-				"mac"		"@_Z22NextBotCreatePlayerBotI6HunterEPT_PKc"
-			}
-			"NextBotCreatePlayerBot<Tank>"
-			{
-				"library"	"server"
-				"linux"	"@_Z22NextBotCreatePlayerBotI4TankEPT_PKc"
-				"windows"	"\x83\x2A\x2A\x56\x57\x68\x80"
-				"mac"		"@_Z22NextBotCreatePlayerBotI4TankEPT_PKc"
-			}
-		}
-	}
 	"left4dead2"
 	{
 		"Addresses"
