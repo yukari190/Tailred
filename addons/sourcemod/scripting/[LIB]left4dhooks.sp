@@ -18,7 +18,7 @@
 
 
 
-#define PLUGIN_VERSION		"1.35"
+#define PLUGIN_VERSION		"1.41"
 
 #define DEBUG				0
 // #define DEBUG			1	// Prints addresses + detour info (only use for debugging, slows server down)
@@ -37,6 +37,38 @@
 
 ========================================================================================
 	Change Log:
+
+1.41 (18-Jun-2021)
+	- L4D2: Fixed "InvulnerabilityTimer" offset. Thanks to "Nuki" for helping.
+	- GameData .txt file updated.
+
+1.40 (16-Jun-2021)
+	- L4D2: Fixed various offsets breaking from "2.2.1.3" game update. Thanks to "Nuki" for reporting and helping.
+	- GameData .txt file updated.
+
+1.39 (16-Jun-2021)
+	- Changed command "sm_l4dd_detours" results displayed to be read easier.
+	- L4D2: Fixed signatures breaking from "2.2.1.3" game update. Thanks to "Crasher_3637" for fixing.
+	- L4D2: Fixed "VanillaModeOffset" in Linux breaking from "2.2.1.3" game update. Thanks to "Accelerator74" for fixing.
+	- GameData .txt file updated.
+
+1.38 (28-Apr-2021)
+	- Changed native "L4D2_IsReachable" to allow using team 2 and team 4.
+
+1.37 (20-Apr-2021)
+	- Removed "RoundRespawn" being used, was for private testing, maybe a future native. Thanks to "Ja-Forces" for reporting.
+
+1.36 (20-Apr-2021)
+	- Added optional forward "AP_OnPluginUpdate" from "Autoreload Plugins" by Dragokas, to rescan required detours when loaded plugins change.
+	- Fixed native "L4D2Direct_GetFlowDistance" sometimes returning -9999.0 when invalid, now returns 0.0;
+	- Fixed native "L4D_FindRandomSpot" from crashing Linux servers. Thanks to "Gold Fish" for reporting and fixing and "Marttt" for testing.
+	- Restricted native "L4D2_IsReachable" client index to Survivor bots only. Attempts to find a valid bot otherwise it will throw an error. Thanks to "Forgetest" for reporting.
+	- Signatures compatibility with plugins detouring them. L4D1: "OnLedgeGrabbed", "OnRevived" and L4D2: "OnLedgeGrabbed". Thanks to "Dragokas" for providing.
+
+	- Updated: L4D1 GameData file.
+	- Updated: L4D2 GameData file.
+	- Updated: Plugin and Include file.
+	- Updated: Test plugin to reflect above changes.
 
 1.35 (10-Apr-2021)
 	- Fixed native "L4D_GetTeamScore" error message when using the wrong team values. Thanks to "BHaType" for reporting.
@@ -596,6 +628,7 @@ Handle g_hSDK_Call_CTerrorPlayer_OnHitByVomitJar;
 Handle g_hSDK_Call_Infected_OnHitByVomitJar;
 Handle g_hSDK_Call_Fling;
 Handle g_hSDK_Call_CancelStagger;
+// Handle g_hSDK_Call_RoundRespawn;
 Handle g_hSDK_Call_CreateRescuableSurvivors;
 Handle g_hSDK_Call_OnRevived;
 Handle g_hSDK_Call_GetVersusCompletionPlayer;
@@ -1001,6 +1034,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// =========================
 	CreateNative("L4D_CTerrorPlayer_OnVomitedUpon",					Native_CTerrorPlayer_OnVomitedUpon);
 	CreateNative("L4D_CancelStagger",								Native_CancelStagger);
+	// CreateNative("L4D_RespawnPlayer",								Native_RespawnPlayer); // Future addition maybe
 	CreateNative("L4D_CreateRescuableSurvivors",					Native_CreateRescuableSurvivors);
 	CreateNative("L4D_ReviveSurvivor",								Native_OnRevived);
 	CreateNative("L4D_GetHighestFlowSurvivor",						Native_GetHighestFlowSurvivor);
@@ -1905,6 +1939,7 @@ public MRESReturn AddonsDisabler(int pThis, Handle hReturn, Handle hParams)
 		int playerSlot = LoadFromAddress(view_as<Address>(ptr + g_iAddonEclipse1), NumberType_Int8);
 		// The playerslot is an index into `CBaseServer::m_Clients`, and SourceMod's client entity indexes are just `m_Clients` index plus 1.
 		int client = playerSlot + 1;
+
 		#if DEBUG
 		PrintToServer("#### AddonCheck for %d", client);
 		#endif
@@ -1942,6 +1977,15 @@ public MRESReturn AddonsDisabler(int pThis, Handle hReturn, Handle hParams)
 // ====================================================================================================
 //										DYNAMIC DETOURS SETUP
 // ====================================================================================================
+// Forward from "[DEV] Autoreload Plugins" by "Dragokas"
+public void AP_OnPluginUpdate(int pre) 
+{
+	if( pre == 0 )
+	{
+		CheckRequiredDetours();
+	}
+}
+
 public Action CmdLobby(int client, int args)
 {
 	Native_LobbyUnreserve(null, 0);
@@ -2146,14 +2190,14 @@ void CheckRequiredDetours(int client = 0)
 					{
 						StopProfiling(g_vProf);
 						g_fProf += GetProfilerTime(g_vProf);
-						PrintToServer("<FORCED> detour %s", forwards);
+						ReplyToCommand(client - 1, "%40s> %s", "FORCED DETOUR", forwards);
 						StartProfiling(g_vProf);
 					}
 					#endif
 
 					if( client )
 					{
-						ReplyToCommand(client - 1, "<FORCED> detour %s", forwards);
+						ReplyToCommand(client - 1, "%40s> %s", "FORCED DETOUR", forwards);
 					}
 				}
 				// Check if used
@@ -2166,14 +2210,14 @@ void CheckRequiredDetours(int client = 0)
 					if( client == 0 )
 					{
 						#if DETOUR_ALL
-						filename = "<THIS_PLUGIN_TEST>";
+						filename = "THIS_PLUGIN_TEST";
 						#else
 						GetPluginFilename(hPlug, filename, sizeof(filename));
 						#endif
 
 						StopProfiling(g_vProf);
 						g_fProf += GetProfilerTime(g_vProf);
-						PrintToServer("%s using %s", filename, forwards);
+						PrintToServer("%40s> %s", filename, forwards);
 						StartProfiling(g_vProf);
 					}
 					#endif
@@ -2181,10 +2225,10 @@ void CheckRequiredDetours(int client = 0)
 					if( client )
 					{
 						#if DETOUR_ALL
-						ReplyToCommand(client - 1, "<FORCED> detour %s", forwards);
+						ReplyToCommand(client - 1, "%40s %s", "FORCED DETOUR", forwards);
 						#else
 						GetPluginFilename(hPlug, filename, sizeof(filename));
-						ReplyToCommand(client - 1, "%s using %s", filename, forwards);
+						ReplyToCommand(client - 1, "%40s> %s", filename, forwards);
 						#endif
 					}
 				}
@@ -2514,7 +2558,7 @@ void LoadGameData()
 	{
 		LogError("Failed to find signature: FindRandomSpot");
 	} else {
-		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef, _, VENCODE_FLAG_COPYBACK);
+		PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue);
 		g_hSDK_Call_FindRandomSpot = EndPrepSDKCall();
 		if( g_hSDK_Call_FindRandomSpot == null )
 			LogError("Failed to create SDKCall: FindRandomSpot");
@@ -3011,6 +3055,18 @@ void LoadGameData()
 		if( g_hSDK_Call_CancelStagger == null )
 			LogError("Failed to create SDKCall: CancelStagger");
 	}
+
+	/* Future addition maybe
+	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "RoundRespawn") == false )
+	{
+		LogError("Failed to find signature: RoundRespawn");
+	} else {
+		g_hSDK_Call_RoundRespawn = EndPrepSDKCall();
+		if( g_hSDK_Call_RoundRespawn == null )
+			LogError("Failed to create SDKCall: RoundRespawn");
+	}
+	// */
 
 	StartPrepSDKCall(SDKCall_Raw);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CreateRescuableSurvivors") == false )
@@ -3813,8 +3869,8 @@ public int Native_FindRandomSpot(Handle plugin, int numParams)
 	int area = GetNativeCell(1);
 
 	//PrintToServer("#### CALL g_hSDK_Call_FindRandomSpot");
-	SDKCall(g_hSDK_Call_FindRandomSpot, area, vPos);
-	SetNativeArray(2, vPos, 3);
+	SDKCall(g_hSDK_Call_FindRandomSpot, area, vPos, sizeof(vPos));
+	SetNativeArray(2, vPos, sizeof(vPos));
 }
 
 public int Native_HasAnySurvivorLeftSafeArea(Handle plugin, int numParams)
@@ -3949,11 +4005,9 @@ public int Native_IsReachable(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_IsReachable, "IsReachable");
 
-	float vPos[3];
 	int client = GetNativeCell(1);
-	GetNativeArray(2, vPos, 3);
 
-	if( IsFakeClient(client) == false )
+	if( IsFakeClient(client) == false || (GetClientTeam(client) != 2 && GetClientTeam(client) != 4) )
 	{
 		client = 0;
 
@@ -3961,17 +4015,23 @@ public int Native_IsReachable(Handle plugin, int numParams)
 		{
 			if( IsClientInGame(i) && IsFakeClient(i) && IsPlayerAlive(i) )
 			{
-				client = i;
-				break;
+				int team = GetClientTeam(i);
+				if( team == 2 || team == 4 )
+				{
+					client = i;
+					break;
+				}
 			}
 		}
 
 		if( !client )
 		{
-			ThrowNativeError(SP_ERROR_PARAM, "L4D2_IsReachable Error: cannot find a valid fake client. This native only works with fake clients.");
+			ThrowNativeError(SP_ERROR_PARAM, "L4D2_IsReachable Error: invalid client. This native only works for Survivor Bots.");
 		}
 	}
 
+	float vPos[3];
+	GetNativeArray(2, vPos, 3);
 	return SDKCall(g_hSDK_Call_IsReachable, client, vPos);
 }
 
@@ -5447,7 +5507,10 @@ public any Direct_GetFlowDistance(Handle plugin, int numParams)
 	int area = SDKCall(g_hSDK_Call_GetLastKnownArea, client);
 	if( area == 0 ) return 0.0;
 
-	return LoadFromAddress(view_as<Address>(area + m_flow), NumberType_Int32);
+	float flow = view_as<float>(LoadFromAddress(view_as<Address>(area + m_flow), NumberType_Int32));
+	if( flow == -9999.0 ) flow = 0.0;
+
+	return flow;
 }
 
 public int Direct_DoAnimationEvent(Handle plugin, int numParams)
@@ -5743,6 +5806,16 @@ public int Native_CancelStagger(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	SDKCall(g_hSDK_Call_CancelStagger, client);
 }
+
+/* Future addition maybe
+public int Native_RespawnPlayer(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_RoundRespawn, "g_hSDK_Call_RoundRespawn");
+
+	int client = GetNativeCell(1);
+	SDKCall(g_hSDK_Call_RoundRespawn, client);
+}
+// */
 
 public int Native_CreateRescuableSurvivors(Handle plugin, int numParams)
 {

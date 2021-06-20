@@ -339,7 +339,7 @@ public Action HudDrawTimer(Handle hTimer)
 			if (!bTankHudHintShown[i])
 			{
 				bTankHudHintShown[i] = true;
-				L4D2_CPrintToChat(i, "<{G}HUD{W}> 输入 {green}!tankhud{W} 切换 {R}Tank面板{W} 状态.");
+				L4D2_CPrintToChat(i, "<{G}HUD{W}> 输入 {O}!tankhud{W} 切换 {R}Tank面板{W} 状态.");
 			}
 		}
 	}

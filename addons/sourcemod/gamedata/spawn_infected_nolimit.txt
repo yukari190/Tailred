@@ -19,7 +19,7 @@
 			{
 				"library"	"server"
 				"linux"	"@_ZN8Infected18AttackSurvivorTeamEv"
-				"windows"	"\x56\x2A\x2A\x2A\x2A\xE1\x1C"
+				"windows"	"\x56\x8B\x2A\x80\xBE\xC1\x1C\x00\x00\x01\x74\x2A\x80"
 				"mac"		"@_ZN8Infected18AttackSurvivorTeamEv"
 			}
 			"CTerrorPlayer::ReplaceWithBot.jumptable"
