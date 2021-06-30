@@ -53,7 +53,7 @@ public Action Event_AbilityUse(Event event, const char[] name, bool dontBroadcas
     }
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{

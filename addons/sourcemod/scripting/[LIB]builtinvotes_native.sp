@@ -4,6 +4,9 @@
 #include <sourcemod>
 #include <[LIB]builtinvotes>
 #include <[LIB]l4d2library>
+#undef REQUIRE_PLUGIN
+#include <[LIB]Caster>
+#define REQUIRE_PLUGIN
 
 #define PLAYER_LIMIT 1
 
@@ -99,7 +102,7 @@ public int Native_StartVoteAllTeam(Handle plugin, int numParams)
 		PrintToChat(client, "无法开始投票.");
 		return false;
 	}
-	if (!L4D2_IsClientCaster(client) && GetClientTeam(client) <= 1)
+	if (!IsClientCaster(client) && GetClientTeam(client) <= 1)
 	{
 		PrintToChat(client, "{B}[{W}SM{B}] {W}观众不允许投票.");
 		return false;
@@ -110,7 +113,7 @@ public int Native_StartVoteAllTeam(Handle plugin, int numParams)
 		int[] iPlayers = new int[MaxClients];
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (!IsClientInGame(i) || IsFakeClient(i) || (!L4D2_IsClientCaster(i) && GetClientTeam(i) <= 1)) continue;
+			if (!IsClientInGame(i) || IsFakeClient(i) || (!IsClientCaster(i) && GetClientTeam(i) <= 1)) continue;
 			iPlayers[iNumPlayers++] = i;
 		}
 		if (iNumPlayers < PLAYER_LIMIT)

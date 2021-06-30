@@ -5,6 +5,7 @@
 #include <sdkhooks>
 #include <sdktools>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 #undef REQUIRE_PLUGIN
 #include <[LIB]readyup>
@@ -95,7 +96,7 @@ public void OnMapStart()
     if (fMaxTankHealth <= 0.0) fMaxTankHealth = 1.0;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	ClearTankDamage();
     for (int i = 1; i <= MAXPLAYERS; i++)
@@ -115,7 +116,7 @@ public void L4D2_OnRealRoundStart()
     iTotalFF = 0;
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	if (g_bAnnounceTankDamage) PrintRemainingHealth();
 	ClearTankDamage();
@@ -152,18 +153,18 @@ public void L4D2_OnPlayerHurt(int victim, int attacker, int health, char[] weapo
 	}
 }
 
-public void L4D2_OnTankDeath(int tankClient, int attacker)
+public void L4D_OnTankDeath(int tankClient, int attacker)
 {
     if (L4D2_IsValidClient(attacker)) g_iDamage[attacker] += g_iLastTankHealth;
 	if (g_bAnnounceTankDamage)
 	{
-		L4D2_CPrintToChatAll("对 {B}Tank{W} ({G}%N{W}) 造成的{B}伤害", tankClient);
+		CPrintToChatAll("对 {B}Tank{W} ({G}%N{W}) 造成的{B}伤害", tankClient);
 		PrintTankDamage();
 	}
 	ClearTankDamage();
 }
 
-public void L4D2_OnTankFirstSpawn(int tankClient)
+public void L4D_OnTankSpawn(int tankClient)
 {
 	g_bAnnounceTankDamage = true;
 	g_iLastTankHealth = GetClientHealth(tankClient);
@@ -216,22 +217,22 @@ public Action ShowMVPStats_Cmd(int client, int args)
         
         if (iTotalDamageAll > 0)
         {
-            Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} (你) 特感: ({G}%d {W}伤害量 [{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])\n", iDidDamageAll[client], (float(iDidDamageAll[client]) / float(iTotalDamageAll)) * 100, iGotKills[client], (float(iGotKills[client]) / float(iTotalKills)) * 100);
-			L4D2_CPrintToChat(client, "%s", printBuffer);
+            Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} (你) 特感: ({G}%d {W}伤害量 [{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])\n", iDidDamageAll[client], (float(iDidDamageAll[client]) / float(iTotalDamageAll)) * 100, iGotKills[client], (float(iGotKills[client]) / float(iTotalKills)) * 100);
+			CPrintToChat(client, "%s", printBuffer);
         }
         else
         {
-            Format(printBuffer, sizeof(printBuffer), "{W}{B}[{O}全场最佳{B}]{G} (你) 特感: (没什么)\n");
-			L4D2_CPrintToChat(client, "%s", printBuffer);
+            Format(printBuffer, sizeof(printBuffer), "{W}{B}[{O}MVP{B}]{G} (你) 特感: (没什么)\n");
+			CPrintToChat(client, "%s", printBuffer);
         }
         
             if (iTotalCommon > 0)
             {
-                Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} (你) 一般感染者: ({G}%d {W}一般 [{O}%.0f%%{W}])\n", iGotCommon[client], (float(iGotCommon[client]) / float(iTotalCommon)) * 100);
-				L4D2_CPrintToChat(client, "%s", printBuffer);
+                Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} (你) 丧尸: ({G}%d {W}一般 [{O}%.0f%%{W}])\n", iGotCommon[client], (float(iGotCommon[client]) / float(iTotalCommon)) * 100);
+				CPrintToChat(client, "%s", printBuffer);
             }
         
-        L4D2_CPrintToChat(client, "{B}[{O}全场最佳{B}]{G} (你) 队友伤害: ({G}%d {W}队友伤害 [{O}%.0f%%{W}])\n", iDidFF[client], (float(iDidFF[client]) / float(iTotalFF)) * 100);
+        CPrintToChat(client, "{B}[{O}MVP{B}]{G} (你) 友伤: ({G}%d {W}友伤 [{O}%.0f%%{W}])\n", iDidFF[client], (float(iDidFF[client]) / float(iTotalFF)) * 100);
     }
 }
 
@@ -252,8 +253,8 @@ public Action delayedMVPPrint(Handle timer)
         for (int i = 0; i <= 2; i++)
         {
             if (L4D2_IsValidClient(mvp_SI_losers[i])) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}全场最佳{B}]{G} 你的排名 | 特感: <#{G}%d{W}> ({G}%d {W}伤害量 [{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
-                L4D2_CPrintToChat(mvp_SI_losers[i], "{W}%s", tmpBuffer);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}MVP{B}]{G} 你的排名 | 特感: <#{G}%d{W}> ({G}%d {W}伤害量 [{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
+                CPrintToChat(mvp_SI_losers[i], "{W}%s", tmpBuffer);
             }
         }
     }
@@ -269,8 +270,8 @@ public Action delayedMVPPrint(Handle timer)
         for (int i = 0; i <= 2; i++)
         {
             if (L4D2_IsValidClient(mvp_CI_losers[i])) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}全场最佳{B}]{G} 你的排名 | 一般感染者: <#{G}%d{W}> ({G}%d {W}杀 [{O}%.0f%%{W}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
-                L4D2_CPrintToChat(mvp_CI_losers[i], "{W}%s", tmpBuffer);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}MVP{B}]{G} 你的排名 | 丧尸: <#{G}%d{W}> ({G}%d {W}杀 [{O}%.0f%%{W}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
+                CPrintToChat(mvp_CI_losers[i], "{W}%s", tmpBuffer);
             }
         }
     }
@@ -286,8 +287,8 @@ public Action delayedMVPPrint(Handle timer)
         for (int i = 0; i <= 2; i++)
         {
             if (L4D2_IsValidClient(mvp_FF_losers[i])) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}全场最佳{B}]{G} 你的排名 | 队友伤害: <#{G}%d{W}> ({G}%d {W}伤害量 [{O}%.0f%%{W}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
-                L4D2_CPrintToChat(mvp_FF_losers[i], "{W}%s", tmpBuffer);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{B}[{O}MVP{B}]{G} 你的排名 | 友伤: <#{G}%d{W}> ({G}%d {W}伤害量 [{O}%.0f%%{W}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
+                CPrintToChat(mvp_FF_losers[i], "{W}%s", tmpBuffer);
             }
         }
     }
@@ -372,38 +373,38 @@ void GetMVPString()
     
     if (mvp_SI == 0 && mvp_Common == 0)
     {
-        Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} (行动还不够)\n");
-		L4D2_CPrintToChatAll("%s", printBuffer);
+        Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} (行动还不够)\n");
+		CPrintToChatAll("%s", printBuffer);
     }
     else
     {
         if (mvp_SI > 0)
         {
-            Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} 特感:{B} %s {W}({G}%d {W}伤害量[{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])\n", mvp_SI_name, iDidDamageAll[mvp_SI], (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI], (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
-			L4D2_CPrintToChatAll("%s", printBuffer);
+            Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} 特感:{B} %s {W}({G}%d {W}伤害量[{O}%.0f%%{W}],{G} %d {W}杀 [{O}%.0f%%{W}])\n", mvp_SI_name, iDidDamageAll[mvp_SI], (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI], (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
+			CPrintToChatAll("%s", printBuffer);
         }
         else
         {
-            Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} 特感: (没有人)\n");
-			L4D2_CPrintToChatAll("%s", printBuffer);
+            Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} 特感: (没有人)\n");
+			CPrintToChatAll("%s", printBuffer);
         }
         
         if (mvp_Common > 0)
         {
-            Format(printBuffer, sizeof(printBuffer), "{B}[{O}全场最佳{B}]{G} 一般感染者:{B} %s {W}({G}%d {W}一般 [{O}%.0f%%{W}])\n", mvp_Common_name, iGotCommon[mvp_Common], (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
-			L4D2_CPrintToChatAll("%s", printBuffer);
+            Format(printBuffer, sizeof(printBuffer), "{B}[{O}MVP{B}]{G} 丧尸:{B} %s {W}({G}%d {W}一般 [{O}%.0f%%{W}])\n", mvp_Common_name, iGotCommon[mvp_Common], (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
+			CPrintToChatAll("%s", printBuffer);
         }
     }
     
     if (mvp_FF == 0)
     {
-        Format(printBuffer, sizeof(printBuffer), "{B}[{G}全场最变异{B}]{O} 队友伤害: 没有误伤可言!\n");
-		L4D2_CPrintToChatAll("%s", printBuffer);
+        Format(printBuffer, sizeof(printBuffer), "{B}[{G}LVP{B}]{O} 友伤: 没有误伤可言!\n");
+		CPrintToChatAll("%s", printBuffer);
     }
     else
     {
-        Format(printBuffer, sizeof(printBuffer), "{B}[{G}全场最变异{B}]{O} 队友伤害:{B} %s {W}({G}%d {W}伤害量 [{O}%.0f%%{W}])\n", mvp_FF_name, iDidFF[mvp_FF], (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
-		L4D2_CPrintToChatAll("%s", printBuffer);
+        Format(printBuffer, sizeof(printBuffer), "{B}[{G}LVP{B}]{O} 友伤:{B} %s {W}({G}%d {W}伤害量 [{O}%.0f%%{W}])\n", mvp_FF_name, iDidFF[mvp_FF], (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
+		CPrintToChatAll("%s", printBuffer);
     }
     
     sConsoleBuf = "";
@@ -589,7 +590,7 @@ void PrintRemainingHealth()
 	char name[MAX_NAME_LENGTH];
 	if (IsFakeClient(tankclient)) name = "AI";
 	else GetClientName(tankclient, name, sizeof(name));
-	L4D2_CPrintToChatAll("{B}Tank{W} ({G}%s{W}) 还有 {G}%d{W} 的生命值 ", name, g_iLastTankHealth);
+	CPrintToChatAll("{B}Tank{W} ({G}%s{W}) 还有 {G}%d{W} 的生命值 ", name, g_iLastTankHealth);
 	PrintTankDamage();
 }
 
@@ -627,7 +628,7 @@ void PrintTankDamage()
 				percent_adjustment = 0;
 			}
 		}
-		L4D2_CPrintToChatAll("{B}[{W}%4d{B}] ({W}%d%%{B}) {G}%N", damage, percent_damage, client);
+		CPrintToChatAll("{B}[{W}%4d{B}] ({W}%d%%{B}) {G}%N", damage, percent_damage, client);
 	}
 }
 

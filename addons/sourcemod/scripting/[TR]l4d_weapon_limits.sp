@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <[LIB]l4d2library>
+#include <[LIB]l4d2_weapon_stocks>
 
 public Plugin myinfo =
 {
@@ -47,7 +48,7 @@ public Action L4D2_OnAwaySurvivor(int client)
 	SDKUnhook(client, SDKHook_WeaponCanUse, WeaponCanUse);
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
@@ -55,7 +56,7 @@ public void L4D2_OnRealRoundEnd()
 	}
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	CreateTimer(2.0, RoundStartDelay_Timer);
 }
@@ -88,7 +89,7 @@ public Action AddLimit_Cmd(int args)
 	for (int i = 2; i <= args; ++i)
 	{
 		GetCmdArg(i, sTempBuff, sizeof(sTempBuff));
-		wepid = L4D2_WeaponNameToId(sTempBuff);
+		wepid = WeaponNameToId(sTempBuff);
 		newEntry.LAE_WeaponArray[view_as<int>(wepid)/32] |= (1 << (view_as<int>(wepid) % 32));
 	}
 	hLimitArray.PushArray(newEntry);
@@ -120,11 +121,11 @@ public Action ClearLimits_Cmd(int args)
 public Action WeaponCanUse(int client, int weapon)
 {
 	if (GetClientTeam(client) != 2 || !bIsLocked) return Plugin_Continue;
-	WeaponId wepid = L4D2_IdentifyWeapon(weapon);
+	WeaponId wepid = IdentifyWeapon(weapon);
 	LimitArrayEntry arrayEntry;
-	int wep_slot = L4D2_GetSlotFromWeaponId(wepid);
+	int wep_slot = GetSlotFromWeaponId(wepid);
 	int player_weapon = GetPlayerWeaponSlot(client, wep_slot);
-	WeaponId player_wepid = L4D2_IdentifyWeapon(player_weapon);
+	WeaponId player_wepid = IdentifyWeapon(player_weapon);
 	for (int i = 0; i < GetArraySize(hLimitArray); ++i)
 	{
 		hLimitArray.GetArray(i, arrayEntry);
@@ -145,7 +146,7 @@ public Action WeaponCanUse(int client, int weapon)
 /*public Action:OnIncap(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (GetClientTeam(client) == 2 && L4D2_IdentifyWeapon(GetPlayerWeaponSlot(client, 1)) == WEPID_MELEE)
+	if (GetClientTeam(client) == 2 && IdentifyWeapon(GetPlayerWeaponSlot(client, 1)) == WEPID_MELEE)
 	{
 		bIsIncappedWithMelee[client] = true;
 	}
@@ -170,7 +171,7 @@ int GetWeaponCount(const int[] mask)
 		{
 			for (int j = 0; j < 5; ++j)
 			{
-				wepid = L4D2_IdentifyWeapon(GetPlayerWeaponSlot(i, j));
+				wepid = IdentifyWeapon(GetPlayerWeaponSlot(i, j));
 				if (mask[view_as<int>(wepid)/32] & (1 << (view_as<int>(wepid) % 32))/* || (j == 1 && bIsIncappedWithMelee[i] && wepid != WEPID_PISTOL_MAGNUM)*/)
 				{
 					++count;

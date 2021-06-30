@@ -6,6 +6,7 @@
 #include <sdkhooks>
 #include <[LIB]left4dhooks>
 #include <[LIB]readyup>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 
 #define MELEE_TIME              0.25
@@ -144,7 +145,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
     iClientPlaying = GetCurrentSurvivor();
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	bIsRoundLive = false;
 	
@@ -156,7 +157,7 @@ public void L4D2_OnRealRoundStart()
     }
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
     ResolveOpenShots();
     CreateTimer(3.0, delayedSkeetStatPrint);
@@ -202,7 +203,7 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 		int remaining_health = GetClientHealth(attacker);
 		char sBuffer[16];
 		L4D2_GetInfectedClassName(zombie_class, sBuffer, sizeof(sBuffer));
-		L4D2_CPrintToChatAll(
+		CPrintToChatAll(
 			"[{G}EQ 1v1{W}] {R}%N{W}({O}%s{W}) had {G}%d{W} health remaining!", 
 			attacker, 
 			sBuffer, 

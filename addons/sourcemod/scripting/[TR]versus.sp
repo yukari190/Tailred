@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 #include <[LIB]readyup>
 
@@ -107,7 +108,7 @@ public void OnMapStart()
 	bPatched = false;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	FS_bIsFinale = false;
 	g_bIsTankInPlay = false;
@@ -180,7 +181,7 @@ public Action PatchAlarmedCars(Handle timer)
 }
 
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	FS_bIsFinale = false;
 	g_bIsTankInPlay = false;
@@ -191,14 +192,14 @@ public void L4D2_OnRealRoundEnd()
 	}
 }
 
-public void L4D2_OnTankFirstSpawn(int tankClient)
+public void L4D_OnTankSpawn(int tankClient)
 {
 	g_bIsTankInPlay = true;
 	SetConVarInt(g_hSpitterLimit, 0);
 	SetConVarInt(hSpitterLimit, 0);
 }
 
-public void L4D2_OnTankDeath()
+public void L4D_OnTankDeath()
 {
 	g_bIsTankInPlay = false;
 	if (g_iSpitterLimit > 0)
@@ -394,7 +395,7 @@ void PrintToSurvivors(const char[] Message, any ... )
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
 		if (index == 0) continue;
-        L4D2_CPrintToChat(index, "%s", sPrint);
+        CPrintToChat(index, "%s", sPrint);
     }
 }
 

@@ -76,7 +76,7 @@ bool ER_ReplaceTriggerHurtGhost(int ent, char[] buf)
 	return false;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	CreateTimer(0.3,  ER_RoundStart_Timer);
 }

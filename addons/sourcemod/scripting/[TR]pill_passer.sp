@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <[LIB]l4d2library>
+#include <[LIB]l4d2_weapon_stocks>
 
 public Plugin myinfo =
 {
@@ -22,7 +23,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	{
 		char weapon_name[64];
 		GetClientWeapon(client, weapon_name, sizeof(weapon_name));
-		WeaponId wep = L4D2_WeaponNameToId(weapon_name);
+		WeaponId wep = WeaponNameToId(weapon_name);
 		if (wep == WEPID_PAIN_PILLS || wep == WEPID_ADRENALINE)
 		{
 			int target = GetClientAimTarget(client);

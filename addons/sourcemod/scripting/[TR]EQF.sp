@@ -73,7 +73,7 @@ public void OnMapStart()
 	}
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	blockStumble = false;
 	for (int i = 1; i <= MAXPLAYERS; i++)

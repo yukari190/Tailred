@@ -6,6 +6,7 @@
 #include <[LIB]left4dhooks>
 #include <[LIB]builtinvotes>
 #include <[LIB]builtinvotes_native>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 
 #define MAX_FOOTERS 10
@@ -53,11 +54,16 @@ int footerCounter = 0;
 int readyDelay;
 float g_fButtonTime[MAXPLAYERS+1];
 
+StringMap casterTrie;
+StringMap allowedCastersTrie;
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("AddStringToReadyFooter", Native_AddStringToReadyFooter);
 	CreateNative("IsInReady", Native_IsInReady);
 	CreateNative("GetReadyCfgName", Native_GetReadyCfgName);
+	CreateNative("IsClientCaster", _native_IsClientCaster);
+	CreateNative("IsIDCaster", _native_IsIDCaster);
 	liveForward = new GlobalForward("OnRoundIsLive", ET_Event);
 	RegPluginLibrary("readyup");
 	return APLRes_Success;
@@ -65,6 +71,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	casterTrie = new StringMap();
+	allowedCastersTrie = new StringMap();
+	
 	l4d_ready_cfg_name = CreateConVar("l4d_ready_cfg_name", "", "配置名称显示在准备好的面板上", FCVAR_NONE|FCVAR_PRINTABLEONLY);
 	l4d_ready_countdown_sound = CreateConVar("l4d_ready_countdown_sound", "buttons/bell1.wav", "现场直播时播放的声音");
 	l4d_ready_live_sound = CreateConVar("l4d_ready_live_sound", "ui/helpful_event_1.wav", "现场直播时播放的声音");
@@ -92,6 +101,12 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_unready", Unready_Cmd, "Mark yourself as not ready if you have set yourself as ready");
 	RegConsoleCmd("sm_return", Return_Cmd, "如果您在未解冻的准备期间卡住, 请返回有效的安全室产卵");
 	RegConsoleCmd("sm_kickspecs", KickSpecs_Cmd, "Let's vote to kick those Spectators!");
+	
+	RegConsoleCmd("sm_cast", Cast_Cmd, "将呼叫玩家注册为裁判, 这样该回合将不会启动, 除非他们已经准备好");
+	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "将玩家注册为裁判, 这样一轮除非准备就绪, 否则该回合将无法进行");
+	RegServerCmd("sm_resetcasters", ResetCaster_Cmd, "用于重置比赛之间的裁判. 这应该用在confogl_off.cfg或您的系统等效");
+	RegServerCmd("sm_add_caster_id", AddCasterSteamID_Cmd, "用于将裁判添加到白名单中，即允许谁自注册为裁判");
+	RegConsoleCmd("sm_notcasting", NotCasting_Cmd, "取消自己作为裁判或允许管理员取消其他玩家");
 	
 	LoadTranslations("common.phrases");
 }
@@ -196,6 +211,19 @@ public int Native_GetReadyCfgName(Handle plugin, int numParams)
 	SetNativeString(1, cfgBuf, len);
 }
 
+public int _native_IsClientCaster(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	return view_as<int>(IsClientCaster(client));
+}
+
+public int _native_IsIDCaster(Handle plugin, int numParams)
+{
+	char buffer[64];
+	GetNativeString(1, buffer, sizeof(buffer));
+	return view_as<int>(IsIDCaster(buffer));
+}
+
 //======================================
 //				CMDS
 //======================================
@@ -270,13 +298,122 @@ public void BuiltinVotes_VoteResult()
 	{
 		for (int c=1; c<=MaxClients; c++)
 		{
-			if (IsClientInGame(c) && (GetClientTeam(c) == 1) && !L4D2_IsClientCaster(c) && !L4D2_IsClientAdmin(c))
+			if (IsClientInGame(c) && (GetClientTeam(c) == 1) && !IsClientCaster(c) && !L4D2_IsClientAdmin(c))
 			{
 				KickClient(c, "No Spectators, please!");
 			}
 		}
 	}
 	bVoteStart = false;
+}
+
+
+public Action Cast_Cmd(int client, int args)
+{	
+	char buffer[64];
+	GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer));
+
+	if (GetClientTeam(client) != 1) ChangeClientTeam(client, 1);
+
+	casterTrie.SetValue(buffer, 1);
+	CPrintToChat(client, "{B}[{W}Cast{B}] {W}您已将自己注册为裁判");
+	CPrintToChat(client, "{B}[{W}Cast{B}] {W}重新连接以使您的插件正常工作.");
+	return Plugin_Handled;
+}
+
+public Action Caster_Cmd(int client, int args)
+{
+	if (args < 1)
+	{
+		ReplyToCommand(client, "[SM] Usage: sm_caster <player>");
+		return Plugin_Handled;
+	}
+	char buffer[64];
+	GetCmdArg(1, buffer, sizeof(buffer));
+	int target = FindTarget(client, buffer, true, false);
+	if (target > 0)
+	{
+		if (GetClientAuthId(target, AuthId_Steam3, buffer, sizeof(buffer)))
+		{
+			casterTrie.SetValue(buffer, 1);
+			ReplyToCommand(client, "注册 %N 作为裁判", target);
+			CPrintToChat(client, "{B}[{G}!{B}] {W}管理员已将您注册为裁判");
+		}
+		else
+		{
+			ReplyToCommand(client, "找不到Steam ID. 检查拼写错误并让玩家完全连接.");
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action ResetCaster_Cmd(int args)
+{
+	casterTrie.Clear();
+	return Plugin_Handled;
+}
+
+public Action AddCasterSteamID_Cmd(int args)
+{
+	char buffer[128];
+	GetCmdArg(1, buffer, sizeof(buffer));
+	if (buffer[0] != EOS) 
+	{
+		int index;
+		GetTrieValue(allowedCastersTrie, buffer, index);
+		if (index == -1)
+		{
+			SetTrieValue(allowedCastersTrie, buffer, 1);
+			PrintToServer("[casters_database] 已添加 '%s'", buffer);
+		}
+		else PrintToServer("[casters_database] '%s' 已经存在", buffer);
+	}
+	else PrintToServer("[casters_database] 未指定args / 空字符");
+	return Plugin_Handled;
+}
+
+public Action NotCasting_Cmd(int client, int args)
+{
+	char buffer[64];
+	if (args < 1)
+	{
+		GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer));
+		casterTrie.Remove(buffer);
+		CPrintToChat(client, "{B}[{W}Reconnect{B}] {W}您将重新连接到服务器..");
+		CPrintToChat(client, "{B}[{W}Reconnect{B}] {W}有一个黑屏, 而不是一个加载栏!");
+		CreateTimer(3.0, Reconnect, client);
+		return Plugin_Handled;
+	}
+	else
+	{
+		if (!L4D2_IsClientAdmin(client))
+		{
+			ReplyToCommand(client, "只有管理员可以删除其他裁判. 如果您想删除自己, 请使用不带参数的sm_notcasting.");
+			return Plugin_Handled;
+		}
+		
+		GetCmdArg(1, buffer, sizeof(buffer));
+		
+		int target = FindTarget(client, buffer, true, false);
+		if (target > 0)
+		{
+			if (GetClientAuthId(target, AuthId_Steam3, buffer, sizeof(buffer)))
+			{
+				casterTrie.Remove(buffer);
+				ReplyToCommand(client, "%N 不再是裁判", target);
+			}
+			else
+			{
+				ReplyToCommand(client, "找不到Steam ID. 检查拼写错误并让玩家完全连接.");
+			}
+		}
+		return Plugin_Handled;
+	}
+}
+
+public Action Reconnect(Handle timer, any client)
+{
+	if (IsClientInGame(client)) ReconnectClient(client);
 }
 
 //======================================
@@ -301,7 +438,7 @@ public void OnBossVote()
 	footerCounter = 1;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	for (int i = 0; i <= MAXPLAYERS; i++)
 	{
@@ -431,7 +568,7 @@ public Action MenuRefresh_Timer(Handle timer)
 							StrCat(infectedBuffer, sizeof(infectedBuffer), nameBuf);
 						}
 					}
-					else if (L4D2_IsClientCaster(client))
+					else if (IsClientCaster(client))
 					{
 						++casterCount;
 						Format(nameBuf, sizeof(nameBuf), "%s\n", nameBuf);
@@ -776,12 +913,12 @@ bool CheckFullReady()
 	{
 		if (IsClientInGame(client))
 		{
-			if (L4D2_IsClientCaster(client))
+			if (IsClientCaster(client))
 			{
 				casterCount++;
 			}
 
-			if ((IsPlayer(client) || L4D2_IsClientCaster(client)) && isPlayerReady[client])
+			if ((IsPlayer(client) || IsClientCaster(client)) && isPlayerReady[client])
 			{
 				readyCount++;
 			}
@@ -867,4 +1004,16 @@ void MakePropsBreakable()
 		}
 		DispatchKeyValueFloat(iEntity, "minhealthdmg", 5.0);
 	}
+}
+
+bool IsClientCaster(int client)
+{
+	char buffer[64];
+	return GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer)) && IsIDCaster(buffer);
+}
+
+bool IsIDCaster(const char[] AuthID)
+{
+	int dummy;
+	return casterTrie.GetValue(AuthID, dummy);
 }

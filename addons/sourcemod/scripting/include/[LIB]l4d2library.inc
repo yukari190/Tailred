@@ -107,14 +107,14 @@ enum L4D2GlowType
  *
  * @noreturn
  */
-forward void L4D2_OnRealRoundStart();
+forward void L4D_OnRoundStart();
 
 /**
  * Called on a real L4D2 round_end
  *
  * @noreturn
  */
-forward void L4D2_OnRealRoundEnd();
+forward void L4D_OnRoundEnd();
 
 /**
  * @Called when a tank is first spawned into the game
@@ -122,7 +122,7 @@ forward void L4D2_OnRealRoundEnd();
  * @param tankClient		The client index of the tank
  * @noreturn
  */
-forward void L4D2_OnTankFirstSpawn(int tankClient);
+forward void L4D_OnTankSpawn(int tankClient);
 
 /**
  * @Called when a tank passes from one client to another
@@ -132,7 +132,7 @@ forward void L4D2_OnTankFirstSpawn(int tankClient);
  * @param passCount			The number of times this tank has been passed
  * @noreturn
  */
-forward void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount);
+forward void L4D_OnTankPass(int oldTank, int newTank, int passCount);
 
 /**
  * @Called 0.5s after a tank death
@@ -140,7 +140,7 @@ forward void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount);
  * @param tankClient		The client index of the tank that died
  * @noreturn
  */
-forward void L4D2_OnTankDeath(int tankClient, int attacker);
+forward void L4D_OnTankDeath(int tankClient, int attacker);
 
 /**
  * Called on a real L4D2 player_hurt
@@ -349,21 +349,6 @@ native void L4D2_SetPlayerRespawn(int client);
  * @return 
  */
 native void L4D2_PauseClient(int client, bool b);
-
-/**
- * If this in-game and fully connected client is a caster or not
- *
- * @return          True if this is a registered caster
- */
-native bool L4D2_IsClientCaster(int client);
-
-/**
- * If this Steam ID is a registered caster or not
- *
- * @param           String containing the user's auth id
- * @return          True if this is a registered caster
- */
-native bool L4D2_IsIDCaster(const char[] AuthID);
 
 /**
  * 
@@ -681,7 +666,7 @@ native void L4D2_GiveDefaultAmmo(int client);
  * @param defvalue	Default value to return if key is not found (default 0)
  * @return			Integer value for given key, or defvalue if key is not found
  */
-native int L4D2_GetMapValueInt(const char[] key, const int defvalue = 0);
+native int L4D_GetMapValueInt(const char[] key, const int defvalue = 0);
 
 /**
  * @brief Get a Float value from the MapInfo keyvalues for the current map with a specific key
@@ -691,7 +676,7 @@ native int L4D2_GetMapValueInt(const char[] key, const int defvalue = 0);
  * @param defvalue	Default value to return if key is not found (default 0.0)
  * @return			Float value for given key, or defvalue if key is not found
  */
-native float L4D2_GetMapValueFloat(const char[] key, const float defvalue = 0.0);
+native float L4D_GetMapValueFloat(const char[] key, const float defvalue = 0.0);
 
 /**
  * @brief Get a Vector from the MapInfo keyvalues for the current map with a specific key
@@ -702,19 +687,19 @@ native float L4D2_GetMapValueFloat(const char[] key, const float defvalue = 0.0)
  * @param defvalue	Default value to use if key is not found (default NULL_VECTOR)
  * @noreturn
  */
-native void L4D2_GetMapValueVector(const char[] key, float vector[3], const float defvalue[3]=NULL_VECTOR);
+native void L4D_GetMapValueVector(const char[] key, float vector[3], const float defvalue[3]=NULL_VECTOR);
 
 /*
   Check if entity is in a saferoom
   returns bool (errors/incorrect data returns false)
 */
-native bool L4D2_IsEntityInSaferoom(int entity);
+native bool L4D_IsEntityInSaferoom(int entity);
 
 /*
   Check if player (client) is in a saferoom
   returns bool (errors/incorrect data returns false)
 */
-//native bool L4D2_IsPlayerInSaferoom(int client);
+//native bool L4D_IsPlayerInSaferoom(int client);
 
 /**
  * 
@@ -808,6 +793,14 @@ stock bool L4D2_IsSurvivor(int client)
 {
 	return GetClientTeam(client) == 2;
 }
+stock bool L4D2_IsValidSurvivor(int client)
+{
+	return L4D2_IsValidClient(client) && L4D2_IsSurvivor(client);
+}
+stock bool L4D2_IsSurvivorAlive(int client)
+{
+	return L4D2_IsValidSurvivor(client) && IsPlayerAlive(client);
+}
 
 /**
  * 
@@ -818,6 +811,14 @@ stock bool L4D2_IsSurvivor(int client)
 stock bool L4D2_IsInfected(int client)
 {
 	return GetClientTeam(client) == 3;
+}
+stock bool L4D2_IsValidInfected(int client)
+{
+	return L4D2_IsValidClient(client) && L4D2_IsInfected(client);
+}
+stock bool L4D2_IsInfectedAlive(int client)
+{
+	return L4D2_IsValidInfected(client) && IsPlayerAlive(client);
 }
 
 /**
@@ -1119,264 +1120,6 @@ stock int GetFlow(const float o[3])
 
 
 
-// ====================================================================================================
-// NATIVES - l4d2_weapon_stocks.inc
-// ====================================================================================================
-enum WeaponId
-{
-    WEPID_NONE,             // 0
-    WEPID_PISTOL,           // 1
-    WEPID_SMG,              // 2
-    WEPID_PUMPSHOTGUN,      // 3
-    WEPID_AUTOSHOTGUN,      // 4
-    WEPID_RIFLE,            // 5
-    WEPID_HUNTING_RIFLE,    // 6
-    WEPID_SMG_SILENCED,     // 7
-    WEPID_SHOTGUN_CHROME,   // 8
-    WEPID_RIFLE_DESERT,     // 9
-    WEPID_SNIPER_MILITARY,  // 10
-    WEPID_SHOTGUN_SPAS,     // 11
-    WEPID_FIRST_AID_KIT,    // 12
-    WEPID_MOLOTOV,          // 13
-    WEPID_PIPE_BOMB,        // 14
-    WEPID_PAIN_PILLS,       // 15
-    WEPID_GASCAN,           // 16
-    WEPID_PROPANE_TANK,     // 17
-    WEPID_OXYGEN_TANK,      // 18
-    WEPID_MELEE,            // 19
-    WEPID_CHAINSAW,         // 20
-    WEPID_GRENADE_LAUNCHER, // 21
-    WEPID_AMMO_PACK,        // 22
-    WEPID_ADRENALINE,       // 23
-    WEPID_DEFIBRILLATOR,    // 24
-    WEPID_VOMITJAR,         // 25
-    WEPID_RIFLE_AK47,       // 26
-    WEPID_GNOME_CHOMPSKI,   // 27
-    WEPID_COLA_BOTTLES,     // 28
-    WEPID_FIREWORKS_BOX,    // 29
-    WEPID_INCENDIARY_AMMO,  // 30
-    WEPID_FRAG_AMMO,        // 31
-    WEPID_PISTOL_MAGNUM,    // 32
-    WEPID_SMG_MP5,          // 33
-    WEPID_RIFLE_SG552,      // 34
-    WEPID_SNIPER_AWP,       // 35
-    WEPID_SNIPER_SCOUT,     // 36
-    WEPID_RIFLE_M60,        // 37
-    WEPID_TANK_CLAW,        // 38
-    WEPID_HUNTER_CLAW,      // 39
-    WEPID_CHARGER_CLAW,     // 40
-    WEPID_BOOMER_CLAW,      // 41
-    WEPID_SMOKER_CLAW,      // 42
-    WEPID_SPITTER_CLAW,     // 43
-    WEPID_JOCKEY_CLAW,      // 44
-    WEPID_MACHINEGUN,       // 45
-    WEPID_VOMIT,            // 46
-    WEPID_SPLAT,            // 47
-    WEPID_POUNCE,           // 48
-    WEPID_LOUNGE,           // 49
-    WEPID_PULL,             // 50
-    WEPID_CHOKE,            // 51
-    WEPID_ROCK,             // 52
-    WEPID_PHYSICS,          // 53
-    WEPID_AMMO,             // 54
-    WEPID_UPGRADE_ITEM      // 55
-}
-
-enum MeleeWeaponId 
-{
-    WEPID_MELEE_NONE,
-    WEPID_KNIFE,
-    WEPID_BASEBALL_BAT,
-    WEPID_MELEE_CHAINSAW,
-    WEPID_CRICKET_BAT,
-    WEPID_CROWBAR,
-    WEPID_DIDGERIDOO,
-    WEPID_ELECTRIC_GUITAR,
-    WEPID_FIREAXE,
-    WEPID_FRYING_PAN,
-    WEPID_GOLF_CLUB,
-    WEPID_KATANA,
-    WEPID_MACHETE,
-    WEPID_RIOT_SHIELD,
-    WEPID_TONFA,
-    WEPID_SHOVEL,
-    WEPID_PITCHFORK
-}
-
-enum L4D2WeaponSlot
-{
-    L4D2WeaponSlot_Primary,
-    L4D2WeaponSlot_Secondary,
-    L4D2WeaponSlot_Throwable,
-    L4D2WeaponSlot_HeavyHealthItem,
-    L4D2WeaponSlot_LightHealthItem
-};
-
-
-
-/**
- * Performs bounds checking to determine if a WeaponId is valid
- * @remark Simple check to see if wepid has a garbage value
- *
- * @param wepid        WeaponId to check for validity
- * @return True if wepid is valid, false otherwise.
- */
-stock bool L4D2_IsValidWeaponId(WeaponId wepid)
-{
-    return wepid >= WEPID_NONE && wepid <= WEPID_UPGRADE_ITEM;
-}
-
-/**
- * Get the player weapon slot used by the given WeaponId.
- * 
- * @param wepid     WeaponId to get the slot for.
- * @return Slot number (0-4) or -1 for invalid WeaponId or no slot
- */
-native int L4D2_GetSlotFromWeaponId(WeaponId wepid);
-
-/**
- * Checks to see if a given weaponid has a known WeaponModel in this file's model array
- * @remark Some weapons (like weapon_melee) have multiple valid models, and this will report false for them.
- *
- * @param wepid        WeaponId to check for a known weapon model for.
- * @return True if a valid weapon model exists for wepid, false otherwise.
- */
-native bool L4D2_HasValidWeaponModel(WeaponId wepid);
-
-/**
- * Checks to see if a given meleeweaponid has a known WeaponModel in this file's model array
- *
- * @param wepid        MeleeWeaponId to check for a known weapon model for.
- * @return True if a valid weapon model exists for wepid, false otherwise.
- */
-native bool L4D2_HasValidMeleeWeaponModel(MeleeWeaponId wepid);
-
-/**
- * Tries to look up a WeaponId for a given Weapon Name.
- *
- * @param weaponName    Weapon name string to look up Id from
- * @return                The corresponding WeaponId if found, else WEPID_NONE
- */
-native WeaponId L4D2_WeaponNameToId(const char[] weaponName);
-
-/**
- * Tries to look up L4D2's internal weapon name for a given WeaponId.
- *
- * @param wepid            WeaponId To get name of.
- * @param nameBuffer    String buffer to write the weapon name to.
- * @param length        Max length which can be written to the buffer.
- * @return                Number of bytes written to buffer, or 0 for invalid weaponId.
- */
-native void L4D2_GetWeaponName(WeaponId wepid, char[] nameBuffer, int length);
-
-/**
- * Tries to look up L4D2's internal weapon name for a given WeaponId.
- *
- * @param wepid            WeaponId To get name of.
- * @param nameBuffer    String buffer to write the weapon name to.
- * @param length        Max length which can be written to the buffer.
- * @return                Number of bytes written to buffer, or 0 for invalid weaponId.
- */
-native void L4D2_GetLongWeaponName(WeaponId wepid, char[] nameBuffer, int length);
-
-/**
- * Tries to look up L4D2's internal weapon name for a given MeleeWeaponId.
- *
- * @param wepid            MeleeWeaponId To get name of.
- * @param nameBuffer    String buffer to write the weapon name to.
- * @param length        Max length which can be written to the buffer.
- * @return                Number of bytes written to buffer, or 0 for invalid weaponId.
- */
-native void L4D2_GetLongMeleeWeaponName(MeleeWeaponId wepid, char[] nameBuffer, int length);
-
-/**
- * Performs bounds checking to determine if a MeleeWeaponId is valid
- * @remark Simple check to see if wepid has a garbage value
- *
- * @param wepid        MeleeWeaponId to check for validity
- * @return True if wepid is valid, false otherwise.
- */
-stock bool L4D2_IsValidMeleeWeaponId(MeleeWeaponId wepid)
-{
-    return wepid >= WEPID_MELEE_NONE && wepid <= WEPID_PITCHFORK;
-}
-
-/**
- * Tries to look up the weapon model for a given WeaponId.
- * @remarks You should use HasValidWeaponModel to make sure the WeaponId you're looking up has a valid model associated with it.
- *
- * @param wepid            WeaponId To get name of.
- * @param nameBuffer    String buffer to write the weapon name to.
- * @param length        Max length which can be written to the buffer.
- * @return                Number of bytes written to buffer, or 0 for invalid weaponid or no weapon model available.
- */
-native void L4D2_GetWeaponModel(WeaponId wepid, char[] modelBuffer, int length);
-
-/**
- * Identifies a weapon spawn or weapon entity as a WeaponID
- * @remark Should work on most weapon ents--even spawns, singles, held, etc.
- *
- * @param entity        Index of entity to identify
- * @return WeaponID for the entity if it is a weapon, WEPID_NONE otherwise
- */
-native WeaponId L4D2_IdentifyWeapon(int entity);
-
-// Helper function used for getting an entity's internal melee name
-native bool L4D2_GetMeleeWeaponNameFromEntity(int entity, char[] buffer, int length);
-
-/**
- * Identifies a melee weapon spawn or weapon entity as a MeleeWeaponId
- * @remark Should work on most weapon ents--even spawns, singles, held, etc.
- *
- * @param entity        Index of entity to identify
- * @return MeleeWeaponId for the entity if it is a weapon, WEPID_MELEE_NONE otherwise
- */
-native MeleeWeaponId L4D2_IdentifyMeleeWeapon(int entity);
-
-/**
- * Attempts to convert a weapon spawn entity to a given weapon spawn
- * @remark Truthfully, this will work on any entity with origin/rotation.
- *        Also, requires the weapon to either have a Valid weapon model or have one provided
- *
- * @param entity        Index of entity to convert to weapon spawn
- * @param wepid            WeaponId of the weapon to have the spawner hold
- * @param count            Weapon count for the spawner (default 5)
- * @param model            World model to use for the weapon spawn
- * @return entity of the new weapon spawn, or -1 on errors.
- */
-native int L4D2_ConvertWeaponSpawn(int entity, WeaponId wepid, int count=5, const char[] model = "");
-
-
-
-
-
-// ====================================================================================================
-// NATIVES - colors.inc
-// ====================================================================================================
-/**
- * Prints a message to a specific client in the chat area.
- * Supports color tags.
- *
- * @param client	  Client index.
- * @param szMessage   Message (formatting rules).
- * @return			  No return
- * 
- * On error/Errors:   If the client is not connected an error will be thrown.
- */
-native void L4D2_CPrintToChat(int client, const char[] szMessage, any ...);
-
-/**
- * Prints a message to all clients in the chat area.
- * Supports color tags.
- *
- * @param client	  Client index.
- * @param szMessage   Message (formatting rules)
- * @return			  No return
- */
-native void L4D2_CPrintToChatAll(const char[] szMessage, any ...);
-
-
-
 public SharedPlugin __pl_l4d2library = 
 {
 	name = "l4d2library",
@@ -1403,8 +1146,6 @@ public void __pl_l4d2library_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_SetAnimFling");
 	MarkNativeAsOptional("L4D2_SetPlayerRespawn");
 	MarkNativeAsOptional("L4D2_PauseClient");
-	MarkNativeAsOptional("L4D2_IsClientCaster");
-	MarkNativeAsOptional("L4D2_IsIDCaster");
 	MarkNativeAsOptional("L4D2_GetRandomSurvivor");
 	MarkNativeAsOptional("L4D2_IdentifySurvivor");
 	MarkNativeAsOptional("L4D2_ClientModelToSC");
@@ -1436,32 +1177,10 @@ public void __pl_l4d2library_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_GetSurvivorCount");
 	MarkNativeAsOptional("L4D2_GetSurvivorOfIndex");
 	MarkNativeAsOptional("L4D2_GiveDefaultAmmo");
-	MarkNativeAsOptional("L4D2_GetMapValueInt");
-	MarkNativeAsOptional("L4D2_GetMapValueFloat");
-	MarkNativeAsOptional("L4D2_GetMapValueVector");
-	MarkNativeAsOptional("L4D2_IsEntityInSaferoom");
-	//MarkNativeAsOptional("L4D2_IsPlayerInSaferoom");
-	
-	// =========================
-	// l4d2_weapon_stocks.inc
-	// =========================
-	MarkNativeAsOptional("L4D2_GetSlotFromWeaponId");
-	MarkNativeAsOptional("L4D2_HasValidWeaponModel");
-	MarkNativeAsOptional("L4D2_HasValidMeleeWeaponModel");
-	MarkNativeAsOptional("L4D2_WeaponNameToId");
-	MarkNativeAsOptional("L4D2_GetWeaponName");
-	MarkNativeAsOptional("L4D2_GetLongWeaponName");
-	MarkNativeAsOptional("L4D2_GetLongMeleeWeaponName");
-	MarkNativeAsOptional("L4D2_GetWeaponModel");
-	MarkNativeAsOptional("L4D2_IdentifyWeapon");
-	MarkNativeAsOptional("L4D2_GetMeleeWeaponNameFromEntity");
-	MarkNativeAsOptional("L4D2_IdentifyMeleeWeapon");
-	MarkNativeAsOptional("L4D2_ConvertWeaponSpawn");
-	
-	// =========================
-	// colors.inc
-	// =========================
-	MarkNativeAsOptional("L4D2_CPrintToChat");
-	MarkNativeAsOptional("L4D2_CPrintToChatAll");
+	MarkNativeAsOptional("L4D_GetMapValueInt");
+	MarkNativeAsOptional("L4D_GetMapValueFloat");
+	MarkNativeAsOptional("L4D_GetMapValueVector");
+	MarkNativeAsOptional("L4D_IsEntityInSaferoom");
+	//MarkNativeAsOptional("L4D_IsPlayerInSaferoom");
 }
 #endif

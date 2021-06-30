@@ -70,7 +70,7 @@ public void OnPluginStart()
     HookEvent("player_incapacitated", OnIncap);
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
     //Reset Clientside Tracking and Total.
     for(int i = 1; i <= MAXPLAYERS; i++)

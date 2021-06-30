@@ -6,6 +6,7 @@
 #include <sdkhooks>
 #include <[LIB]left4dhooks>
 #include <[LIB]l4d2library>
+#include <[LIB]l4d2_weapon_stocks>
 
 public Plugin myinfo =
 {
@@ -148,13 +149,13 @@ public void L4D2_OnEntitySpawned(int entity, char[] classname)
 			if (len-6 > 0 && StrEqual(classname[len-6], "_spawn"))
 			{
 				classname[len-6]='\0';
-				source = L4D2_WeaponNameToId(classname);
+				source = WeaponNameToId(classname);
 			}
 			else
-			  source = L4D2_WeaponNameToId(classname);
+			  source = WeaponNameToId(classname);
 		}
 		if (
-			(source == WEPID_FIRST_AID_KIT && (!L4D_IsMissionFinalMap() || L4D2_IsEntityInSaferoom(entity))) ||
+			(source == WEPID_FIRST_AID_KIT && (!L4D_IsMissionFinalMap() || L4D_IsEntityInSaferoom(entity))) ||
 			source == WEPID_CHAINSAW || source == WEPID_DEFIBRILLATOR ||
 			source == WEPID_UPGRADE_ITEM || source == WEPID_FRAG_AMMO ||
 			source == WEPID_INCENDIARY_AMMO || source == WEPID_ADRENALINE ||
@@ -210,7 +211,7 @@ public void OnRoundIsLive()
 	}
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	CreateTimer(0.1, RoundStartDelay, _, TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -242,14 +243,14 @@ public Action RoundStartDelay(Handle timer)
 						if (len-6 > 0 && StrEqual(class[len-6], "_spawn"))
 						{
 							class[len-6]='\0';
-							source = L4D2_WeaponNameToId(class);
+							source = WeaponNameToId(class);
 						}
 						else
-						  source = L4D2_WeaponNameToId(class);
+						  source = WeaponNameToId(class);
 					}
 					if (source == WEPID_PAIN_PILLS)
 					{
-						if (L4D2_IsEntityInSaferoom(i))
+						if (L4D_IsEntityInSaferoom(i))
 						  RemoveEntityLog(i);
 						else
 						{
@@ -278,7 +279,7 @@ public Action RoundStartDelay(Handle timer)
 				{
 					int killidx = GetRandomInt(0, GetArraySize(g_hItemSpawns)-1);
 					g_hItemSpawns.GetArray(killidx, curitem, sizeof(curitem));
-					WeaponId source = L4D2_IdentifyWeapon(curitem.IT_entity);
+					WeaponId source = IdentifyWeapon(curitem.IT_entity);
 					if (source == WEPID_PAIN_PILLS)
 					  RemoveEntityLog(curitem.IT_entity);
 					RemoveFromArray(g_hItemSpawns, killidx);
@@ -303,10 +304,10 @@ public Action RoundStartDelay(Handle timer)
 						if (len-6 > 0 && StrEqual(class[len-6], "_spawn"))
 						{
 							class[len-6]='\0';
-							source = L4D2_WeaponNameToId(class);
+							source = WeaponNameToId(class);
 						}
 						else
-						  source = L4D2_WeaponNameToId(class);
+						  source = WeaponNameToId(class);
 					}
 					if (source == WEPID_PAIN_PILLS)
 					  RemoveEntityLog(i);
@@ -359,13 +360,13 @@ void EntitySearchLoop()
 			if (len-6 > 0 && StrEqual(classname[len-6], "_spawn"))
 			{
 				classname[len-6]='\0';
-				source = L4D2_WeaponNameToId(classname);
+				source = WeaponNameToId(classname);
 			}
 			else
-			  source = L4D2_WeaponNameToId(classname);
+			  source = WeaponNameToId(classname);
 		}
 		
-		if (g_iSurvivorLimit > 1 && source == WEPID_FIRST_AID_KIT && L4D_IsMissionFinalMap() && !L4D2_IsEntityInSaferoom(i))
+		if (g_iSurvivorLimit > 1 && source == WEPID_FIRST_AID_KIT && L4D_IsMissionFinalMap() && !L4D_IsEntityInSaferoom(i))
 		{
 			float origins[3], angles[3];
 			GetEntPropVector(i, Prop_Send, "m_vecOrigin", origins);
@@ -379,7 +380,7 @@ void EntitySearchLoop()
 			if (g_GlobalWeaponRules[source] == view_as<int>(WEPID_NONE))
 			  RemoveEntityLog(i);
 			else
-			  L4D2_ConvertWeaponSpawn(i, view_as<WeaponId>(g_GlobalWeaponRules[source]));
+			  ConvertWeaponSpawn(i, view_as<WeaponId>(g_GlobalWeaponRules[source]));
 		}
 	}
 }
@@ -397,7 +398,7 @@ public Action AddWeaponRuleCb(int args)
     WeaponId match = WeaponNameToId2(weaponbuf);
     GetCmdArg(2, weaponbuf, sizeof(weaponbuf));
     WeaponId to = WeaponNameToId2(weaponbuf);
-	if (L4D2_IsValidWeaponId(match) && (to == view_as<WeaponId>(-1) || L4D2_IsValidWeaponId(to))) g_GlobalWeaponRules[match] = view_as<int>(to);
+	if (IsValidWeaponId(match) && (to == view_as<WeaponId>(-1) || IsValidWeaponId(to))) g_GlobalWeaponRules[match] = view_as<int>(to);
     return Plugin_Handled;
 }
 
@@ -442,11 +443,11 @@ void SpawnPills(float origin[3], float angles[3])
 WeaponId WeaponNameToId2(const char[] name)
 {
     static char namebuf[64]="weapon_";
-    WeaponId wepid = L4D2_WeaponNameToId(name);
+    WeaponId wepid = WeaponNameToId(name);
     if (wepid == WEPID_NONE)
     {
         strcopy(namebuf[7], sizeof(namebuf)-7, name);
-        wepid = L4D2_WeaponNameToId(namebuf);
+        wepid = WeaponNameToId(namebuf);
     }
     return wepid;
 }

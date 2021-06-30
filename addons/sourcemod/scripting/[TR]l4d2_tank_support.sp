@@ -36,28 +36,28 @@ public Action L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 	}
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	KillClones(true);
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	KillClones(true);
 }
 
-public void L4D2_OnTankDeath()
+public void L4D_OnTankDeath()
 {
 	KillClones(true);
 }
 
-public void L4D2_OnTankFirstSpawn()
+public void L4D_OnTankSpawn()
 {
 	KillClones(true);
 	HookProps();
 }
 
-public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
+public void L4D_OnTankPass(int oldTank, int newTank, int passCount)
 {
 	KillClones(false);
 	bVision[newTank] = true;

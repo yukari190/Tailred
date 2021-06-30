@@ -4,7 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
+#include <[LIB]l4d2_weapon_stocks>
 #include <[LIB]builtinvotes>
 #undef REQUIRE_PLUGIN
 #include <[LIB]readyup>
@@ -201,7 +203,7 @@ public void OnClientDisconnect(int client)
 }
 
 public void OnMapStart() { bRoundLive = false; }
-public void L4D2_OnRealRoundEnd() { bRoundLive = false; }
+public void L4D_OnRoundEnd() { bRoundLive = false; }
 public void OnRoundIsLive()
 {
 	l4d_ready_cfg_name.GetString(sReadyCfgName, sizeof(sReadyCfgName));
@@ -240,7 +242,7 @@ public void OnRoundIsLive()
 
 //public void L4D2_OnEndVersusModeRound_Post() { if (!L4D2_IsSecondRound()) iFirstHalfScore = L4D_GetTeamScore(GetRealTeam(0) + 1); }
 
-public void L4D2_OnTankDeath(int tankClient, int attacker)
+public void L4D_OnTankDeath(int tankClient, int attacker)
 {
 	if (!L4D2_IsValidClient(tankClient)) return;
 	
@@ -262,13 +264,13 @@ public Action L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 public Action ToggleSpecHudCmd(int client, int args) 
 {
 	bSpecHudActive[client] = !bSpecHudActive[client];
-	L4D2_CPrintToChat(client, "<{G}HUD{W}> 旁观面板 %s.", (bSpecHudActive[client] ? "{B}打开{W}" : "{R}关闭{W}"));
+	CPrintToChat(client, "<{G}HUD{W}> 旁观面板 %s.", (bSpecHudActive[client] ? "{B}打开{W}" : "{R}关闭{W}"));
 }
 
 public Action ToggleTankHudCmd(int client, int args) 
 {
 	bTankHudActive[client] = !bTankHudActive[client];
-	L4D2_CPrintToChat(client, "<{G}HUD{W}> Tank面板 %s.", (bTankHudActive[client] ? "{B}打开{W}" : "{R}关闭{W}"));
+	CPrintToChat(client, "<{G}HUD{W}> Tank面板 %s.", (bTankHudActive[client] ? "{B}打开{W}" : "{R}关闭{W}"));
 }
 
 public Action HudDrawTimer(Handle hTimer)
@@ -316,7 +318,7 @@ public Action HudDrawTimer(Handle hTimer)
 			if (!bSpecHudHintShown[i])
 			{
 				bSpecHudHintShown[i] = true;
-				L4D2_CPrintToChat(i, "<{G}HUD{W}> 输入 {green}!spechud{W} 切换 {B}旁观面板{W} 状态.");
+				CPrintToChat(i, "<{G}HUD{W}> 输入 {green}!spechud{W} 切换 {B}旁观面板{W} 状态.");
 			}
 		}
 		delete specHud;
@@ -339,7 +341,7 @@ public Action HudDrawTimer(Handle hTimer)
 			if (!bTankHudHintShown[i])
 			{
 				bTankHudHintShown[i] = true;
-				L4D2_CPrintToChat(i, "<{G}HUD{W}> 输入 {O}!tankhud{W} 切换 {R}Tank面板{W} 状态.");
+				CPrintToChat(i, "<{G}HUD{W}> 输入 {O}!tankhud{W} 切换 {R}Tank面板{W} 状态.");
 			}
 		}
 	}
@@ -361,7 +363,7 @@ void FillHeaderInfo(Panel hSpecHud)
 void GetMeleePrefix(int client, char[] prefix, int length)
 {
 	int secondary = GetPlayerWeaponSlot(client, view_as<int>(L4D2WeaponSlot_Secondary));
-	WeaponId secondaryWep = L4D2_IdentifyWeapon(secondary);
+	WeaponId secondaryWep = IdentifyWeapon(secondary);
 
 	static char buf[4];
 	switch (secondaryWep)
@@ -382,8 +384,8 @@ void GetWeaponInfo(int client, char[] info, int length)
 	
 	int activeWep = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 	int primaryWep = GetPlayerWeaponSlot(client, view_as<int>(L4D2WeaponSlot_Primary));
-	WeaponId activeWepId = L4D2_IdentifyWeapon(activeWep);
-	WeaponId primaryWepId = L4D2_IdentifyWeapon(primaryWep);
+	WeaponId activeWepId = IdentifyWeapon(activeWep);
+	WeaponId primaryWepId = IdentifyWeapon(primaryWep);
 	
 	// Let's begin with what player is holding,
 	// but cares only pistols if holding secondary.
@@ -397,13 +399,13 @@ void GetWeaponInfo(int client, char[] info, int length)
 				// Straight use the prefix since full name is a bit long.
 				Format(buffer, sizeof(buffer), "DP");
 			}
-			else L4D2_GetLongWeaponName(activeWepId, buffer, sizeof(buffer));
+			else GetLongWeaponName(activeWepId, buffer, sizeof(buffer));
 			
 			FormatEx(info, length, "%s %i", buffer, GetWeaponClip(activeWep));
 		}
 		default:
 		{
-			L4D2_GetLongWeaponName(primaryWepId, buffer, sizeof(buffer));
+			GetLongWeaponName(primaryWepId, buffer, sizeof(buffer));
 			FormatEx(info, length, "%s %i/%i", buffer, GetWeaponClip(primaryWep), GetWeaponAmmo(client, primaryWepId));
 		}
 	}
@@ -415,8 +417,8 @@ void GetWeaponInfo(int client, char[] info, int length)
 		// show the melee full name.
 		if (activeWepId == WEPID_MELEE || activeWepId == WEPID_CHAINSAW)
 		{
-			MeleeWeaponId meleeWepId = L4D2_IdentifyMeleeWeapon(activeWep);
-			L4D2_GetLongMeleeWeaponName(meleeWepId, info, length);
+			MeleeWeaponId meleeWepId = IdentifyMeleeWeapon(activeWep);
+			GetLongMeleeWeaponName(meleeWepId, info, length);
 		}
 	}
 	else
@@ -424,7 +426,7 @@ void GetWeaponInfo(int client, char[] info, int length)
 		// Default display -> [Primary <In Detail> | Secondary <Prefix>]
 		// Holding melee included in this way
 		// i.e. [Chrome 8/56 | M]
-		if (L4D2_GetSlotFromWeaponId(activeWepId) != 1 || activeWepId == WEPID_MELEE || activeWepId == WEPID_CHAINSAW)
+		if (GetSlotFromWeaponId(activeWepId) != 1 || activeWepId == WEPID_MELEE || activeWepId == WEPID_CHAINSAW)
 		{
 			GetMeleePrefix(client, buffer, sizeof(buffer));
 			Format(info, length, "%s | %s", info, buffer);
@@ -434,7 +436,7 @@ void GetWeaponInfo(int client, char[] info, int length)
 		// i.e. [Deagle 8 | Mac 700]
 		else
 		{
-			L4D2_GetLongWeaponName(primaryWepId, buffer, sizeof(buffer));
+			GetLongWeaponName(primaryWepId, buffer, sizeof(buffer));
 			Format(info, length, "%s | %s %i", info, buffer, GetWeaponClip(primaryWep) + GetWeaponAmmo(client, primaryWepId));
 		}
 	}
@@ -487,7 +489,7 @@ void FillSurvivorInfo(Panel hSpecHud)
 			else if (L4D2_IsPlayerIncap(client))
 			{
 				int activeWep = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-				L4D2_GetLongWeaponName(L4D2_IdentifyWeapon(activeWep), info, sizeof(info));
+				GetLongWeaponName(IdentifyWeapon(activeWep), info, sizeof(info));
 				Format(info, sizeof(info), "%s: <%iHP@%s> [%s %i]", name, GetClientHealth(client), (L4D2_GetSurvivorIncapCount(client) == 1 ? "2nd" : "1st"), info, GetWeaponClip(activeWep));
 			}
 			else

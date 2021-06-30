@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 
 #define BRIDGE_CAR_DMG 6.0
@@ -104,7 +105,7 @@ public void OnMapStart()
 	}
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
     for (int i = 1; i <= MAXPLAYERS; i++)
     {
@@ -270,7 +271,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 				damage = L4D2_IsPlayerIncap(victim) ? CHARGER_DMG_INCAPPED : CHARGER_DMG_POUND;
 				return Plugin_Changed;
 			}
-			L4D2_CPrintToChatAll("{W}-{B}Charger Damage{W}- {O}warning, charger doing a type of damage it shouldn't! infl.: [%s] type [%d] damage [%.0f] force [%.0f %.0f %.0f]", classname, damageType, damage, damageForce[0], damageForce[1], damageForce[2]);
+			CPrintToChatAll("{W}-{B}Charger Damage{W}- {O}warning, charger doing a type of damage it shouldn't! infl.: [%s] type [%d] damage [%.0f] force [%.0f %.0f %.0f]", classname, damageType, damage, damageForce[0], damageForce[1], damageForce[2]);
 		}
 	}
 	return Plugin_Continue;

@@ -20,7 +20,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_match", MatchRequest);
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	bVoteStart = false;
 }

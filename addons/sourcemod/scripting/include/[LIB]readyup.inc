@@ -24,6 +24,21 @@ native bool IsInReady();
 native void GetReadyCfgName(char[] buffer, int maxlength);
 
 /**
+ * If this in-game and fully connected client is a caster or not
+ *
+ * @return          True if this is a registered caster
+ */
+native bool IsClientCaster(int client);
+
+/**
+ * If this Steam ID is a registered caster or not
+ *
+ * @param           String containing the user's auth id
+ * @return          True if this is a registered caster
+ */
+native bool IsIDCaster(const char[] AuthID);
+
+/**
  * Called when the live countdown ends and the round goes live
  */
 forward void OnRoundIsLive();
@@ -41,9 +56,11 @@ public SharedPlugin __pl_readyup =
 
 public void __pl_readyup_SetNTVOptional()
 {
-        MarkNativeAsOptional("AddStringToReadyFooter");
-        MarkNativeAsOptional("IsInReady");
-		MarkNativeAsOptional("GetReadyCfgName");
+	MarkNativeAsOptional("AddStringToReadyFooter");
+	MarkNativeAsOptional("IsInReady");
+	MarkNativeAsOptional("GetReadyCfgName");
+	MarkNativeAsOptional("IsClientCaster");
+	MarkNativeAsOptional("IsIDCaster");
 }
 
 // vim: ft=sourcepawn et sw=8

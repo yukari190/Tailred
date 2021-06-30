@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 #include <[LIB]navmesh>
 #include <[LIB]DirectInfectedSpawn>
@@ -20,6 +21,28 @@
 #define SI_JOCKEY		4
 #define SI_CHARGER		5
 
+#define PI 3.14159265359
+#define UNINITIALISED_FLOAT -1.42424
+
+#define NAV_MESH_HEIGHT 20.0
+
+#define COORD_X 0
+#define COORD_Y 1
+#define COORD_Z 2
+#define X_MIN 0
+#define X_MAX 1
+#define Y_MIN 2
+#define Y_MAX 3
+
+#define PITCH 0
+#define YAW 1
+#define ROLL 2
+#define MAX_ANGLE 89.0
+
+#define X_COORD 0
+#define Y_COORD 1
+#define Z_COORD 2
+
 // Settings upon load
 ConVar cvSpawnSize;
 ConVar cvSILimit;
@@ -28,7 +51,6 @@ ConVar cvSpawnWeights[NUM_TYPES_INFECTED];
 ConVar cvScaleWeights;
 ConVar cvSpawnProximityMin;
 ConVar cvSpawnProximityMax;
-ConVar cvRearSpawnMaxTrailingDistance;
 ConVar cvSpawnTimeMode;
 ConVar cvSpawnTimeMin;
 ConVar cvSpawnTimeMax;
@@ -45,7 +67,6 @@ float fSpawnTimeMax;
 int iSpawnTimeMode;
 int iSpawnProximityMin;
 int iSpawnProximityMax;
-float fRearSpawnMaxTrailingDistance;
 int iIncapAllowance;
 int iSurvivorLimit;
 
@@ -57,6 +78,8 @@ float SpawnTimes[MAXPLAYERS];
 float IntervalEnds[NUM_TYPES_INFECTED];
 
 int g_bHasSpawnTimerStarted = true;
+
+float spawnBounds[4]; // denoted by minimum and maximum X and Y coordinates
 
 /***********************************************************************************************************************************************************************************
      					All credit for the spawn timer, quantities and queue modules goes to the developers of the 'l4d2_autoIS' plugin                            
@@ -100,7 +123,6 @@ public void OnPluginStart()
 	*/
 	cvSpawnProximityMin = CreateConVar( "ss_spawn_proximity_min", "500", "最接近SI的可能是生还者", _, true, 1.0 );
 	cvSpawnProximityMax = CreateConVar( "ss_spawn_proximity_max", "650", "一个SI可以产卵到幸存者的最远的地方", _, true, float(cvSpawnProximityMin.IntValue) );
-	cvRearSpawnMaxTrailingDistance = CreateConVar("ss2_rearspawn_max_trailing_distance", "150", "Limit set on ", _, true, 0.0);
 	// Grace period
 	cvIncapAllowance = CreateConVar( "ss_incap_allowance", "15", "Grace period(sec) per incapped survivor" );
 	// sets SpawnTimeMin, SpawnTimeMax, and SpawnTimes[]
@@ -119,7 +141,6 @@ public void OnPluginStart()
 	cvSpawnTimeMode.AddChangeHook(ConVarChange);
 	cvSpawnProximityMin.AddChangeHook(ConVarChange);
 	cvSpawnProximityMax.AddChangeHook(ConVarChange);
-	cvRearSpawnMaxTrailingDistance.AddChangeHook(ConVarChange);
 	cvIncapAllowance.AddChangeHook(ConVarChange);
 	cvSurvivorLimit.AddChangeHook(ConVarChange);
 	ConVarChange(view_as<ConVar>(INVALID_HANDLE), "", "");
@@ -159,7 +180,6 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 	iSpawnTimeMode = cvSpawnTimeMode.IntValue;
 	iSpawnProximityMin = cvSpawnProximityMin.IntValue;
 	iSpawnProximityMax = cvSpawnProximityMax.IntValue;
-	fRearSpawnMaxTrailingDistance = cvRearSpawnMaxTrailingDistance.FloatValue;
 	iIncapAllowance = cvIncapAllowance.IntValue;
 	iSurvivorLimit = cvSurvivorLimit.IntValue;
 	CalculateSpawnTimes();
@@ -183,7 +203,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
 	}
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	EndSpawnTimer(true);
 }
@@ -237,7 +257,7 @@ public Action SpawnInfectedAuto(Handle timer)
 	{ // grant grace period
 		int gracePeriod = numIncappedSurvivors * iIncapAllowance;
 		CreateTimer( float(gracePeriod), Timer_GracePeriod, _, TIMER_FLAG_NO_MAPCHANGE );
-		L4D2_CPrintToChatAll("{G}[{W}SS{G}]{W} {B}%d{W}s {G}grace period{W} was granted because of {B}%d{W} incapped survivor(s)", gracePeriod, numIncappedSurvivors);
+		CPrintToChatAll("{G}[{W}SS{G}]{W} {B}%d{W}s {G}grace period{W} was granted because of {B}%d{W} incapped survivor(s)", gracePeriod, numIncappedSurvivors);
 	}
 	else
 	{ // spawn immediately
@@ -345,7 +365,16 @@ void GenerateAndExecuteSpawnQueue()
 			SpawnCounts[index] += 1;
 		}	
 		// Execute the spawn queue
-		NavMeshSpawn(SpawnQueue);
+		//NavMeshSpawn(SpawnQueue);
+		// for old spawn times, generate spawn locations one at a time
+		for( int i = 0; i < MAXPLAYERS; i++ ) 
+		{
+			if( SpawnQueue[i] < 0 ) // end of spawn queue (does not always fill the whole array)
+			{ 
+				break;
+			}
+			AttemptSpawnAuto(view_as<L4D2_Infected>(SpawnQueue[i] + 1));
+		}
 	}
 }
 
@@ -429,171 +458,396 @@ int GenerateIndex()
                                                  								AUTOMATIC SPAWNING
                                                                     
 ***********************************************************************************************************************************************************************************/
- /* 
-	 * TODO: 
-	 * - spawns are appearing in clustered locationsl, ook into reducing spawn condition check strictness
-	 */
-void NavMeshSpawn ( const int SpawnQueue[MAXPLAYERS] )
+// Handles radial and grid spawning; Nav Mesh spawning is handled differently in SpawnQueue module and does not pass on to here.
+void AttemptSpawnAuto(L4D2_Infected SIClass)
 {
-	int rearSurvivorFlow = GetRearSurvivorFlow(); // The rear survivor's flow distance is required to prevent spawns later spawning too far behind
-	ArrayList ProximateSpawns;
-	ProximateSpawns = new ArrayList();
-	
-	/*
-	 * Collate all spawn areas near survivors
-	 */
-	int countFoundSpawnAreas = 0;
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	if( CheckSurvivorsSeparated() )
 	{
-		int thisClient = L4D2_GetSurvivorOfIndex(i);
-		if (thisClient == 0 || !IsPlayerAlive(thisClient)) continue;
-		float posThisSurvivor[3]; // Need this survivor's coordinates to start search
-		char nameThisSurvivor[32]; 
-		GetClientName(thisClient, nameThisSurvivor, sizeof(nameThisSurvivor)); 
-		if ( GetClientAbsOrigin(thisClient, posThisSurvivor) )
-		{
-			CNavArea areaThisSurvivor = NavMesh_GetNearestArea(posThisSurvivor); // Identify closest navmesh tile from their coordinates
-			if ( areaThisSurvivor != INVALID_NAV_AREA )
-			{
-				ArrayStack hereProximates = new ArrayStack(); // Get nearby navmesh tiles
-				NavMesh_CollectSurroundingAreas(hereProximates, areaThisSurvivor); 
-				while ( !hereProximates.Empty )
-				{
-					CNavArea area = INVALID_NAV_AREA; // for each discovered tile, check we have not seen it before 
-					PopStackCell(hereProximates, area); 
-					if ( area != INVALID_NAV_AREA && ProximateSpawns.FindValue(area) == -1 )
-					{
-						float posArea[3];
-						int indexArea = view_as<int>(NavMesh_FindAreaByID(view_as<int>(area.ID)));
-						if ( NavMeshArea_GetCenter(indexArea, posArea) ) // returns true if successful
-						{
-							int flowThisArea = GetFlow(posArea);
-							if ( flowThisArea >= 0 ) // TODO: checking for flow distance invalidates potential spawn areas with no flow distance attached, not sure of ramifications
-							{
-								if ( (rearSurvivorFlow - flowThisArea) < fRearSpawnMaxTrailingDistance )
-								{
-									++countFoundSpawnAreas;
-									if ( CheckSpawnConditions(area) ) // check each tile meets our spawn conditions
-									{
-										ProximateSpawns.Push(indexArea); // save this tile
-									} 
-								}
-							}
-						}
-						else
-						{
-							PrintToServer("NavMeshSpawn(): Failed to find center position for spawn area of ID: %d; unable to calculate flow distance from rear survivor", indexArea);
-						}
-						
-					} 
-				}
-				delete hereProximates;
-			}
-			else 
-			{
-				PrintToServer("NavMeshSpawn(): No CNavArea found near %s required to search for proximate spawn areas", nameThisSurvivor);
-			}
-		} 
-		else 
-		{
-			PrintToServer("NavMeshSpawn(): Unable to obtain coordinates for survivor %s", nameThisSurvivor);
-		}
-	}
-	PrintToServer("NavMeshSpawn(): Found %d spawns near survivors, of which %d met spawn conditions", countFoundSpawnAreas, ProximateSpawns.Length);
-	
-	// Spawn all SI in queue
-	if ( ProximateSpawns.Length > 0 ) {	
-		for( int i = 0; i < MAXPLAYERS; i++ ) 
-		{
-			if( SpawnQueue[i] < 0 ) // end of spawn queue (does not always fill the whole array)
-			{ 
-				break;
-			}
-			else
-			{
-				int spawnIndex = GetRandomInt(0, ProximateSpawns.Length - 1);	
-				int indexRandomSpawn = ProximateSpawns.Get(spawnIndex);
-				float posRandomSpawn[3]; 
-				if ( NavMeshArea_GetCenter(indexRandomSpawn, posRandomSpawn) ) // returns true if successful
-				{
-					TriggerSpawn( view_as<L4D2_Infected>(SpawnQueue[i] + 1), posRandomSpawn, NULL_VECTOR);
-				}
-				else
-				{
-					PrintToServer("NavMeshSpawn(): Failed to spawn at NavMesh index %d; cannot determine mesh center coordinates", indexRandomSpawn);
-				}	
-			}
-		}
-	}
-	else 
-	{
-		LogError("NavMeshSpawn(): Failed to find any proximate spawns");
-	} 
-	delete ProximateSpawns;
-}
-
-bool CheckSpawnConditions(CNavArea spawn)
-{
-	bool shouldSpawn = false;
-	
-	int shortestPath = -1; // Find shortest path cost to any member of the survivor team
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int thisClient = L4D2_GetSurvivorOfIndex(i);
-		if (thisClient == 0 || !IsPlayerAlive(thisClient)) continue;
-		float posThisSurvivor[3];			
-		GetClientAbsOrigin(thisClient, posThisSurvivor);
-		CNavArea areaThisSurvivor = NavMesh_GetNearestArea(posThisSurvivor); 
-		int indexAreaThisSurvivor = view_as<int>(NavMesh_FindAreaByID(view_as<int>(areaThisSurvivor.ID)));
-		bool didBuildPath = NavMesh_BuildPath(spawn, areaThisSurvivor, posThisSurvivor, GauntletPathCost); 
-		if ( didBuildPath )
-		{
-			// TODO: hoping the cost is for the path built in NavMesh_BuildPath
-			int pathCost = NavMeshArea_GetTotalCost(indexAreaThisSurvivor); 
-			if ( pathCost < shortestPath || shortestPath == -1 )
-			{
-				shortestPath = pathCost; // update the shortest path found to survivors from this position
-			}
-		}
-	}
-	// Return whether this shortest calculated path length is acceptable
-	if ( shortestPath > iSpawnProximityMin && shortestPath < iSpawnProximityMax ) 
-	{
-		shouldSpawn = true;	
-	}
-	
-	return shouldSpawn;	
-}
-
-int GauntletPathCost(CNavArea area, CNavArea from, CNavLadder ladder, any data)
-{
-	if (from == INVALID_NAV_AREA)
-	{
-		return 0;
+		RadialSpawn( SIClass, GetLeadSurvivor() );	
 	}
 	else
 	{
-		int iDist = 0;
-		if (ladder != INVALID_NAV_LADDER)
-		{
-			iDist = RoundFloat(ladder.Length * 10.0); // addding 10x multiplier to discourage spawn spots that require climbing
+		GridSpawn( SIClass );
+	} 
+}
+
+/*
+ * Reposition the SI to a point on the circumference of a circle [spawn_proximity] from a survivor; respects distance to all survivors
+ * Always spawns SI at [ss_spawn_proximity_min] distance to survivors
+ */
+void RadialSpawn( L4D2_Infected SIClass, int survivorTarget ) {
+	bool spawnSuccess = false;
+	float survivorPos[3];
+	float rayEnd[3];
+	float spawnPos[3] = {-1.0, -1.0, -1.0};
+	for( int i = 0; i < 500; i++ ) {		
+		// Fire a ray at a random angle around the survivor
+		GetClientAbsOrigin(survivorTarget, survivorPos); 
+		float spawnSearchAngle = GetRandomFloat(0.0, 2.0 * PI);
+		rayEnd[0] = survivorPos[0] + Sine(spawnSearchAngle) * iSpawnProximityMin;
+		rayEnd[1] = survivorPos[1] + Cosine(spawnSearchAngle) * iSpawnProximityMin;
+		rayEnd[2] = survivorPos[2] + 50;
+		// Search down the vertical column from the ray's' endpoint for a valid spawn position
+		float direction[3];
+		direction[PITCH] = MAX_ANGLE; // straight down
+		direction[YAW] = 0.0;
+		direction[ROLL] = 0.0;
+		TR_TraceRay( rayEnd, direction, MASK_ALL, RayType_Infinite );
+		if( TR_DidHit() ) {
+			float traceImpact[3];
+			TR_GetEndPosition( traceImpact );
+			spawnPos = traceImpact;
+			spawnPos[COORD_Z] += NAV_MESH_HEIGHT; // from testing I presume the SI cannot spawn on the floor itself
+			// Have to use the size of a survivor to estimate if SI will get stuck, 
+			// as with recent update to this plugin, the SI do not get repositioned but are spawned directly into the decided position
+			if( IsOnValidMesh(spawnPos) && !IsPlayerStuck(spawnPos, L4D2_GetRandomSurvivor()) && GetSurvivorProximity(spawnPos) > iSpawnProximityMin ) {
+				TriggerSpawn(SIClass, spawnPos, NULL_VECTOR); 
+				spawnSuccess = true;
+				break;
+			}
 		}
-		else
-		{
-			float flAreaCenter[3]; float flFromAreaCenter[3];
-			area.GetCenter(flAreaCenter);
-			from.GetCenter(flFromAreaCenter);
-			
-			iDist = RoundFloat(GetVectorDistance(flAreaCenter, flFromAreaCenter));
-		}
+	}
 		
-		int iCost = iDist + from.CostSoFar;
-		int iAreaFlags = area.Attributes;
-		if (iAreaFlags & NAV_MESH_CROUCH) iCost += 20; // default += (20)
-		if (iAreaFlags & NAV_MESH_JUMP) iCost += (50 * iDist); // default +=(5 * iDist)
-		return iCost;
+	// Could not find an acceptable spawn position
+	if(!spawnSuccess) {
+		LogMessage("[SS] FAILED to find a valid RADIAL SPAWN position for infected class '%d' after %d attempts", SIClass, 500 ); 
+	}		
+}
+
+/*
+ * Reposition the SI to a random point on a 2D grid around the survivors. 
+ */
+void GridSpawn( L4D2_Infected SIClass ) {
+	
+	UpdateSpawnBounds();
+	
+	for( int i = 0; i < 500; i++ ) {
+		float searchPos[3];
+		float survivorPos[3];
+		int closestSurvivor;
+		
+		// 'x' and 'y' for potential spawn point coordinates is selected with uniform RNG
+		searchPos[COORD_X] = GetRandomFloat(spawnBounds[X_MIN], spawnBounds[X_MAX]);
+		searchPos[COORD_Y] = GetRandomFloat(spawnBounds[Y_MIN], spawnBounds[Y_MAX]);
+		// 'z' for potential spawn point coordinate is taken from just above the height of nearest survivor
+		closestSurvivor = GetClosestSurvivor2D(searchPos[COORD_X], searchPos[COORD_Y]);
+		GetClientAbsOrigin(closestSurvivor, survivorPos);
+		searchPos[COORD_Z] = survivorPos[COORD_Z] + float( 50 );
+		
+		// Search down the vertical column from the generated [x, y ,z] coordinate for a valid spawn position
+		float direction[3];
+		direction[PITCH] = MAX_ANGLE; // straight down
+		direction[YAW] = 0.0;
+		direction[ROLL] = 0.0;
+		TR_TraceRay( searchPos, direction, MASK_ALL, RayType_Infinite );
+		
+		// found solid land below the [x, y, z] coordinate
+		if( TR_DidHit() ) { 
+			float traceImpact[3];
+			float spawnPos[3];
+			TR_GetEndPosition( traceImpact ); 
+			spawnPos = traceImpact;
+			spawnPos[COORD_Z] += NAV_MESH_HEIGHT; // from testing I presume the SI cannot spawn on the floor itself
+			
+			if ( IsValidSpawn(spawnPos) ) {
+				TriggerSpawn(SIClass, spawnPos, NULL_VECTOR); // all spawn conditions satisifed
+				return;
+				
+			}
+		} 
+ 	}
+ 	// Could not find an acceptable spawn position
+	LogMessage("[SS] FAILED to find a valid GRID SPAWN position for SI Class '%d' after %d attempts", SIClass, 500 ); 
+	return;
+}
+
+/* Determine if the lead survivor is too far ahead of the rear survivor, using the [spawn_proximity] cvar 
+ * @return: a random survivor or a survivor that is rushing too far ahead in front
+ */
+bool CheckSurvivorsSeparated() {
+	// Lead survivor position
+	int leadSurvivor = GetLeadSurvivor();
+	float leadSurvivorPos[3];
+	if( L4D2_IsSurvivor(leadSurvivor) ) {
+		GetClientAbsOrigin( leadSurvivor, leadSurvivorPos );
+	}
+	// Rear survivor position
+	int rearSurvivor = GetRearSurvivor();
+	float rearSurvivorPos[3];
+	if( L4D2_IsSurvivor(rearSurvivor) ) {
+		GetClientAbsOrigin( rearSurvivor, rearSurvivorPos );
+	}
+	// Is the leading player too far ahead?
+	if( GetVectorDistance( leadSurvivorPos, rearSurvivorPos ) > float(2 * iSpawnProximityMax) ) {
+		return true;
+	} else {
+		return false;
 	}
 }
+
+int GetLeadSurvivor() {
+	// Find the farthest flow held by a survivor
+	float farthestFlow = -1.0;
+	int leadSurvivor = -1;
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || !IsPlayerAlive(index)) continue;
+		
+		float origin[3];
+		GetClientAbsOrigin(index, origin);
+		Address pNavArea = L4D2Direct_GetTerrorNavArea(origin);
+		if( pNavArea != Address_Null ) {
+			float tmp_flow = L4D2Direct_GetTerrorNavAreaFlow(pNavArea);
+			if( tmp_flow > farthestFlow || farthestFlow == -1.0 ) {
+				farthestFlow = tmp_flow;
+				leadSurvivor = index;
+			}
+		}
+	}
+	return leadSurvivor;
+}
+
+bool IsOnValidMesh(const float position[3]) {
+	float pos[3];
+	pos[0] = position[0]; 
+	pos[1] = position[1]; 
+	pos[2] = position[2]; 
+	Address pNavArea;
+	pNavArea = L4D2Direct_GetTerrorNavArea(pos);
+	if (pNavArea != Address_Null) { 
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void UpdateSpawnBounds() {
+	// Grid will have coords (min X, min Y), (min X, max Y), (max X, min Y), (max X, max Y)
+	spawnBounds[X_MIN] = UNINITIALISED_FLOAT, spawnBounds[Y_MIN] = UNINITIALISED_FLOAT;
+	spawnBounds[X_MAX] = UNINITIALISED_FLOAT, spawnBounds[Y_MAX] = UNINITIALISED_FLOAT;
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || !IsPlayerAlive(index)) continue;
+		float pos[3];
+		GetClientAbsOrigin(index, pos);
+		// Check min
+		spawnBounds[X_MIN] = CheckMinCoord( spawnBounds[X_MIN], pos[COORD_X] );
+		spawnBounds[Y_MIN] = CheckMinCoord( spawnBounds[Y_MIN], pos[COORD_Y] );
+		// Check max
+		spawnBounds[X_MAX] = CheckMaxCoord( spawnBounds[X_MAX], pos[COORD_X] );
+		spawnBounds[Y_MAX] = CheckMaxCoord( spawnBounds[Y_MAX], pos[COORD_Y] );
+	}
+	// Extend a border around grid
+	float borderWidth = float( iSpawnProximityMax );
+	spawnBounds[X_MIN] -= borderWidth;
+	spawnBounds[Y_MIN] -= borderWidth;
+	spawnBounds[X_MAX] += borderWidth;
+	spawnBounds[Y_MAX] += borderWidth;
+}
+
+bool IsPlayerStuck( const float pos[3], int client) {
+	bool isStuck = true;
+	if( L4D2_IsValidClient(client) ) {
+		float mins[3];
+		float maxs[3];		
+		GetClientMins(client, mins);
+		GetClientMaxs(client, maxs);
+		
+		// inflate the sizes just a little bit
+		for( int i = 0; i < sizeof(mins); i++ ) {
+		    mins[i] -= BOUNDINGBOX_INFLATION_OFFSET;
+		    maxs[i] += BOUNDINGBOX_INFLATION_OFFSET;
+		}
+		
+		TR_TraceHullFilter(pos, pos, mins, maxs, MASK_ALL, TraceEntityFilterPlayer, client);
+		isStuck = TR_DidHit();
+	}
+	return isStuck;
+}  
+
+// filter out players, since we can't get stuck on them
+public bool TraceEntityFilterPlayer(int entity, int contentsMask) {
+    return entity <= 0 || entity > MaxClients;
+}  
+
+int GetSurvivorProximity( const float rp[3], int specificSurvivor = -1 ) {
+	
+	int targetSurvivor;
+	float targetSurvivorPos[3];
+	float referencePos[3]; // non constant var
+	referencePos[0] = rp[0];
+	referencePos[1] = rp[1];
+	referencePos[2] = rp[2];
+	
+	if( specificSurvivor > 0 && L4D2_IsSurvivor(specificSurvivor) ) { // specified survivor
+		targetSurvivor = specificSurvivor;		
+	} else { // closest survivor		
+		targetSurvivor = GetClosestSurvivor( referencePos );
+	}
+	
+	GetEntPropVector( targetSurvivor, Prop_Send, "m_vecOrigin", targetSurvivorPos );
+	return RoundToNearest( GetVectorDistance(referencePos, targetSurvivorPos) );
+}
+
+int GetClosestSurvivor2D(float x_coord, float y_coord) 
+{
+	float proximity = -1.0;
+	int closestSurvivor = L4D2_GetRandomSurvivor();
+	if ( !L4D2_IsValidClient(closestSurvivor) ) 
+	{
+		LogError("GetClosestSurvivor2D(%f, %f) - Unable to find any survivors", x_coord, y_coord);
+	}		
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int j = L4D2_GetSurvivorOfIndex(i);
+		if (j == 0 || !IsPlayerAlive(j)) continue;
+		float survivorPos[3];
+		GetClientAbsOrigin( j, survivorPos );
+		// Pythagoras
+		float survivorDistance = SquareRoot( Pow(survivorPos[X_COORD] - x_coord, 2.0) + Pow(survivorPos[Y_COORD] - y_coord, 2.0) );
+		if( survivorDistance < proximity || proximity == -1.0 ) {
+			proximity = survivorDistance;
+			closestSurvivor = j;
+		}
+	}
+	return closestSurvivor;
+}
+
+bool IsValidSpawn(const float spawnPos[3]) {
+	bool is_valid = false;
+	int flow_dist_survivors;
+	if( IsOnValidMesh(spawnPos) && !IsPlayerStuck(spawnPos, L4D2_GetRandomSurvivor()) ) {
+		flow_dist_survivors = GetFlowDistToSurvivors(spawnPos);
+		if ( HasSurvivorLOS(spawnPos) ) {
+			int survivor_proximity = GetSurvivorProximity(spawnPos);
+			if ( survivor_proximity > iSpawnProximityMin && flow_dist_survivors < 900 ) { 
+				is_valid = true;
+			}
+		} else { // try to keep spawn flow distance to survivors low if they are spawning outside of LOS
+			if ( flow_dist_survivors < 500 && flow_dist_survivors != -1 ) {
+				is_valid = true;
+			}
+		}
+	}
+	return is_valid;
+}
+
+int GetRearSurvivor() {
+	// Find the farthest flow held by a survivor
+	float lowestFlow = -1.0;
+	int rearSurvivor = -1;
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int j = L4D2_GetSurvivorOfIndex(i);
+		if (j == 0 || !IsPlayerAlive(j)) continue;
+		
+		float origin[3];
+		GetClientAbsOrigin(j, origin);
+		Address pNavArea = L4D2Direct_GetTerrorNavArea(origin);
+		if( pNavArea != Address_Null ) {
+			float tmp_flow = L4D2Direct_GetTerrorNavAreaFlow(pNavArea);
+			if( tmp_flow < lowestFlow || lowestFlow == -1.0 ) {
+				lowestFlow = tmp_flow;
+				rearSurvivor = j;
+			}
+		}
+	}
+	return rearSurvivor;
+}
+
+float CheckMinCoord( float oldMin, float checkValue ) {
+	if( checkValue < oldMin || oldMin == UNINITIALISED_FLOAT ) {
+		return checkValue;
+	} else {
+		return oldMin;
+	}
+}
+
+float CheckMaxCoord( float oldMax, float checkValue ) {
+	if( checkValue > oldMax || oldMax == UNINITIALISED_FLOAT ) {
+		return checkValue;
+	} else {
+		return oldMax;
+	}
+}
+
+int GetClosestSurvivor( float referencePos[3], int excludeSurvivor = -1 ) {
+	float survivorPos[3];
+	int closestSurvivor = L4D2_GetRandomSurvivor();	
+	if ( !L4D2_IsValidClient(closestSurvivor) ) 
+	{
+		LogError("GetClosestSurvivor([%f, %f, %f], %d) = invalid client %d", referencePos[0], referencePos[1], referencePos[2], excludeSurvivor, closestSurvivor);
+		return -1;
+	}
+	GetClientAbsOrigin( closestSurvivor, survivorPos );
+	int iClosestAbsDisplacement = RoundToNearest( GetVectorDistance(referencePos, survivorPos) );
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int client = L4D2_GetSurvivorOfIndex(i);
+		if (client == 0 || !IsPlayerAlive(client) || client == excludeSurvivor) continue;
+		GetClientAbsOrigin( client, survivorPos );
+		int displacement = RoundToNearest( GetVectorDistance(referencePos, survivorPos) );			
+		if( displacement < iClosestAbsDisplacement || iClosestAbsDisplacement < 0 ) { 
+			iClosestAbsDisplacement = displacement;
+			closestSurvivor = client;
+		}
+	}
+	return closestSurvivor;
+}
+
+int GetFlowDistToSurvivors(const float pos[3]) {
+	int spawnpoint_flow;
+	int lowest_flow_dist = -1;
+	
+	spawnpoint_flow = GetFlow(pos);
+	if ( spawnpoint_flow == -1) {
+		return -1;
+	}
+	
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int j = L4D2_GetSurvivorOfIndex(i);
+		if (j == 0 || !IsPlayerAlive(j)) continue;
+		float origin[3];
+		int flow_dist;
+		
+		GetClientAbsOrigin(j, origin);
+		flow_dist = GetFlow(origin);
+		
+		// have we found a new valid(i.e. != -1) lowest flow_dist
+		if ( flow_dist != -1 && FloatCompare(FloatAbs(float(flow_dist) - float(spawnpoint_flow)), float(lowest_flow_dist)) ==  -1 ) {
+			lowest_flow_dist = flow_dist;
+		}
+	}
+	
+	return lowest_flow_dist;
+}
+
+bool HasSurvivorLOS( const float pos[3] ) {
+	bool hasLOS = false;
+	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	{
+		int j = L4D2_GetSurvivorOfIndex(i);
+		if (j == 0 || !IsPlayerAlive(j)) continue;
+		float origin[3];
+		GetClientAbsOrigin(j, origin);
+		TR_TraceRay( pos, origin, MASK_ALL, RayType_EndPoint );
+		if( !TR_DidHit() ) {
+			hasLOS = true;
+			break;
+		}	
+	}
+	return hasLOS;
+}
+
+
+
+
+
+
+
 
 int CountSpecialInfectedBots()
 {
@@ -639,36 +893,3 @@ bool IsPinned(int client)
 	return bIsPinned;
 }
 
-/**
- * @return: the farthest flow distance currently held by a survivor
- */
-int GetRearSurvivorFlow() 
-{
-	int lowestMapFlow = -1; // initialise to impossible value
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int thisClient = L4D2_GetSurvivorOfIndex(i);
-		if (thisClient == 0 || !IsPlayerAlive(thisClient)) continue;
-		float thisSurvivorsOrigin[3];
-		char survivorName[32];
-		GetClientName(thisClient, survivorName, sizeof(survivorName));
-		if ( GetClientAbsOrigin(thisClient, thisSurvivorsOrigin) )
-		{
-			int thisFlow = GetFlow(thisSurvivorsOrigin);
-			if ( thisFlow <= 0 )
-			{
-				PrintToServer("GetRearSurvivorFlow(): Survivor %s returning invalid flow %f", survivorName, thisFlow);
-				continue;
-			}
-			if ( lowestMapFlow == -1 || thisFlow < lowestMapFlow )
-			{
-				lowestMapFlow = thisFlow;
-			}
-		}
-		else
-		{
-			PrintToServer("GetRearSurvivorFlow(): Failed to find position for %s", survivorName);
-		}
-	}
-	return lowestMapFlow;
-}

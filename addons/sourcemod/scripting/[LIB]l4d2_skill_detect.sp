@@ -434,7 +434,7 @@ public void OnMapStart()
 }
 
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
     g_iRocksBeingThrownCount = 0;
     
@@ -458,7 +458,7 @@ public void L4D2_OnRealRoundStart()
 	g_iAlarmCarClient = 0;
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
     g_hCarTrie.Clear();
 	for (int i = 1; i <= MAXPLAYERS; i++)

@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 
 #define NO_HORDES 3600.0
@@ -48,8 +49,8 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 public void OnMapStart()
 {
 	PrecacheSound(HORDE_SOUND);
-	commonLimit = L4D2_GetMapValueInt("horde_limit", -1);
-	commonTank = L4D2_GetMapValueInt("horde_tank", -1);
+	commonLimit = L4D_GetMapValueInt("horde_limit", -1);
+	commonTank = L4D_GetMapValueInt("horde_tank", -1);
 }
 
 public void OnEntitySpawned(int entity, const char[] classname)
@@ -84,7 +85,7 @@ public void OnEntitySpawned(int entity, const char[] classname)
 				int remaining = commonLimit - commonTotal;
 				if (remaining)
 				{
-					L4D2_CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
+					CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
 					EmitSoundToAll(HORDE_SOUND);
 				}
 				lastCheckpoint++;
@@ -93,7 +94,7 @@ public void OnEntitySpawned(int entity, const char[] classname)
 	}
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	bHordesDisabled = false;
 	announcedInChat = false;
@@ -101,12 +102,12 @@ public void L4D2_OnRealRoundStart()
 	lastCheckpoint = 0;
 }
 
-public void L4D2_OnTankDeath()
+public void L4D_OnTankDeath()
 {
 	bHordesDisabled = false;
 }
 
-public void L4D2_OnTankFirstSpawn()
+public void L4D_OnTankSpawn()
 {
 	bHordesDisabled = true;
 }
@@ -146,7 +147,7 @@ public Action L4D_OnSpawnMob(int &amount)
 		if (commonLimit < 0) return Plugin_Continue;
 		if (!announcedInChat)
 		{
-			L4D2_CPrintToChatAll("<{G}Horde{W}> {B}有限的{W}暴动事件开始! 总数: {G}%i{W} .", commonLimit);
+			CPrintToChatAll("<{G}Horde{W}> {B}有限的{W}暴动事件开始! 总数: {G}%i{W} .", commonLimit);
 			announcedInChat = true;
 		}
 		if (commonTotal >= commonLimit)

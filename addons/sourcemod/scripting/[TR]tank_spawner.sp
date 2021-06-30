@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 #include <[LIB]builtinvotes_native>
 #undef REQUIRE_PLUGIN
@@ -166,7 +167,7 @@ public Action L4D_OnSpawnWitchBride(const float vector[3], const float qangle[3]
     return Plugin_Handled;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	CreateTimer(1.0, AdjustBossFlow);
 	readyFooterAdded = false;
@@ -245,13 +246,13 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
 void PrintBossPercents(int client)
 {
 	int boss_proximity = L4D2_GetHighestSurvivorFlow();
-	L4D2_CPrintToChat(client, "{W}当前: R{O}#%d{W}, {O}%d%%", iRoundPercent, boss_proximity);
+	CPrintToChat(client, "{W}当前: R{O}#%d{W}, {O}%d%%", iRoundPercent, boss_proximity);
 	if (hybridScoringAvailable) ClientCommand(client, "sm_bonus");
 	
 	if (bAllowTankSpawn)
 	{
-		if (L4D2_GetTankToSpawn()) L4D2_CPrintToChat(client, "{R}Tank{W}:  [ {G}%d%%{W} ]", iTankPercent);
-		else L4D2_CPrintToChat(client, "{R}Tank{W}:  [ {G}--%%{W} ]");
+		if (L4D2_GetTankToSpawn()) CPrintToChat(client, "{R}Tank{W}:  [ {G}%d%%{W} ]", iTankPercent);
+		else CPrintToChat(client, "{R}Tank{W}:  [ {G}--%%{W} ]");
 	}
 }
 
@@ -266,8 +267,8 @@ public Action AdjustBossFlow(Handle timer)
 	
 	if (bAllowTankSpawn && !IsStaticTankMap())
 	{
-		int iMinBanFlow = L4D2_GetMapValueInt("tank_ban_flow_min", -1);
-		int iMaxBanFlow = L4D2_GetMapValueInt("tank_ban_flow_max", -1);
+		int iMinBanFlow = L4D_GetMapValueInt("tank_ban_flow_min", -1);
+		int iMaxBanFlow = L4D_GetMapValueInt("tank_ban_flow_max", -1);
 		/*int iBanRange = iMaxBanFlow - iMinBanFlow;
 		if (iMinBanFlow > 0 && iMinBanFlow < iCvarMinFlow)
 		{

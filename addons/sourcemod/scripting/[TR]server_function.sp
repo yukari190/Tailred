@@ -7,8 +7,10 @@
 #include <geoip>
 #include <adminmenu>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 #include <[LIB]builtinvotes_native>
+#include <[LIB]DirectInfectedSpawn>
 
 #define PLUGIN_TAG					"[A4D] "
 #define MENU_DISPLAY_TIME		20
@@ -140,12 +142,12 @@ public void OnMapStart()
 	GetCurrentMap(mapname, sizeof(mapname));
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	bVoteStart = false;
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	if (L4D2_IsVersus() && L4D_IsMissionFinalMap() && L4D2_IsSecondRound())
 	{
@@ -172,7 +174,7 @@ public Action Announce_Timer(Handle timer, any client)
 {
 	if (L4D2_IsValidClient(client) && !IsFakeClient(client))
 	{
-		L4D2_CPrintToChat(client, "{LG}命令: !match | !vcm | !slots | !rhp");
+		CPrintToChat(client, "{LG}命令: !match | !vcm | !slots | !rhp");
 	}
 }
 
@@ -191,7 +193,7 @@ public void OnClientPostAdminCheck(int client)
 		char rawmsg[301];
 		PrintFormattedMessageToAll(rawmsg, client);
 		Format(rawmsg, sizeof(rawmsg), "%c%s @ 加入游戏.", 1, rawmsg);
-		L4D2_CPrintToChatAll("%s", rawmsg);
+		CPrintToChatAll("%s", rawmsg);
 	}
 }
 
@@ -296,7 +298,7 @@ public Action Event_PlayerDisconnectPre(Event event, const char[] name, bool don
 		ReplaceString(reason, sizeof(reason), "\n", " ");
 		PrintFormattedMessageToAll(rawmsg, client);
 		Format(rawmsg, sizeof(rawmsg), "%c%s @ 断开连接. {O}原因: {W}%s", 1, rawmsg, reason);
-		L4D2_CPrintToChatAll("%s", rawmsg);
+		CPrintToChatAll("%s", rawmsg);
 	}
 }
 
@@ -312,7 +314,7 @@ public Action TeamSay_Callback(int client, char[] command, int args)
         {
             if (IsClientInGame(i) && L4D2_IsSpectator(i))
             {
-                L4D2_CPrintToChat(i, "{W}%s%N {W}: %s", L4D2_IsSurvivor(client) ? "(生还者) {B}" : "(感染者) {R}", client, sChat);
+                CPrintToChat(i, "{W}%s%N {W}: %s", L4D2_IsSurvivor(client) ? "(生还者) {B}" : "(感染者) {R}", client, sChat);
             }
         }
     }
@@ -373,7 +375,7 @@ public Action SlotsRequest(int client, int args)
 	if (iSlot < 0 || iSlot > 24)
 	{
 		PrintToServer("[Slots]有效范围 0 - 24");
-		L4D2_CPrintToChatAll("{B}[{W}Slots{B}] {W}有效范围 0 - 24");
+		CPrintToChatAll("{B}[{W}Slots{B}] {W}有效范围 0 - 24");
 		return Plugin_Handled;
 	}
 	if (!L4D2_IsValidClient(client)) L4D2_SetMaxPlayers(iSlot);
@@ -535,15 +537,19 @@ void RespawnPlayer(int client, int player_id)
 	TeleportEntity(player_id, g_pos, NULL_VECTOR, NULL_VECTOR);
 }
 
-void Do_SpawnInfected(int client, const char[] type)
+void Do_SpawnInfected(int client, L4D2_Infected class)
 {
 	char arguments[16];
 	char feedback[64];
-	Format(feedback, sizeof(feedback), "A %s has been spawned", type);
-	Format(arguments, sizeof(arguments), "%s", type);
-	L4D2_CheatCommand(client, "z_spawn", arguments);
+	L4D2_GetInfectedClassName(class, arguments, 16);
+	Format(feedback, sizeof(feedback), "A %s has been spawned", arguments);
+	float location[3];
+	if (!Misc_TraceClientViewToLocation(client, location)) {
+		GetClientAbsOrigin(client, location);
+	}
+	TriggerSpawn(class, location, NULL_VECTOR);
 	NotifyPlayers(client, feedback);
-	LogAction(client, -1, "[NOTICE]: (%L) has spawned a %s", client, type);
+	LogAction(client, -1, "[NOTICE]: (%L) has spawned a %s", client, arguments);
 }
 
 void Do_SpawnItem(int client, const char[] type)
@@ -722,23 +728,23 @@ public int Menu_SpawnSInfectedHandler(Handle menu, MenuAction action, int cindex
 		switch (itempos)
 		{
 			case 0:
-				Do_SpawnInfected(cindex, "tank");
+				Do_SpawnInfected(cindex, L4D2Infected_Tank);
 			case 1:
-				Do_SpawnInfected(cindex, "witch");
+				Do_SpawnInfected(cindex, L4D2Infected_Witch);
 			case 2:
-				Do_SpawnInfected(cindex, "boomer");
+				Do_SpawnInfected(cindex, L4D2Infected_Boomer);
 			case 3:
-				Do_SpawnInfected(cindex, "hunter");
+				Do_SpawnInfected(cindex, L4D2Infected_Hunter);
 			case 4:
-				Do_SpawnInfected(cindex, "smoker");
+				Do_SpawnInfected(cindex, L4D2Infected_Smoker);
 			case 5:
-				Do_SpawnInfected(cindex, "spitter");
+				Do_SpawnInfected(cindex, L4D2Infected_Spitter);
 			case 6:
-				Do_SpawnInfected(cindex, "jockey");
+				Do_SpawnInfected(cindex, L4D2Infected_Jockey);
 			case 7:
-				Do_SpawnInfected(cindex, "charger");
+				Do_SpawnInfected(cindex, L4D2Infected_Charger);
 			case 8:
-				Do_SpawnInfected(cindex, "mob");
+				L4D2_CheatCommand(cindex, "z_spawn", "mob");
 		}
 		Menu_CreateSpecialInfectedMenu(cindex, false);
 	}

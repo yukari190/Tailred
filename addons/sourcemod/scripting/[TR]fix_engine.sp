@@ -73,7 +73,7 @@ public void OnClientDisconnect(int client)
 		EF_ClearAllVars(client);
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{

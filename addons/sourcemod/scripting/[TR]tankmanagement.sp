@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <[LIB]left4dhooks>
+#include <[LIB]colors>
 #include <[LIB]l4d2library>
 
 #define MAX_TANKS		2
@@ -95,7 +96,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
     return Plugin_Continue;
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	BS_bFinaleStarted = false;
 	bFinaleVehicleIncoming = false;
@@ -112,7 +113,7 @@ public Action newGame(Handle timer)
     if (teamAScore == 0 && teamBScore == 0) ClearArray(h_whosHadTank);
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	UnhookTankProps();
 	ClearArray(hTankPropsHit);
@@ -129,10 +130,10 @@ public Action L4D2_OnAwayInfected(int client)
     }
 }
 
-public void L4D2_OnTankFirstSpawn(int tankClient)
+public void L4D_OnTankSpawn(int tankClient)
 {
 	EmitSoundToAll("ui/pickup_secret01.wav");
-	L4D2_CPrintToChatAll("{G}Tank{W} 已产生!");
+	CPrintToChatAll("{G}Tank{W} 已产生!");
 	
 	UnhookTankProps();
 	ClearArray(hTankPropsHit);
@@ -148,7 +149,7 @@ public void L4D2_OnTankFirstSpawn(int tankClient)
 	
 	if (!BS_bFinaleStarted && !bIsBridge)
 	{
-		if (L4D2_GetMapValueInt("tank_z_fix")) FixZDistance(tankClient); // fix stuck tank spawns, ex c1m1
+		if (L4D_GetMapValueInt("tank_z_fix")) FixZDistance(tankClient); // fix stuck tank spawns, ex c1m1
 		if (BS_iTankCount[(!L4D2_IsSecondRound() ? 0 : 1)] < MAX_TANKS)
 		{
 			if (!L4D2_IsSecondRound())
@@ -165,7 +166,7 @@ public void L4D2_OnTankFirstSpawn(int tankClient)
 	}
 }
 
-public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
+public void L4D_OnTankPass(int oldTank, int newTank, int passCount)
 {
 	if (!IsFakeClient(newTank))
 	{
@@ -175,10 +176,10 @@ public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
 		  hidemessage = view_as<bool>(StringToInt(buffer));
 		if (!hidemessage)
 		{
-			L4D2_CPrintToChat(newTank, "{B}[{W}Tank 岩石选择器{B}]");
-			L4D2_CPrintToChat(newTank, "{G}Reload {W}= {B}双手举过头顶");
-			L4D2_CPrintToChat(newTank, "{G}Use {W}= {B}低抛");
-			L4D2_CPrintToChat(newTank, "{G}M2 {W}= {B}单手举过头顶");
+			CPrintToChat(newTank, "{B}[{W}Tank 岩石选择器{B}]");
+			CPrintToChat(newTank, "{G}Reload {W}= {B}双手举过头顶");
+			CPrintToChat(newTank, "{G}Use {W}= {B}低抛");
+			CPrintToChat(newTank, "{G}M2 {W}= {B}单手举过头顶");
 		}
 	}
 }
@@ -202,7 +203,7 @@ public Action Event_FinaleVehicleIncoming(Event event, const char[] name, bool d
 	bFinaleVehicleIncoming = true;
 }
 
-public void L4D2_OnTankDeath(int tankClient)
+public void L4D_OnTankDeath(int tankClient)
 {
 	int tankId = GetClientUserId(tankClient);
 	if (tankId)  chooseTank();
@@ -242,10 +243,10 @@ public Action Tank_Cmd(int client, int args)
             for (int i = 1; i <= MaxClients; i++)
             {
                 if (IsClientInGame(i) && !IsFakeClient(i) && L4D2_IsInfected(i))
-				  L4D2_CPrintToChat(i, "{O}%s {W}将成为 tank!", tankClientName);
+				  CPrintToChat(i, "{O}%s {W}将成为 tank!", tankClientName);
             }
         }
-        else L4D2_CPrintToChat(client, "{O}%s {W}将成为 tank!", tankClientName);
+        else CPrintToChat(client, "{O}%s {W}将成为 tank!", tankClientName);
     }
     return Plugin_Handled;
 }
@@ -302,7 +303,7 @@ public Action L4D_OnTryOfferingTankBot(int tank_index, bool &enterStasis)
 		for (int i = 1; i <= MaxClients; i++) 
 		{
 			if (!IsClientInGame(i) || !L4D2_IsInfected(i)) continue;
-			L4D2_CPrintToChat(i, "[Tank Control] {O}(%N) {G}开始第二次控制权!", tank_index);
+			CPrintToChat(i, "[Tank Control] {O}(%N) {G}开始第二次控制权!", tank_index);
 		}
 		L4D2_SetTankFrustration(tank_index, 100);
 		L4D2Direct_SetTankPassedCount(L4D2Direct_GetTankPassedCount() + 1);
@@ -372,7 +373,7 @@ public void outputTankToAll()
     if (tankClientId != -1)
     {
         GetClientName(tankClientId, tankClientName, sizeof(tankClientName));
-        L4D2_CPrintToChatAll("{O}%s {W}将成为 tank!", tankClientName);
+        CPrintToChatAll("{O}%s {W}将成为 tank!", tankClientName);
     }
 }
 
@@ -424,14 +425,14 @@ stock void FixZDistance(int client)
 	GetClientAbsOrigin(client, TankLocation);
 	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
 	{
-		float distance = L4D2_GetMapValueFloat("max_tank_z", 99999999999999.9);
+		float distance = L4D_GetMapValueFloat("max_tank_z", 99999999999999.9);
 		index = L4D2_GetSurvivorOfIndex(i);
 		if (index == 0 || !IsPlayerAlive(index)) continue;
 		GetClientAbsOrigin(index, TempSurvivorLocation);
 		if (FloatAbs(TempSurvivorLocation[2] - TankLocation[2]) > distance)
 		{
 			float WarpToLocation[3];
-			L4D2_GetMapValueVector("tank_warpto", WarpToLocation);
+			L4D_GetMapValueVector("tank_warpto", WarpToLocation);
 			if (!GetVectorLength(WarpToLocation, true))
 			{
 				LogMessage("[BS] tank_warpto missing from mapinfo.txt");

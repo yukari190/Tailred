@@ -110,7 +110,7 @@ public Action Timer_ForceInfectedAssault(Handle timer)
 	L4D2_CheatCommand(0, "nb_assault");
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
@@ -121,7 +121,7 @@ public void L4D2_OnRealRoundStart()
 	}
 }
 
-public void L4D2_OnRealRoundEnd()
+public void L4D_OnRoundEnd()
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -163,7 +163,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	return Plugin_Continue;
 }
 
-public void L4D2_OnTankFirstSpawn(int tankClient)
+public void L4D_OnTankSpawn(int tankClient)
 {
 	CreateTimer(0.1, Tank_Distance, tankClient, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }

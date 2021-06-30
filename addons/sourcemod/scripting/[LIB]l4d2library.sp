@@ -29,15 +29,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <[LIB]colors>
 #include <[LIB]left4dhooks>
 #include <[LIB]l4d2library>
-
-#define MAX_MESSAGE_LENGTH 250
-#define MAX_COLORS 6
-
-#define SERVER_INDEX 0
-#define NO_INDEX -1
-#define NO_PLAYER -2
 
 #define MOVESPEED_MAX     1000
 
@@ -83,8 +77,6 @@ Handle hSDKGiveDefaultAmmo;
 
 // l4d2lib
 StringMap hSurvivorModelsTrie;
-StringMap casterTrie;
-StringMap allowedCastersTrie;
 float fTankFlow;
 float fVsBossBuffer;
 float fDecayRate;
@@ -193,262 +185,6 @@ float g_fEndLocC[3];
 float g_fEndLocD[3];
 float g_fEndRotate;
 
-// Weapons
-StringMap hWeaponNamesTrie;
-StringMap hMeleeWeaponNamesTrie;
-StringMap hMeleeWeaponModelsTrie;
-
-char WeaponNames[view_as<int>(WEPID_UPGRADE_ITEM)+1][] =
-{
-    "weapon_none", "weapon_pistol", "weapon_smg",                                            // 0
-    "weapon_pumpshotgun", "weapon_autoshotgun", "weapon_rifle",                              // 3
-    "weapon_hunting_rifle", "weapon_smg_silenced", "weapon_shotgun_chrome",                  // 6
-    "weapon_rifle_desert", "weapon_sniper_military", "weapon_shotgun_spas",                  // 9
-    "weapon_first_aid_kit", "weapon_molotov", "weapon_pipe_bomb",                            // 12
-    "weapon_pain_pills", "weapon_gascan", "weapon_propanetank",                              // 15
-    "weapon_oxygentank", "weapon_melee", "weapon_chainsaw",                                  // 18
-    "weapon_grenade_launcher", "weapon_ammo_pack", "weapon_adrenaline",                      // 21
-    "weapon_defibrillator", "weapon_vomitjar", "weapon_rifle_ak47",                          // 24
-    "weapon_gnome", "weapon_cola_bottles", "weapon_fireworkcrate",                           // 27
-    "weapon_upgradepack_incendiary", "weapon_upgradepack_explosive", "weapon_pistol_magnum", // 30
-    "weapon_smg_mp5", "weapon_rifle_sg552", "weapon_sniper_awp",                             // 33
-    "weapon_sniper_scout", "weapon_rifle_m60", "weapon_tank_claw",                           // 36
-    "weapon_hunter_claw", "weapon_charger_claw", "weapon_boomer_claw",                       // 39
-    "weapon_smoker_claw", "weapon_spitter_claw", "weapon_jockey_claw",                       // 42
-    "weapon_machinegun", "vomit", "splat",                                                   // 45
-    "pounce", "lounge", "pull",                                                              // 48
-    "choke", "rock", "physics",                                                              // 51
-    "ammo", "upgrade_item"                                                                   // 54
-};
-
-char LongWeaponNames[view_as<int>(WEPID_UPGRADE_ITEM)+1][] = 
-{
-    "None", "Pistol", "Uzi", // 0
-    "Pump", "Autoshotgun", "M-16", // 3
-    "Hunting Rifle", "Mac", "Chrome", // 6
-    "Desert Rifle", "Military Sniper", "SPAS Shotgun", // 9
-    "First Aid Kit", "Molotov", "Pipe Bomb", // 12
-    "Pills", "Gascan", "Propane Tank", // 15
-    "Oxygen Tank", "Melee", "Chainsaw", // 18
-    "Grenade Launcher", "Ammo Pack", "Adrenaline", // 21
-    "Defibrillator", "Bile Bomb", "AK-47", // 24
-    "Gnome", "Cola Bottles", "Fireworks", // 27
-    "Incendiary Ammo Pack", "Explosive Ammo Pack", "Deagle", // 30
-    "MP5", "SG552", "AWP", // 33
-    "Scout", "M60", "Tank Claw", // 36
-    "Hunter Claw", "Charger Claw", "Boomer Claw", // 39
-    "Smoker Claw", "Spitter Claw", "Jockey Claw", // 42
-    "Turret", "vomit", "splat", // 45
-    "pounce", "lounge", "pull", // 48
-    "choke", "rock", "physics", // 51
-    "ammo", "upgrade_item" // 54
-};
-
-char MeleeWeaponNames[view_as<int>(WEPID_PITCHFORK)+1][] =
-{
-    "",
-    "knife",
-    "baseball_bat",
-    "chainsaw",
-    "cricket_bat",
-    "crowbar",
-    "didgeridoo",
-    "electric_guitar",
-    "fireaxe",
-    "frying_pan",
-    "golfclub",
-    "katana",
-    "machete",
-    "riotshield",
-    "tonfa",
-    "shovel",
-    "pitchfork"
-};
-
-char WeaponModels[view_as<int>(WEPID_UPGRADE_ITEM)+1][] =
-{
-    "",
-    "/w_models/weapons/w_pistol_B.mdl",
-    "/w_models/weapons/w_smg_uzi.mdl",
-    "/w_models/weapons/w_shotgun.mdl",
-    "/w_models/weapons/w_autoshot_m4super.mdl",
-    "/w_models/weapons/w_rifle_m16a2.mdl",
-    "/w_models/weapons/w_sniper_mini14.mdl",
-    "/w_models/weapons/w_smg_a.mdl",
-    "/w_models/weapons/w_pumpshotgun_a.mdl",
-    "/w_models/weapons/w_desert_rifle.mdl",           // "/w_models/weapons/w_rifle_b.mdl"
-    "/w_models/weapons/w_sniper_military.mdl",
-    "/w_models/weapons/w_shotgun_spas.mdl",
-    "/w_models/weapons/w_eq_medkit.mdl",
-    "/w_models/weapons/w_eq_molotov.mdl",
-    "/w_models/weapons/w_eq_pipebomb.mdl",
-    "/w_models/weapons/w_eq_painpills.mdl",
-    "/props_junk/gascan001a.mdl",
-    "/props_junk/propanecanister001.mdl",
-    "/props_equipment/oxygentank01.mdl",
-    "",
-    "/weapons/melee/w_chainsaw.mdl",
-    "/w_models/weapons/w_grenade_launcher.mdl",
-    "",
-    "/w_models/weapons/w_eq_adrenaline.mdl",
-    "/w_models/weapons/w_eq_defibrillator.mdl",
-    "/w_models/weapons/w_eq_bile_flask.mdl",
-    "/w_models/weapons/w_rifle_ak47.mdl",
-    "/props_junk/gnome.mdl",
-    "/w_models/weapons/w_cola.mdl",
-    "/props_junk/explosive_box001.mdl",
-    "/w_models/weapons/w_eq_incendiary_ammopack.mdl",
-    "/w_models/weapons/w_eq_explosive_ammopack.mdl",
-    "/w_models/weapons/w_desert_eagle.mdl",
-    "/w_models/weapons/w_smg_mp5.mdl",
-    "/w_models/weapons/w_rifle_sg552.mdl",
-    "/w_models/weapons/w_sniper_awp.mdl",
-    "/w_models/weapons/w_sniper_scout.mdl",
-    "/w_models/weapons/w_m60.mdl",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-};
-
-char MeleeWeaponModels[view_as<int>(WEPID_PITCHFORK)+1][] =
-{
-    "",
-    "/w_models/weapons/w_knife_t.mdl",
-    "/weapons/melee/w_bat.mdl",
-    "/weapons/melee/w_chainsaw.mdl",
-    "/weapons/melee/w_cricket_bat.mdl",
-    "/weapons/melee/w_crowbar.mdl",
-    "/weapons/melee/w_didgeridoo.mdl",
-    "/weapons/melee/w_electric_guitar.mdl",
-    "/weapons/melee/w_fireaxe.mdl",
-    "/weapons/melee/w_frying_pan.mdl",
-    "/weapons/melee/w_golfclub.mdl",
-    "/weapons/melee/w_katana.mdl",
-    "/weapons/melee/w_machete.mdl",
-    "/weapons/melee/w_riotshield.mdl",
-    "/weapons/melee/w_tonfa.mdl",
-    "/weapons/melee/v_shovel.mdl",
-    "/weapons/melee/v_pitchfork.mdl"
-};
-
-char LongMeleeWeaponNames[view_as<int>(WEPID_PITCHFORK)+1][] =
-{
-    "None",
-    "Knife",
-    "Baseball Bat",
-    "Chainsaw",
-    "Cricket Bat",
-    "Crowbar",
-    "didgeridoo", // derp
-    "Guitar",
-    "Axe",
-    "Frying Pan",
-    "Golf Club",
-    "Katana",
-    "Machete",
-    "Riot Shield",
-    "Tonfa",
-    "Shovel",
-    "Pitchfork"
-};
-
-int WeaponSlots[view_as<int>(WEPID_UPGRADE_ITEM)+1] =
-{
-    -1, // WEPID_NONE
-    1,  // WEPID_PISTOL
-    0,  // WEPID_SMG
-    0,  // WEPID_PUMPSHOTGUN
-    0,  // WEPID_AUTOSHOTGUN
-    0,  // WEPID_RIFLE
-    0,  // WEPID_HUNTING_RIFLE
-    0,  // WEPID_SMG_SILENCED
-    0,  // WEPID_SHOTGUN_CHROME
-    0,  // WEPID_RIFLE_DESERT
-    0,  // WEPID_SNIPER_MILITARY
-    0,  // WEPID_SHOTGUN_SPAS
-    3,  // WEPID_FIRST_AID_KIT
-    2,  // WEPID_MOLOTOV
-    2,  // WEPID_PIPE_BOMB
-    4,  // WEPID_PAIN_PILLS
-    -1, // WEPID_GASCAN
-    -1, // WEPID_PROPANE_TANK
-    -1, // WEPID_OXYGEN_TANK
-    1,  // WEPID_MELEE
-    1,  // WEPID_CHAINSAW
-    0,  // WEPID_GRENADE_LAUNCHER
-    3,  // WEPID_AMMO_PACK
-    4,  // WEPID_ADRENALINE
-    3,  // WEPID_DEFIBRILLATOR
-    2,  // WEPID_VOMITJAR
-    0,  // WEPID_RIFLE_AK47
-    -1, // WEPID_GNOME_CHOMPSKI
-    -1, // WEPID_COLA_BOTTLES
-    -1, // WEPID_FIREWORKS_BOX
-    3,  // WEPID_INCENDIARY_AMMO
-    3,  // WEPID_FRAG_AMMO
-    1,  // WEPID_PISTOL_MAGNUM
-    0,  // WEPID_SMG_MP5
-    0,  // WEPID_RIFLE_SG552
-    0,  // WEPID_SNIPER_AWP
-    0,  // WEPID_SNIPER_SCOUT
-    0,  // WEPID_RIFLE_M60
-    -1, // WEPID_TANK_CLAW
-    -1, // WEPID_HUNTER_CLAW
-    -1, // WEPID_CHARGER_CLAW
-    -1, // WEPID_BOOMER_CLAW
-    -1, // WEPID_SMOKER_CLAW
-    -1, // WEPID_SPITTER_CLAW
-    -1, // WEPID_JOCKEY_CLAW
-    -1, // WEPID_MACHINEGUN
-    -1, // WEPID_FATAL_VOMIT
-    -1, // WEPID_EXPLODING_SPLAT
-    -1, // WEPID_LUNGE_POUNCE
-    -1, // WEPID_LOUNGE
-    -1, // WEPID_FULLPULL
-    -1, // WEPID_CHOKE
-    -1, // WEPID_THROWING_ROCK
-    -1, // WEPID_TURBO_PHYSICS
-    -1, // WEPID_AMMO
-    -1  // WEPID_UPGRADE_ITEM
-};
-
-
-// colors.inc
-enum Colors
-{
- 	Color_Default = 0,
-	Color_Green,
-	Color_Lightgreen,
-	Color_Red,
-	Color_Blue,
-	Color_Olive
-}
-
-/* Colors' properties */
-//				白色  橙色  浅绿色  红色  蓝色 橄榄绿
-char CTag[][] = {"{W}", "{O}", "{LG}", "{R}", "{B}", "{G}"};
-char CTagCode[][] = {"\x01", "\x04", "\x03", "\x03", "\x03", "\x05"};
-bool CTagReqSayText2[] = {false, false, true, true, true, false};
-
-/* Game default profile */
-bool CProfile_Colors[] = {true, true, false, false, false, false};
-int CProfile_TeamIndex[] = {NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX, NO_INDEX};
-
 
 
 // ====================================================================================================
@@ -478,11 +214,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// ====================================================================================================
 	// FORWARDS
 	// List should match the CreateDetour list of forwards.
-	hFwdRoundStart = new GlobalForward("L4D2_OnRealRoundStart", ET_Ignore);
-	hFwdRoundEnd = new GlobalForward("L4D2_OnRealRoundEnd", ET_Ignore);
-	hFwdFirstTankSpawn = new GlobalForward("L4D2_OnTankFirstSpawn", ET_Ignore, Param_Cell);
-	hFwdTankPassControl = new GlobalForward("L4D2_OnTankPassControl", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-	hFwdTankDeath = new GlobalForward("L4D2_OnTankDeath", ET_Ignore, Param_Cell, Param_Cell);
+	hFwdRoundStart = new GlobalForward("L4D_OnRoundStart", ET_Ignore);
+	hFwdRoundEnd = new GlobalForward("L4D_OnRoundEnd", ET_Ignore);
+	hFwdFirstTankSpawn = new GlobalForward("L4D_OnTankSpawn", ET_Ignore, Param_Cell);
+	hFwdTankPassControl = new GlobalForward("L4D_OnTankPass", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	hFwdTankDeath = new GlobalForward("L4D_OnTankDeath", ET_Ignore, Param_Cell, Param_Cell);
 	hFwd_PlayerHurt = new GlobalForward("L4D2_OnPlayerHurt", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell);
 	hFwdJoinSurvivor = new GlobalForward("L4D2_OnJoinSurvivor", ET_Event, Param_Cell);
 	hFwdAwaySurvivor = new GlobalForward("L4D2_OnAwaySurvivor", ET_Event, Param_Cell);
@@ -513,8 +249,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_SetAnimFling", _native_SetAnimFling);
 	CreateNative("L4D2_SetPlayerRespawn", _native_SetPlayerRespawn);
 	CreateNative("L4D2_PauseClient", _native_PauseClient);
-	CreateNative("L4D2_IsClientCaster", _native_IsClientCaster);
-	CreateNative("L4D2_IsIDCaster", _native_IsIDCaster);
 	CreateNative("L4D2_GetRandomSurvivor", _native_GetRandomSurvivor);
 	CreateNative("L4D2_IdentifySurvivor", _native_IdentifySurvivor);
 	CreateNative("L4D2_ClientModelToSC", _native_ClientModelToSC);
@@ -546,25 +280,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_GetSurvivorCount", _native_GetSurvivorCount);
 	CreateNative("L4D2_GetSurvivorOfIndex", _native_GetSurvivorOfIndex);
 	CreateNative("L4D2_GiveDefaultAmmo", _native_GiveDefaultAmmo);
-	CreateNative("L4D2_GetMapValueInt", _native_GetMapValueInt);
-	CreateNative("L4D2_GetMapValueFloat", _native_GetMapValueFloat);
-	CreateNative("L4D2_GetMapValueVector", _native_GetMapValueVector);
-	CreateNative("L4D2_IsEntityInSaferoom", _native_IsEntityInSaferoom);
-	//CreateNative("L4D2_IsPlayerInSaferoom", _native_IsPlayerInSaferoom);
-	CreateNative("L4D2_GetSlotFromWeaponId", _native_GetSlotFromWeaponId);
-	CreateNative("L4D2_HasValidWeaponModel", _native_HasValidWeaponModel);
-	CreateNative("L4D2_HasValidMeleeWeaponModel", _native_HasValidMeleeWeaponModel);
-	CreateNative("L4D2_WeaponNameToId", _native_WeaponNameToId);
-	CreateNative("L4D2_GetWeaponName", _native_GetWeaponName);
-	CreateNative("L4D2_GetLongWeaponName", _native_GetLongWeaponName);
-	CreateNative("L4D2_GetLongMeleeWeaponName", _native_GetLongMeleeWeaponName);
-	CreateNative("L4D2_GetWeaponModel", _native_GetWeaponModel);
-	CreateNative("L4D2_IdentifyWeapon", _native_IdentifyWeapon);
-	CreateNative("L4D2_GetMeleeWeaponNameFromEntity", _native_GetMeleeWeaponNameFromEntity);
-	CreateNative("L4D2_IdentifyMeleeWeapon", _native_IdentifyMeleeWeapon);
-	CreateNative("L4D2_ConvertWeaponSpawn", _native_ConvertWeaponSpawn);
-	CreateNative("L4D2_CPrintToChat", _native_CPrintToChat);
-	CreateNative("L4D2_CPrintToChatAll", _native_CPrintToChatAll);
+	CreateNative("L4D_GetMapValueInt", _native_GetMapValueInt);
+	CreateNative("L4D_GetMapValueFloat", _native_GetMapValueFloat);
+	CreateNative("L4D_GetMapValueVector", _native_GetMapValueVector);
+	CreateNative("L4D_IsEntityInSaferoom", _native_IsEntityInSaferoom);
+	//CreateNative("L4D_IsPlayerInSaferoom", _native_IsPlayerInSaferoom);
 	
 	RegPluginLibrary("l4d2library");
 	return APLRes_Success;
@@ -584,28 +304,11 @@ public void OnPluginStart()
 		delete kvData;
 	}
 	
-	casterTrie = new StringMap();
-	allowedCastersTrie = new StringMap();
-	
     hSurvivorModelsTrie = new StringMap();
     for (int i = 0; i < 8; i++)
 	{
 		hSurvivorModelsTrie.SetValue(SurvivorModels[i], i);
 	}
-	
-	hWeaponNamesTrie = new StringMap();
-	for (int i = 0; i < view_as<int>(WEPID_UPGRADE_ITEM)+1; i++)
-	{
-		hWeaponNamesTrie.SetValue(WeaponNames[view_as<WeaponId>(i)], i);
-	}
-	
-	hMeleeWeaponNamesTrie = new StringMap();
-	hMeleeWeaponModelsTrie = new StringMap();
-    for (int i = 0; i < view_as<int>(MeleeWeaponId); ++i)
-    {
-        hMeleeWeaponNamesTrie.SetValue(MeleeWeaponNames[view_as<MeleeWeaponId>(i)], i);
-        hMeleeWeaponModelsTrie.SetString(MeleeWeaponModels[view_as<MeleeWeaponId>(i)], MeleeWeaponNames[view_as<MeleeWeaponId>(i)]);
-    }
 	
 	
 	LoadGameData();
@@ -617,11 +320,6 @@ public void OnPluginStart()
 	// ====================================================================================================
 	AddCommandListener(Say_Callback, "say");
 	AddCommandListener(Say_Callback, "say_team");
-	RegConsoleCmd("sm_cast", Cast_Cmd, "将呼叫玩家注册为裁判, 这样该回合将不会启动, 除非他们已经准备好");
-	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "将玩家注册为裁判, 这样一轮除非准备就绪, 否则该回合将无法进行");
-	RegServerCmd("sm_resetcasters", ResetCaster_Cmd, "用于重置比赛之间的裁判. 这应该用在confogl_off.cfg或您的系统等效");
-	RegServerCmd("sm_add_caster_id", AddCasterSteamID_Cmd, "用于将裁判添加到白名单中，即允许谁自注册为裁判");
-	RegConsoleCmd("sm_notcasting", NotCasting_Cmd, "取消自己作为裁判或允许管理员取消其他玩家");
 	
 	
 	
@@ -663,8 +361,6 @@ public void OnPluginStart()
 	HookEvent("versus_round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 	HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 	
-	HookEvent("server_spawn", CEvent_MapStart, EventHookMode_PostNoCopy);
-
 	HookEvent("tank_spawn", TankSpawn_Event, EventHookMode_Post);
 	HookEvent("item_pickup", ItemPickup_Event, EventHookMode_Post);
 	HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
@@ -935,7 +631,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 
 /* Events */
-public Action RoundEnd_Event(Event event, char[] name, bool dontBroadcast)
+public Action RoundEnd_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (bInRound)
 	{
@@ -946,7 +642,7 @@ public Action RoundEnd_Event(Event event, char[] name, bool dontBroadcast)
 	}
 }
 
-public Action RoundStart_Event(Event event, char[] name, bool dontBroadcast)
+public Action RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	CreateTimer(0.5, RoundStart_Delay, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
@@ -996,7 +692,7 @@ public Action TankSpawnPercentCheck(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action TankSpawn_Event(Event event, char[] name, bool dontBroadcast)
+public Action TankSpawn_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bExpectTankSpawn) return;
 	bExpectTankSpawn = false;
@@ -1037,10 +733,12 @@ public Action ResumeTankTimer(Handle timer, any client)
 	    numSurvivors++;
 	}
 	int attacker = survivors[GetRandomInt(0, numSurvivors - 1)];
-	SDKHooks_TakeDamage(client, attacker, attacker, 0.1, DMG_BULLET);
+	SDKHooks_TakeDamage(client, attacker, attacker, 100.0, DMG_BULLET);
+	int iHealth = GetClientHealth(client) + 100;
+	SetEntityHealth(client, iHealth);
 }
 
-public Action ItemPickup_Event(Event event, char[] name, bool dontBroadcast)
+public Action ItemPickup_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bIsTankActive)
 	{
@@ -1070,7 +768,7 @@ public Action ItemPickup_Event(Event event, char[] name, bool dontBroadcast)
 	}
 }
 
-public Action PlayerDeath_Event(Event event, char[] name, bool dontBroadcast)
+public Action PlayerDeath_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bIsTankActive)
 	{
@@ -1098,7 +796,7 @@ public Action TankDeath_Timer(Handle timer, any attacker)
 	ResetStatus();
 }
 
-public Action PlayerHurt_Event(Event event, char[] name, bool dontBroadcast)
+public Action PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	int victim = GetClientOfUserId(event.GetInt("userid"));
 	int attacker;
@@ -1130,7 +828,7 @@ public Action PlayerHurt_Event(Event event, char[] name, bool dontBroadcast)
 	Call_Finish();
 }
 
-public Action PlayerTeam_Event(Event event, char[] name, bool dontBroadcast)
+public Action PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	int oldteam = event.GetInt("oldteam");
@@ -1186,7 +884,7 @@ public Action BuildArray_Timer(Handle timer)
 	Survivors_RebuildArray();
 }
 
-public Action SI_BuildIndex_Event(Event event, char[] name, bool dontBroadcast)
+public Action SI_BuildIndex_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	Survivors_RebuildArray();
 }
@@ -1203,17 +901,6 @@ public Action OnInfectedSpawn(Event event, const char[] name, bool dontBroadcast
 	Call_Finish();
 }
 
-public Action CEvent_MapStart(Event event, char[] name, bool dontBroadcast)
-{
-	CProfile_Colors[Color_Lightgreen] = true;
-	CProfile_Colors[Color_Red] = true;
-	CProfile_Colors[Color_Blue] = true;
-	CProfile_Colors[Color_Olive] = true;
-	CProfile_TeamIndex[Color_Lightgreen] = SERVER_INDEX;
-	CProfile_TeamIndex[Color_Red] = 3;
-	CProfile_TeamIndex[Color_Blue] = 2;
-}
-
 public Action Event_ServerConVar(Event event, const char[] name, bool dontBroadcast)
 {
 	return Plugin_Handled;
@@ -1228,114 +915,6 @@ public Action Say_Callback(int client, char[] command, int args)
     GetCmdArg(1, sayWord, sizeof(sayWord));
     if (sayWord[0] == '!' || sayWord[0] == '/') return Plugin_Handled;
     return Plugin_Continue; 
-}
-
-public Action Cast_Cmd(int client, int args)
-{	
-	char buffer[64];
-	GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer));
-
-	if (GetClientTeam(client) != 1) ChangeClientTeam(client, 1);
-
-	casterTrie.SetValue(buffer, 1);
-	CPrintToChat(client, "{B}[{W}Cast{B}] {W}您已将自己注册为裁判");
-	CPrintToChat(client, "{B}[{W}Cast{B}] {W}重新连接以使您的插件正常工作.");
-	return Plugin_Handled;
-}
-
-public Action Caster_Cmd(int client, int args)
-{
-	if (args < 1)
-	{
-		ReplyToCommand(client, "[SM] Usage: sm_caster <player>");
-		return Plugin_Handled;
-	}
-	char buffer[64];
-	GetCmdArg(1, buffer, sizeof(buffer));
-	int target = FindTarget(client, buffer, true, false);
-	if (target > 0)
-	{
-		if (GetClientAuthId(target, AuthId_Steam3, buffer, sizeof(buffer)))
-		{
-			casterTrie.SetValue(buffer, 1);
-			ReplyToCommand(client, "注册 %N 作为裁判", target);
-			CPrintToChat(client, "{B}[{G}!{B}] {W}管理员已将您注册为裁判");
-		}
-		else
-		{
-			ReplyToCommand(client, "找不到Steam ID. 检查拼写错误并让玩家完全连接.");
-		}
-	}
-	return Plugin_Handled;
-}
-
-public Action ResetCaster_Cmd(int args)
-{
-	casterTrie.Clear();
-	return Plugin_Handled;
-}
-
-public Action AddCasterSteamID_Cmd(int args)
-{
-	char buffer[128];
-	GetCmdArg(1, buffer, sizeof(buffer));
-	if (buffer[0] != EOS) 
-	{
-		int index;
-		GetTrieValue(allowedCastersTrie, buffer, index);
-		if (index == -1)
-		{
-			SetTrieValue(allowedCastersTrie, buffer, 1);
-			PrintToServer("[casters_database] 已添加 '%s'", buffer);
-		}
-		else PrintToServer("[casters_database] '%s' 已经存在", buffer);
-	}
-	else PrintToServer("[casters_database] 未指定args / 空字符");
-	return Plugin_Handled;
-}
-
-public Action NotCasting_Cmd(int client, int args)
-{
-	char buffer[64];
-	if (args < 1)
-	{
-		GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer));
-		casterTrie.Remove(buffer);
-		CPrintToChat(client, "{B}[{W}Reconnect{B}] {W}您将重新连接到服务器..");
-		CPrintToChat(client, "{B}[{W}Reconnect{B}] {W}有一个黑屏, 而不是一个加载栏!");
-		CreateTimer(3.0, Reconnect, client);
-		return Plugin_Handled;
-	}
-	else
-	{
-		if (!L4D2_IsClientAdmin(client))
-		{
-			ReplyToCommand(client, "只有管理员可以删除其他裁判. 如果您想删除自己, 请使用不带参数的sm_notcasting.");
-			return Plugin_Handled;
-		}
-		
-		GetCmdArg(1, buffer, sizeof(buffer));
-		
-		int target = FindTarget(client, buffer, true, false);
-		if (target > 0)
-		{
-			if (GetClientAuthId(target, AuthId_Steam3, buffer, sizeof(buffer)))
-			{
-				casterTrie.Remove(buffer);
-				ReplyToCommand(client, "%N 不再是裁判", target);
-			}
-			else
-			{
-				ReplyToCommand(client, "找不到Steam ID. 检查拼写错误并让玩家完全连接.");
-			}
-		}
-		return Plugin_Handled;
-	}
-}
-
-public Action Reconnect(Handle timer, any client)
-{
-	if (IsClientInGame(client)) ReconnectClient(client);
 }
 
 
@@ -1507,19 +1086,6 @@ public int _native_PauseClient(Handle plugin, int numParams)
 	PauseClient(client, b);
 }
 
-public int _native_IsClientCaster(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	return view_as<int>(IsClientCaster(client));
-}
-
-public int _native_IsIDCaster(Handle plugin, int numParams)
-{
-	char buffer[64];
-	GetNativeString(1, buffer, sizeof(buffer));
-	return view_as<int>(IsIDCaster(buffer));
-}
-
 public int _native_GetRandomSurvivor(Handle plugin, int numParams)
 {
 	int survivors[NUM_OF_SURVIVORS];
@@ -1645,7 +1211,7 @@ public int _native_NearestActiveSurvivorDistance(Handle plugin, int numParams)
 	{
 		int index = iSurvivorIndex[i];
 		if (index == 0 || !IsPlayerAlive(index)) continue;
-		if (!GetEntProp(client, Prop_Send, "m_isIncapacitated"))
+		if (!L4D2_IsPlayerIncap(client))
 		{
 			float target[3];
 			GetClientAbsOrigin(index, target);
@@ -1816,179 +1382,6 @@ public int _native_IsEntityInSaferoom(Handle plugin, int numParams)
 	GetClientEyePosition(client, locationB);
 	return IsPointInStartSaferoom(locationA) || IsPointInStartSaferoom(locationB) || IsPointInEndSaferoom(locationA) || IsPointInEndSaferoom(locationB);
 }*/
-
-public int _native_IdentifyWeapon(Handle plugin, int numParams)
-{
-	int entity = GetNativeCell(1);
-	return view_as<int>(IdentifyWeapon(entity));
-}
-
-public int _native_IdentifyMeleeWeapon(Handle plugin, int numParams)
-{
-	int entity = GetNativeCell(1);
-    if (IdentifyWeapon(entity) != WEPID_MELEE)
-    {
-        return view_as<int>(WEPID_MELEE_NONE);
-    }
-
-    char sName[128];
-    if (! GetMeleeWeaponNameFromEntity(entity, sName, sizeof(sName)))
-    {
-        return view_as<int>(WEPID_MELEE_NONE);
-    }
-
-    int id;
-    if (hMeleeWeaponNamesTrie.GetValue(sName, id))
-    {
-        return id;
-    }
-	return view_as<int>(WEPID_MELEE_NONE);
-}
-
-public int _native_HasValidWeaponModel(Handle plugin, int numParams)
-{
-	WeaponId wepid = GetNativeCell(1);
-	return HasValidWeaponModel(wepid);
-}
-
-public int _native_HasValidMeleeWeaponModel(Handle plugin, int numParams)
-{
-	MeleeWeaponId wepid = GetNativeCell(1);
-	return L4D2_IsValidMeleeWeaponId(wepid) && MeleeWeaponModels[wepid][0] != '\0';
-}
-
-public int _native_WeaponNameToId(Handle plugin, int numParams)
-{
-	int len;
-	GetNativeStringLength(1, len);
-	len += 1;
-	char[] weaponName= new char[len];
-	GetNativeString(1, weaponName, len);
-	return view_as<int>(WeaponNameToId(weaponName));
-}
-
-public int _native_ConvertWeaponSpawn(Handle plugin, int numParams)
-{
-	int entity = GetNativeCell(1);
-	WeaponId wepid = GetNativeCell(2);
-	int count = GetNativeCell(3);
-	int len;
-	GetNativeStringLength(4, len);
-	len += 1;
-	char[] model = new char[len];
-	GetNativeString(4, model, len);
-
-    if(!IsValidEntity(entity)) return -1;
-    if(!L4D2_IsValidWeaponId(wepid)) return -1;
-    if(model[0] == '\0' && !HasValidWeaponModel(wepid)) return -1;
-
-    float origins[3], angles[3];
-    GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origins);
-    GetEntPropVector(entity, Prop_Send, "m_angRotation", angles);
-    AcceptEntityInput(entity, "kill");
-    
-    entity = CreateEntityByName("weapon_spawn");
-    if(!IsValidEntity(entity)) return -1;
-    SetEntProp(entity, Prop_Send, "m_weaponID", wepid);
-
-    char buf[64];
-    if(model[0] == '\0')
-    {
-        SetEntityModel(entity, model);
-    }
-    else
-    {
-        GetWeaponModel(wepid, buf, sizeof(buf));
-        SetEntityModel(entity, buf);
-    }
-
-    IntToString(count, buf, sizeof(buf));
-    DispatchKeyValue(entity, "count", buf);
-
-    TeleportEntity(entity, origins, angles, NULL_VECTOR);
-    DispatchSpawn(entity);
-    SetEntityMoveType(entity,MOVETYPE_NONE);
-	return entity;
-}
-
-public int _native_GetLongWeaponName(Handle plugin, int numParams)
-{
-	WeaponId wepid = GetNativeCell(1);
-	int len = GetNativeCell(3);
-	char[] nameBuffer = new char[len];
-	strcopy(nameBuffer, len, (L4D2_IsValidWeaponId(view_as<WeaponId>(wepid)) ? (LongWeaponNames[view_as<int>(wepid)]) : ""));
-	SetNativeString(2, nameBuffer, len);
-}
-
-public int _native_GetLongMeleeWeaponName(Handle plugin, int numParams)
-{
-	MeleeWeaponId wepid = GetNativeCell(1);
-	int len = GetNativeCell(3);
-	char[] nameBuffer = new char[len];
-	strcopy(nameBuffer, len, (L4D2_IsValidMeleeWeaponId(view_as<MeleeWeaponId>(wepid)) ? (LongMeleeWeaponNames[view_as<int>(wepid)]) : ""));
-	SetNativeString(2, nameBuffer, len);
-}
-
-public int _native_GetMeleeWeaponNameFromEntity(Handle plugin, int numParams)
-{
-	int entity = GetNativeCell(1);
-	int len = GetNativeCell(3);
-	char[] buffer = new char[len];
-	if (GetMeleeWeaponNameFromEntity(entity, buffer, len))
-	{
-		SetNativeString(2, buffer, len);
-		return true;
-	}
-	return false;
-}
-
-public int _native_GetSlotFromWeaponId(Handle plugin, int numParams)
-{
-	WeaponId wepid = GetNativeCell(1);
-	return L4D2_IsValidWeaponId(wepid) ? WeaponSlots[wepid] : -1;
-}
-
-public int _native_GetWeaponModel(Handle plugin, int numParams)
-{
-	WeaponId wepid = GetNativeCell(1);
-	int len = GetNativeCell(3);
-	char[] modelBuffer = new char[len];
-	GetWeaponModel(wepid, modelBuffer, len);
-	SetNativeString(2, modelBuffer, len);
-}
-
-public int _native_GetWeaponName(Handle plugin, int numParams)
-{
-	WeaponId wepid = GetNativeCell(1);
-	int len = GetNativeCell(3);
-	char[] nameBuffer = new char[len];
-	strcopy(nameBuffer, len, (L4D2_IsValidWeaponId(view_as<WeaponId>(wepid)) ? (WeaponNames[view_as<int>(wepid)]) : ""));
-	SetNativeString(2, nameBuffer, len);
-}
-
-public int _native_CPrintToChat(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	char szMessage[250];
-	FormatNativeString(0, 2, 3, sizeof(szMessage), _, szMessage);
-	CPrintToChat(client, "%s", szMessage);
-}
-
-public int _native_CPrintToChatAll(Handle plugin, int numParams)
-{
-	char szMessage[250];
-	char szBuffer[250];
-	FormatNativeString(0, 1, 2, sizeof(szMessage), _, szMessage);
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i) && !IsFakeClient(i))
-		{
-			SetGlobalTransTarget(i);
-			VFormat(szBuffer, 250, szMessage, 2);
-			CPrintToChat(i, "%s", szBuffer);
-		}
-	}
-}
 
 
 
@@ -2174,175 +1567,6 @@ void Survivors_RebuildArray()
 		iSurvivorIndex[ichar] = client;
 		iSurvivorCount++;
 	}
-}
-
-bool HasValidWeaponModel(WeaponId wepid)
-{
-    return L4D2_IsValidWeaponId(wepid) && WeaponModels[wepid][0] != '\0';
-}
-
-WeaponId WeaponNameToId(const char[] weaponName)
-{
-    WeaponId id;
-    if (hWeaponNamesTrie.GetValue(weaponName, id))
-    {
-        return id;
-    }
-    return WEPID_NONE;
-}
-
-void GetWeaponModel(WeaponId wepid, char[] modelBuffer, int length)
-{
-    strcopy(modelBuffer, length, HasValidWeaponModel(view_as<WeaponId>(wepid)) ? (WeaponModels[view_as<int>(wepid)]) : "");
-}
-
-WeaponId IdentifyWeapon(int entity)
-{
-    if (!entity || !IsValidEntity(entity) || !IsValidEdict(entity))
-    {
-        return WEPID_NONE;
-    }
-    char class[64];
-    if (!GetEdictClassname(entity, class, sizeof(class)))
-    {
-        return WEPID_NONE;
-    }
-
-    if (StrEqual(class, "weapon_spawn") || StrEqual(class, "weapon_item_spawn"))
-    {
-        return view_as<WeaponId>(GetEntProp(entity,Prop_Send,"m_weaponID"));
-    }
-
-    int len = strlen(class);
-    if (len-6 > 0 && StrEqual(class[len-6], "_spawn"))
-    {
-        class[len-6]='\0';
-        return WeaponNameToId(class);
-    }
-    
-    return WeaponNameToId(class);
-}
-
-bool GetMeleeWeaponNameFromEntity(int entity, char[] buffer, int length)
-{
-    char classname[64];
-    if (! GetEdictClassname(entity, classname, sizeof(classname)))
-    {
-        return false;
-    }
-    if (StrEqual(classname, "weapon_melee_spawn"))
-    {
-        char sModelName[128];
-        GetEntPropString(entity, Prop_Data, "m_ModelName", sModelName, sizeof(sModelName));
-
-        if (strncmp(sModelName, "models/", 7, false) == 0)
-        {
-            strcopy(sModelName, sizeof(sModelName), sModelName[6]);
-        }
-
-        if (hMeleeWeaponModelsTrie.GetString(sModelName, buffer, length))
-        {
-            return true;
-        }
-        return false;
-    }
-    else if (StrEqual(classname, "weapon_melee"))
-    {
-        GetEntPropString(entity, Prop_Data, "m_strMapSetScriptName", buffer, length);
-        return true;
-    }
-    return false;
-}
-
-void CPrintToChat(int client, const char[] szMessage, any ...)
-{
-	if (client <= 0 || client > MaxClients)
-		ThrowError("Invalid client index %d", client);
-	
-	if (!IsClientInGame(client))
-		ThrowError("Client %d is not in game", client);
-	
-	char szBuffer[MAX_MESSAGE_LENGTH];
-	char szCMessage[MAX_MESSAGE_LENGTH];
-	SetGlobalTransTarget(client);
-	Format(szBuffer, sizeof(szBuffer), "\x01[SM]%s", szMessage);
-	VFormat(szCMessage, sizeof(szCMessage), szBuffer, 3);
-	
-	int index = NO_INDEX;
-	ReplaceString(szCMessage, sizeof(szCMessage), "{teamcolor}", "");
-	for (int i = 0; i < MAX_COLORS; i++)
-	{
-		if (StrContains(szCMessage, CTag[i]) == -1) continue;
-		else if (!CProfile_Colors[i])
-		{
-			ReplaceString(szCMessage, sizeof(szCMessage), CTag[i], CTagCode[Color_Green]);
-		}
-		else if (!CTagReqSayText2[i])
-		{
-			ReplaceString(szCMessage, sizeof(szCMessage), CTag[i], CTagCode[i]);
-		}
-		else
-		{
-			if (index == NO_INDEX)
-			{
-				if (CProfile_TeamIndex[i] == SERVER_INDEX)
-				{
-					index = 0;
-				}
-				else
-				{
-					for (int j = 1; j <= MaxClients; j++)
-					{
-						if (IsClientInGame(j) && GetClientTeam(j) == CProfile_TeamIndex[i])
-						{
-							index = j;
-							break;
-						}
-						index = NO_PLAYER;
-					}	
-				}
-				
-				if (index == NO_PLAYER)
-				{
-					ReplaceString(szCMessage, sizeof(szCMessage), CTag[i], CTagCode[Color_Green]);
-				}
-				else
-				{
-					ReplaceString(szCMessage, sizeof(szCMessage), CTag[i], CTagCode[i]);
-				}
-			}
-			else
-			{
-				ThrowError("Using two team colors in one message is not allowed");
-			}
-			
-		}
-	}
-	
-	if (index == NO_INDEX)
-	{
-		PrintToChat(client, "%s", szCMessage);
-	}
-	else
-	{
-		Handle hBuffer = StartMessageOne("SayText2", client);
-		BfWriteByte(hBuffer, index);
-		BfWriteByte(hBuffer, true);
-		BfWriteString(hBuffer, szCMessage);
-		EndMessage();
-	}
-}
-
-bool IsClientCaster(int client)
-{
-	char buffer[64];
-	return GetClientAuthId(client, AuthId_Steam3, buffer, sizeof(buffer)) && IsIDCaster(buffer);
-}
-
-bool IsIDCaster(const char[] AuthID)
-{
-	int dummy;
-	return casterTrie.GetValue(AuthID, dummy);
 }
 
 void PauseClient(int client, bool b)

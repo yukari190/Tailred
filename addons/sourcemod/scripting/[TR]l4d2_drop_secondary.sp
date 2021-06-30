@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <[LIB]l4d2library>
+#include <[LIB]l4d2_weapon_stocks>
 
 int g_PlayerSecondaryWeapons[MAXPLAYERS + 1];
 
@@ -25,7 +26,7 @@ public void OnPluginStart()
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 }
 
-public void L4D2_OnRealRoundStart()
+public void L4D_OnRoundStart()
 {
 	for (int i = 0; i <= MAXPLAYERS; i++) g_PlayerSecondaryWeapons[i] = -1;
 }
@@ -36,7 +37,7 @@ public Action OnPlayerUse(Event event, const char[] name, bool dontBroadcast)
 	if (L4D2_IsValidClient(client)) 
 	{
 		int weapon = GetPlayerWeaponSlot(client, 1);
-		WeaponId source = L4D2_IdentifyWeapon(weapon);
+		WeaponId source = IdentifyWeapon(weapon);
 		if (IsSecondaryWeapon(source))
 		{
 			g_PlayerSecondaryWeapons[client] = (weapon == -1 ? weapon : EntIndexToEntRef(weapon));
@@ -69,7 +70,7 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client)) 
 	{
 		int weapon = EntRefToEntIndex(g_PlayerSecondaryWeapons[client]);
-		if (L4D2_IdentifyWeapon(weapon) != WEPID_NONE && client == GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity"))
+		if (IdentifyWeapon(weapon) != WEPID_NONE && client == GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity"))
 		{
 			SDKHooks_DropWeapon(client, weapon);
 		}
