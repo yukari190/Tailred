@@ -5,7 +5,9 @@ Tailred
 免责声明：在其他配置中使用下载所附带的插件的风险自负。
 
 关于：
-此配置基于SirPlease整合的L4D2-Competitive-Rework、ZoneMod以及Hardcoop等，并将在此进行更改。了解具体设置可参阅L4D2-Competitive-Rework: https://github.com/SirPlease/L4D2-Competitive-Rework
+此配置基于ZoneMod、Gauntlet修改。
+https://github.com/SirPlease/L4D2-Competitive-Rework
+https://github.com/brxce/Gauntlet
 	
 	要求：Sourcemod 1.10 以上。
 	

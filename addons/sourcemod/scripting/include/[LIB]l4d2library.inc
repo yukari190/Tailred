@@ -210,62 +210,6 @@ forward void L4D2_OnInfectedSpawn(int client, L4D2_Infected class);
  * @param 
  * @return 
  */
-forward Action L4D2_OnTankRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnSmokerRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnHunterRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnJockeyRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnBoomerRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnSpitterRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-forward Action L4D2_OnChargerRunCmd(int client, int &buttons, float vel[3], float angles[3]);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
 forward void L4D2_OnEntitySpawned(int entity, char[] classname);
 
 
@@ -284,47 +228,7 @@ forward void L4D2_OnEntitySpawned(int entity, char[] classname);
  * @param 
  * @return 
  */
-native void L4D2_SetMaxPlayers(int amount);
 
-/**
- * 
- *
- * @param 
- * @return 
- */
-native bool L4D2_ChangeClientTeam(int client, L4D2_Team team, bool force = false);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-native void L4D2_FillBots();
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-native void L4D2_RestoreHealth(int client);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-native void L4D2_ResetInventory(int client);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
-native bool L4D2_IsLanIP(char[] src);
 
 /**
  * 
@@ -395,34 +299,6 @@ native bool L4D2_GetSurvivorName(int character, char[] buffer, int length);
  * @noreturn
  */
 native void L4D2_GetInfectedClassName(L4D2_Infected iClass, char[] sBuffer, int iBufLen);
-
-/**
- * 在键输入过程中用于繁忙循环和状态维持的变量
- *
- * 死的时候不过关的话会留下之前的信息
- * 做得不太在意
- */
-native void L4D2_DelayStart(int client, int no);
-native bool L4D2_DelayExpired(int client, int no, float delay);
-native float L4D2_SetState(int client, int no, int value);
-native int L4D2_GetState(int client, int no);
-
-/**
- * 获取离client最近的生存者的距离
- *
- * 因为我们现在没有追踪,所以我们在一楼和二楼,隔壁的房间
- * 即使有遮挡,也会变得很近
- */
-native float L4D2_NearestSurvivorDistance(int client);
-native float L4D2_NearestActiveSurvivorDistance(int client);
-
-/**
- * 计算每个客户端的当前移动速度
- *
- * g_move_speedは生存者が直線に走ったときが220くらい
- * 可以判断是跑还是停
- */
-native float L4D2_GetMoveSpeed(int client);
 
 /**
  * 
@@ -631,15 +507,7 @@ stock int L4D2_GetScavengeRoundNumber()
  * @param 
  * @return 
  */
-native bool L4D2_CurrentlyInRound();
-
-/**
- * @brief Returns the number of alive survivors
- * @remarks Includes all living human and bot survivors
- * 
- * @return The number of alive survivors
- */
-native int L4D2_GetSurvivorCount();
+native bool L4D_CurrentlyInRound();
 
 /**
  * @brief Returns the survivor of a specific index
@@ -648,7 +516,7 @@ native int L4D2_GetSurvivorCount();
  * 
  * @return Client number of a survivor stored at the given index.
  */
-native int L4D2_GetSurvivorOfIndex(int index);
+native int L4D_GetSurvivorOfIndex(int index);
 
 /**
  * 
@@ -694,12 +562,6 @@ native void L4D_GetMapValueVector(const char[] key, float vector[3], const float
   returns bool (errors/incorrect data returns false)
 */
 native bool L4D_IsEntityInSaferoom(int entity);
-
-/*
-  Check if player (client) is in a saferoom
-  returns bool (errors/incorrect data returns false)
-*/
-//native bool L4D_IsPlayerInSaferoom(int client);
 
 /**
  * 
@@ -1040,62 +902,6 @@ stock bool L4D2_SetEntGlowOverride(int entity, int colorOverride[3])
 }
 
 /**
- * 
- *
- * @param 
- * @return 
- */
-stock void L4D2_CheatCommand(int commandDummy, char[] commandName, char[] argument1 = "", char[] argument2 = "")
-{
-    if (GetCommandFlags(commandName) != INVALID_FCVAR_FLAGS)
-	{
-		if (!L4D2_IsValidClient(commandDummy))
-		{
-			for (int i = 1; i <= MaxClients; i++)
-			{
-				if (IsClientInGame(i) && IsFakeClient(i))
-				{
-					char clientName[32];
-					GetClientName(i, clientName, sizeof(clientName));
-					if (StrContains(clientName, "[CommandBot]") != -1) commandDummy = i;
-				}  		
-			}
-			if (!L4D2_IsValidClient(commandDummy) || IsClientInKickQueue(commandDummy))
-			{
-				commandDummy = CreateFakeClient("[CommandBot]");
-				if (L4D2_IsValidClient(commandDummy))
-				  ChangeClientTeam(commandDummy, 1);
-			}
-		}
-		if (L4D2_IsValidClient(commandDummy))
-		{
-		    int originalUserFlags = GetUserFlagBits(commandDummy);
-		    int originalCommandFlags = GetCommandFlags(commandName);            
-		    SetUserFlagBits(commandDummy, ADMFLAG_ROOT); 
-		    SetCommandFlags(commandName, originalCommandFlags ^ FCVAR_CHEAT);               
-		    FakeClientCommand(commandDummy, "%s %s %s", commandName, argument1, argument2);
-		    SetCommandFlags(commandName, originalCommandFlags);
-		    SetUserFlagBits(commandDummy, originalUserFlags);
-			if (L4D2_IsSpectator(commandDummy))
-			  CreateTimer(0.1, Timer_KickBot, commandDummy);
-		}
-		else
-		{
-			char pluginName[128];
-			GetPluginFilename(INVALID_HANDLE, pluginName, sizeof(pluginName));        
-			LogError("%s could not find or create a client through which to execute cheat command %s", pluginName, commandName);
-		}
-    }
-}
-public Action Timer_KickBot(Handle timer, any client)
-{
-	if (L4D2_IsValidClient(client) && !IsClientInKickQueue(client) && IsFakeClient(client))
-	{
-		KickClient(client, "");
-	}
-}
-
-/**
  * Returns the flow distance of a given point
  */
 stock int GetFlow(const float o[3])
@@ -1137,12 +943,6 @@ public void __pl_l4d2library_SetNTVOptional()
 	// =========================
 	// l4d2util & l4d2lib & l4d2_saferoom_detect
 	// =========================
-	MarkNativeAsOptional("L4D2_SetMaxPlayers");
-	MarkNativeAsOptional("L4D2_ChangeClientTeam");
-	MarkNativeAsOptional("L4D2_FillBots");
-	MarkNativeAsOptional("L4D2_RestoreHealth");
-	MarkNativeAsOptional("L4D2_ResetInventory");
-	MarkNativeAsOptional("L4D2_IsLanIP");
 	MarkNativeAsOptional("L4D2_SetAnimFling");
 	MarkNativeAsOptional("L4D2_SetPlayerRespawn");
 	MarkNativeAsOptional("L4D2_PauseClient");
@@ -1151,13 +951,6 @@ public void __pl_l4d2library_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_ClientModelToSC");
 	MarkNativeAsOptional("L4D2_GetSurvivorName");
 	MarkNativeAsOptional("L4D2_GetInfectedClassName");
-	MarkNativeAsOptional("L4D2_DelayStart");
-	MarkNativeAsOptional("L4D2_DelayExpired");
-	MarkNativeAsOptional("L4D2_SetState");
-	MarkNativeAsOptional("L4D2_GetState");
-	MarkNativeAsOptional("L4D2_NearestSurvivorDistance");
-	MarkNativeAsOptional("L4D2_NearestActiveSurvivorDistance");
-	MarkNativeAsOptional("L4D2_GetMoveSpeed");
 	MarkNativeAsOptional("L4D2_IsCoop");
 	MarkNativeAsOptional("L4D2_IsVersus");
 	MarkNativeAsOptional("L4D2_IsScavenge");
@@ -1173,14 +966,12 @@ public void __pl_l4d2library_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_GetInfectedVictim");
 	MarkNativeAsOptional("L4D2_IsBeingAttacked");
 	MarkNativeAsOptional("L4D2_IsSecondRound");
-	MarkNativeAsOptional("L4D2_CurrentlyInRound");
-	MarkNativeAsOptional("L4D2_GetSurvivorCount");
-	MarkNativeAsOptional("L4D2_GetSurvivorOfIndex");
+	MarkNativeAsOptional("L4D_CurrentlyInRound");
+	MarkNativeAsOptional("L4D_GetSurvivorOfIndex");
 	MarkNativeAsOptional("L4D2_GiveDefaultAmmo");
 	MarkNativeAsOptional("L4D_GetMapValueInt");
 	MarkNativeAsOptional("L4D_GetMapValueFloat");
 	MarkNativeAsOptional("L4D_GetMapValueVector");
 	MarkNativeAsOptional("L4D_IsEntityInSaferoom");
-	//MarkNativeAsOptional("L4D_IsPlayerInSaferoom");
 }
 #endif

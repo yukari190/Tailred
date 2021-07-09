@@ -33,22 +33,6 @@
 #include <[LIB]left4dhooks>
 #include <[LIB]l4d2library>
 
-#define MOVESPEED_MAX     1000
-
-#define UNINITIALISED_FLOAT -1.42424
-#define NAV_MESH_HEIGHT 20.0
-#define COORD_X 0
-#define COORD_Y 1
-#define COORD_Z 2
-#define X_MIN 0
-#define X_MAX 1
-#define Y_MIN 2
-#define Y_MAX 3
-#define PITCH 0
-#define YAW 1
-#define ROLL 2
-#define MAX_ANGLE 89.0
-
 // FORWARDS
 GlobalForward hFwdRoundStart;
 GlobalForward hFwdRoundEnd;
@@ -62,13 +46,6 @@ GlobalForward hFwdJoinInfected;
 GlobalForward hFwdAwayInfected;
 GlobalForward hFwdTeamChanged;
 GlobalForward hFwdInfectedSpawn;
-GlobalForward hFwdTankRunCmd;
-GlobalForward hFwdSmokerRunCmd;
-GlobalForward hFwdHunterRunCmd;
-GlobalForward hFwdJockeyRunCmd;
-GlobalForward hFwdBoomerRunCmd;
-GlobalForward hFwdSpitterRunCmd;
-GlobalForward hFwdChargerRunCmd;
 GlobalForward hFwdEntitySpawned;
 
 Handle hRoundRespawn;
@@ -80,15 +57,8 @@ StringMap hSurvivorModelsTrie;
 float fTankFlow;
 float fVsBossBuffer;
 float fDecayRate;
-float g_move_grad[MAXPLAYERS+1][3];
-float g_move_speed[MAXPLAYERS+1];
-float g_pos[MAXPLAYERS+1][3];
-float g_delay[MAXPLAYERS+1][8];
 float fTankLotterySelectionTime;
 int iGameMode;
-int g_state[MAXPLAYERS+1][8];
-int iSurvivorLimit;
-int iMaxPlayerZombies;
 int iAmmoPile;
 bool bPause[MAXPLAYERS+1];
 bool IsMapInStart;
@@ -96,10 +66,6 @@ bool bTankSpawn;
 ConVar hGameMode;
 ConVar g_hVsBossBuffer;
 ConVar hDecayRate;
-ConVar hMaxPlayers;
-ConVar hVisibleMaxPlayers;
-ConVar hSurvivorLimit;
-ConVar hMaxPlayerZombies;
 ConVar hTankLotterySelectionTime;
 char g_sMapname[64];
 char SurvivorNames[8][128] =
@@ -160,7 +126,6 @@ bool bSecondRound;
 bool bRoundEnd;
 bool bInRound;
 int iSurvivorIndex[NUM_OF_SURVIVORS];
-int iSurvivorCount;
 
 Handle hTankDeathTimer;
 bool bIsTankActive;
@@ -201,14 +166,6 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
-		return APLRes_SilentFailure;
-	}
-	
-	
-	
 	// ====================================================================================================
 	//									FORWARDS
 	// ====================================================================================================
@@ -226,13 +183,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	hFwdAwayInfected = new GlobalForward("L4D2_OnAwayInfected", ET_Event, Param_Cell);
 	hFwdTeamChanged = new GlobalForward("L4D2_OnPlayerTeamChanged", ET_Event, Param_Cell, Param_Cell, Param_Cell);
 	hFwdInfectedSpawn = new GlobalForward("L4D2_OnInfectedSpawn", ET_Ignore, Param_Cell, Param_Cell);
-	hFwdTankRunCmd = new GlobalForward("L4D2_OnTankRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdSmokerRunCmd = new GlobalForward("L4D2_OnSmokerRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdHunterRunCmd = new GlobalForward("L4D2_OnHunterRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdJockeyRunCmd = new GlobalForward("L4D2_OnJockeyRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdBoomerRunCmd = new GlobalForward("L4D2_OnBoomerRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdSpitterRunCmd = new GlobalForward("L4D2_OnSpitterRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
-	hFwdChargerRunCmd = new GlobalForward("L4D2_OnChargerRunCmd", ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array);
 	hFwdEntitySpawned = new GlobalForward("L4D2_OnEntitySpawned", ET_Ignore, Param_Cell, Param_String);
 	
 	
@@ -240,12 +190,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// ====================================================================================================
 	//									NATIVES
 	// ====================================================================================================
-	CreateNative("L4D2_SetMaxPlayers", _native_SetMaxPlayers);
-	CreateNative("L4D2_ChangeClientTeam", _native_ChangeClientTeam);
-	CreateNative("L4D2_FillBots", _native_FillBots);
-	CreateNative("L4D2_RestoreHealth", _native_RestoreHealth);
-	CreateNative("L4D2_ResetInventory", _native_ResetInventory);
-	CreateNative("L4D2_IsLanIP", _native_IsLanIP);
 	CreateNative("L4D2_SetAnimFling", _native_SetAnimFling);
 	CreateNative("L4D2_SetPlayerRespawn", _native_SetPlayerRespawn);
 	CreateNative("L4D2_PauseClient", _native_PauseClient);
@@ -254,13 +198,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_ClientModelToSC", _native_ClientModelToSC);
 	CreateNative("L4D2_GetSurvivorName", _native_GetSurvivorName);
 	CreateNative("L4D2_GetInfectedClassName", _native_GetInfectedClassName);
-	CreateNative("L4D2_DelayStart", _native_DelayStart);
-	CreateNative("L4D2_DelayExpired", _native_DelayExpired);
-	CreateNative("L4D2_SetState", _native_SetState);
-	CreateNative("L4D2_GetState", _native_GetState);
-	CreateNative("L4D2_NearestSurvivorDistance", _native_NearestSurvivorDistance);
-	CreateNative("L4D2_NearestActiveSurvivorDistance", _native_NearestActiveSurvivorDistance);
-	CreateNative("L4D2_GetMoveSpeed", _native_GetMoveSpeed);
 	CreateNative("L4D2_IsCoop", _native_IsCoop);
 	CreateNative("L4D2_IsVersus", _native_IsVersus);
 	CreateNative("L4D2_IsScavenge", _native_IsScavenge);
@@ -276,15 +213,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_GetInfectedVictim", _native_GetInfectedVictim);
 	CreateNative("L4D2_IsBeingAttacked", _native_IsBeingAttacked);
 	CreateNative("L4D2_IsSecondRound", _native_IsSecondRound);
-	CreateNative("L4D2_CurrentlyInRound", _native_CurrentlyInRound);
-	CreateNative("L4D2_GetSurvivorCount", _native_GetSurvivorCount);
-	CreateNative("L4D2_GetSurvivorOfIndex", _native_GetSurvivorOfIndex);
+	CreateNative("L4D_CurrentlyInRound", _native_CurrentlyInRound);
+	CreateNative("L4D_GetSurvivorOfIndex", _native_GetSurvivorOfIndex);
 	CreateNative("L4D2_GiveDefaultAmmo", _native_GiveDefaultAmmo);
 	CreateNative("L4D_GetMapValueInt", _native_GetMapValueInt);
 	CreateNative("L4D_GetMapValueFloat", _native_GetMapValueFloat);
 	CreateNative("L4D_GetMapValueVector", _native_GetMapValueVector);
 	CreateNative("L4D_IsEntityInSaferoom", _native_IsEntityInSaferoom);
-	//CreateNative("L4D_IsPlayerInSaferoom", _native_IsPlayerInSaferoom);
 	
 	RegPluginLibrary("l4d2library");
 	return APLRes_Success;
@@ -331,17 +266,11 @@ public void OnPluginStart()
 	hGameMode = FindConVar("mp_gamemode");
 	g_hVsBossBuffer = FindConVar("versus_boss_buffer");
 	hDecayRate = FindConVar("pain_pills_decay_rate");
-	hMaxPlayers = FindConVar("sv_maxplayers");
-	hVisibleMaxPlayers = FindConVar("sv_visiblemaxplayers");
-	hSurvivorLimit = FindConVar("survivor_limit");
-	hMaxPlayerZombies = FindConVar("z_max_player_zombies");
 	hTankLotterySelectionTime = FindConVar("director_tank_lottery_selection_time");
 	
 	hGameMode.AddChangeHook(ConVarChange);
 	g_hVsBossBuffer.AddChangeHook(ConVarChange);
 	hDecayRate.AddChangeHook(ConVarChange);
-	hSurvivorLimit.AddChangeHook(ConVarChange);
-	hMaxPlayerZombies.AddChangeHook(ConVarChange);
 	hTankLotterySelectionTime.AddChangeHook(ConVarChange);
 	
 	ConVarChange(view_as<ConVar>(INVALID_HANDLE), "", "");
@@ -378,8 +307,6 @@ public int ConVarChange(ConVar convar, char[] oldValue, char[] newValue)
 {
 	fVsBossBuffer = g_hVsBossBuffer.FloatValue;
 	fDecayRate = hDecayRate.FloatValue;
-	iSurvivorLimit = hSurvivorLimit.IntValue;
-	iMaxPlayerZombies = hMaxPlayerZombies.IntValue;
 	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
 	
 	char gmode[20];
@@ -525,26 +452,6 @@ public Action L4D_OnSpawnTank(const float vector[3], const float qangle[3])
 	return Plugin_Continue;
 }
 
-public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
-{
-	if (client <= 0 || client > MaxClients || !IsClientInGame(client) || GetClientTeam(client) != 3 || !IsPlayerAlive(client)) return Plugin_Continue;
-	float pos[3];
-	GetClientAbsOrigin(client, pos);
-	g_move_grad[client][0] = pos[0] - g_pos[client][0];
-	g_move_grad[client][1] = pos[1] - g_pos[client][1];
-	g_move_grad[client][2] = pos[2] - g_pos[client][2];
-	g_move_speed[client] = SquareRoot(g_move_grad[client][0] * g_move_grad[client][0] + g_move_grad[client][1] * g_move_grad[client][1]);
-	if (g_move_speed[client] > MOVESPEED_MAX)
-	{
-		g_move_speed[client] = 0.0;
-		g_move_grad[client][0] = 0.0;
-		g_move_grad[client][1] = 0.0;
-		g_move_grad[client][2] = 0.0;
-	}
-	g_pos[client] = pos;
-	return Plugin_Continue;
-}
-
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
 	if (
@@ -553,78 +460,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		GetClientTeam(client) != 3 || !IsPlayerAlive(client)
 	) return Plugin_Continue;
 	if (bPause[client]) return Plugin_Handled;
-	if (!GetEntProp(client, Prop_Send, "m_isGhost"))
-	{
-		L4D2_Infected zombie_class = view_as<L4D2_Infected>(GetEntProp(client, Prop_Send, "m_zombieClass"));
-		Action aResult = Plugin_Continue;
-		switch (zombie_class)
-		{
-			case L4D2Infected_Tank:
-			{
-				Call_StartForward(hFwdTankRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Smoker:
-			{
-				Call_StartForward(hFwdSmokerRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Hunter:
-			{
-				Call_StartForward(hFwdHunterRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Jockey:
-			{
-				Call_StartForward(hFwdJockeyRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Boomer:
-			{
-				Call_StartForward(hFwdBoomerRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Spitter:
-			{
-				Call_StartForward(hFwdSpitterRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-			case L4D2Infected_Charger:
-			{
-				Call_StartForward(hFwdChargerRunCmd);
-				Call_PushCell(client);
-				Call_PushCell(buttons);
-				Call_PushArray(vel, 3);
-				Call_PushArray(angles, 3);
-				Call_Finish(aResult);
-			}
-		}
-		return aResult;
-	}
 	return Plugin_Continue;
 }
 
@@ -950,120 +785,6 @@ public int _native_IsSurvival(Handle plugin, int numParams)
 	return iGameMode == 3;
 }
 
-public int _native_SetMaxPlayers(Handle plugin, int numParams)
-{
-	int amount = GetNativeCell(1);
-	SetConVarInt(hMaxPlayers, amount);
-	SetConVarInt(hVisibleMaxPlayers, amount);
-	PrintToServer("服务器人数设置为 %i", amount);
-	PrintToChatAll("服务器人数设置为 %i", amount);
-}
-
-public int _native_ChangeClientTeam(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	L4D2_Team team = GetNativeCell(2);
-	bool force = GetNativeCell(3);
-	if (view_as<L4D2_Team>(GetClientTeam(client)) == team) return true;
-	if (!force)
-	{
-		int humans = 0;
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (IsClientInGame(i) && !IsFakeClient(i) && view_as<L4D2_Team>(GetClientTeam(i)) == team) humans++;
-		}
-		if (humans >= ((team == L4D2Team_Survivor) ? iSurvivorLimit : ((team == L4D2Team_Infected) ? iMaxPlayerZombies : MaxClients)))
-		{
-			PrintToChat(client, "您选择的团队已经满了.");
-			return false;
-		}
-	}
-	if (team != L4D2Team_Survivor)
-	{
-		ChangeClientTeam(client, view_as<int>(team));
-		return true;
-	}
-	else
-	{
-		for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-		{
-			int index = iSurvivorIndex[i];
-			if (index == 0 || !IsFakeClient(index)) continue;
-			L4D2_CheatCommand(client, "sb_takecontrol");
-			if (GetClientTeam(client) != 2) L4D2_CheatCommand(client, "jointeam 2");
-			return true;
-		}
-	}
-	return false;
-}
-
-public int _native_FillBots(Handle plugin, int numParams)
-{
-	CreateTimer(0.1, Timer_FillBots, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action Timer_FillBots(Handle timer)
-{
-	if (GetTeamClientCount(view_as<int>(L4D2Team_Survivor)) < iSurvivorLimit) 
-	{
-		ServerCommand("sb_add");
-		return Plugin_Continue;
-	}
-	else
-	{
-		return Plugin_Stop;
-	}
-}
-
-public int _native_RestoreHealth(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client))
-	{
-		L4D2_CheatCommand(client, "give", "health");
-		SetEntPropFloat(client, Prop_Send, "m_healthBuffer", 0.0);		
-		SetEntProp(client, Prop_Send, "m_currentReviveCount", 0); //reset incaps
-		SetEntProp(client, Prop_Send, "m_bIsOnThirdStrike", false);
-	}
-}
-
-public int _native_ResetInventory(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if (L4D2_IsValidClient(client) && L4D2_IsSurvivor(client))
-	{
-		for (int j = 0; j < 5; j++)
-		{
-			int item = GetPlayerWeaponSlot(client, j);
-			if (item > 0)
-			{
-				RemovePlayerItem(client, item);
-			}
-		}	
-		L4D2_CheatCommand(client, "give", "pistol");
-	}
-}
-
-public int _native_IsLanIP(Handle plugin, int numParams)
-{
-	int len;
-	GetNativeStringLength(1, len);
-	len += 1;
-	char[] src = new char[len];
-	GetNativeString(1, src, len);
-	char ip4[4][4];
-	int ipnum;
-	if (ExplodeString(src, ".", ip4, 4, 4) == 4)
-	{
-		ipnum = StringToInt(ip4[0])*65536 + StringToInt(ip4[1])*256 + StringToInt(ip4[2]);
-		if ((ipnum >= 655360 && ipnum < 655360+65535) || (ipnum >= 11276288 && ipnum < 11276288+4095) || (ipnum >= 12625920 && ipnum < 12625920+255))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 public int _native_SetAnimFling(Handle plugin, int numParams)
 {
 	float value[3];
@@ -1130,11 +851,6 @@ public int _native_GetSurvivorName(Handle plugin, int numParams)
     return true;
 }
 
-public int _native_GetSurvivorCount(Handle plugin, int numParams)
-{
-	return iSurvivorCount;
-}
-
 public int _native_GetSurvivorOfIndex(Handle plugin, int numParams)
 {
 	int index = GetNativeCell(1);
@@ -1147,88 +863,6 @@ public int _native_GiveDefaultAmmo(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if (iAmmoPile != -1)
 		SDKCall(hSDKGiveDefaultAmmo, iAmmoPile, client);
-}
-
-
-public int _native_DelayStart(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	int no = GetNativeCell(2);
-	g_delay[client][no] = GetGameTime();
-}
-
-public int _native_DelayExpired(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	int no = GetNativeCell(2);
-	float delay = GetNativeCell(3);
-	return GetGameTime() - g_delay[client][no] > delay;
-}
-
-public int _native_SetState(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	int no = GetNativeCell(2);
-	int value = GetNativeCell(3);
-	g_state[client][no] = value;
-}
-
-public int _native_GetState(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	int no = GetNativeCell(2);
-	return g_state[client][no];
-}
-
-public int _native_NearestSurvivorDistance(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	float self[3];
-	float min_dist = 100000.0;
-	GetClientAbsOrigin(client, self);
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		float target[3];
-		GetClientAbsOrigin(index, target);
-		float dist = GetVectorDistance(self, target);
-		if (dist < min_dist)
-		{
-			min_dist = dist;
-		}
-	}
-	return view_as<int>(min_dist);
-}
-
-public int _native_NearestActiveSurvivorDistance(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	float self[3];
-	float min_dist = 100000.0;
-	GetClientAbsOrigin(client, self);
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		if (!L4D2_IsPlayerIncap(client))
-		{
-			float target[3];
-			GetClientAbsOrigin(index, target);
-			float dist = GetVectorDistance(self, target);
-			if (dist < min_dist)
-			{
-				min_dist = dist;
-			}
-		}
-	}
-	return view_as<int>(min_dist);
-}
-
-public int _native_GetMoveSpeed(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	return view_as<int>(g_move_speed[client]);
 }
 
 public int _native_GetInfectedClassName(Handle plugin, int numParams)
@@ -1369,20 +1003,6 @@ public int _native_IsEntityInSaferoom(Handle plugin, int numParams)
 	return IsPointInStartSaferoom(location) || IsPointInEndSaferoom(location);
 }
 
-/*public int _native_IsPlayerInSaferoom(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if (client <= 0 || client > MaxClients || !IsClientInGame(client))
-	{
-		return false;
-	}
-	float locationA[3];
-	float locationB[3];
-	GetClientAbsOrigin(client, locationA);
-	GetClientEyePosition(client, locationB);
-	return IsPointInStartSaferoom(locationA) || IsPointInStartSaferoom(locationB) || IsPointInEndSaferoom(locationA) || IsPointInEndSaferoom(locationB);
-}*/
-
 
 
 /* NATIVE FUNCTIONS */
@@ -1516,21 +1136,9 @@ float GetBossProximity()
 
 void InitStatus()
 {
-	float time = GetGameTime();
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
 		bPause[i] = false;
-		g_move_speed[i] = 0.0;
-		for (int j = 0; j < 8; j++)
-		{
-			g_delay[i][j] = time;
-			g_state[i][j] = 0;
-		}
-		for (int j = 0; j < 3; j++)
-		{
-			g_move_grad[i][j] = 0.0;
-			g_pos[i][j] = 0.0;
-		}
 	}
 }
 
@@ -1552,7 +1160,6 @@ void Survivors_RebuildArray()
 {
 	if (!IsServerProcessing()) return;
 	
-	iSurvivorCount = 0;
 	int ifoundsurvivors = 0;
 	int ichar;
 	
@@ -1565,7 +1172,6 @@ void Survivors_RebuildArray()
 		ifoundsurvivors++;
 		if (ichar > 3 || ichar < 0) continue;
 		iSurvivorIndex[ichar] = client;
-		iSurvivorCount++;
 	}
 }
 

@@ -5,7 +5,6 @@
 #include <sdktools>
 #include <[LIB]left4dhooks>
 #include <[LIB]builtinvotes>
-#include <[LIB]builtinvotes_native>
 #include <[LIB]colors>
 #include <[LIB]l4d2library>
 
@@ -46,7 +45,6 @@ bool isPlayerReady[MAXPLAYERS+1];
 bool blockSecretSpam[MAXPLAYERS+1];
 bool isClientLoading[MAXPLAYERS+1];
 bool bReadyUpMode;
-bool bVoteStart;
 char countdownSound[64];
 char liveSound[64];
 int clientTimeout[MAXPLAYERS+1];
@@ -100,7 +98,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_ready", Ready_Cmd, "Mark yourself as ready for the round to go live");
 	RegConsoleCmd("sm_unready", Unready_Cmd, "Mark yourself as not ready if you have set yourself as ready");
 	RegConsoleCmd("sm_return", Return_Cmd, "如果您在未解冻的准备期间卡住, 请返回有效的安全室产卵");
-	RegConsoleCmd("sm_kickspecs", KickSpecs_Cmd, "Let's vote to kick those Spectators!");
 	
 	RegConsoleCmd("sm_cast", Cast_Cmd, "将呼叫玩家注册为裁判, 这样该回合将不会启动, 除非他们已经准备好");
 	RegAdminCmd("sm_caster", Caster_Cmd, ADMFLAG_BAN, "将玩家注册为裁判, 这样一轮除非准备就绪, 否则该回合将无法进行");
@@ -280,34 +277,6 @@ public Action Return_Cmd(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action KickSpecs_Cmd(int client, int args)
-{
-	if (L4D2_IsValidClient(client))
-	{
-		char sBuffer[64];
-		Format(sBuffer, sizeof(sBuffer), "踢非管理员和非强制性观众?");
-		bVoteStart = true;
-		BuiltinVotes_StartVoteAllTeam(client, sBuffer);
-	}
-	return Plugin_Handled;
-}
-
-public void BuiltinVotes_VoteResult()
-{
-	if (bVoteStart)
-	{
-		for (int c=1; c<=MaxClients; c++)
-		{
-			if (IsClientInGame(c) && (GetClientTeam(c) == 1) && !IsClientCaster(c) && !L4D2_IsClientAdmin(c))
-			{
-				KickClient(c, "No Spectators, please!");
-			}
-		}
-	}
-	bVoteStart = false;
-}
-
-
 public Action Cast_Cmd(int client, int args)
 {	
 	char buffer[64];
@@ -448,7 +417,6 @@ public void L4D_OnRoundStart()
 	}
 	inReadyUp = true;
 	inLiveCountdown = false;
-	bVoteStart = false;
 	
 	CreateTimer(1.0, MenuRefresh_Timer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	
@@ -819,7 +787,7 @@ void ReturnTeamToSaferoom()
 {
 	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
 	{
-		int index = L4D2_GetSurvivorOfIndex(i);
+		int index = L4D_GetSurvivorOfIndex(i);
 		if (index == 0) continue;
 		ReturnPlayerToSaferoom(index);
 	}
@@ -845,7 +813,7 @@ void SetTeamFrozen(bool freezeStatus)
 {
 	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
 	{
-		int index = L4D2_GetSurvivorOfIndex(i);
+		int index = L4D_GetSurvivorOfIndex(i);
 		if (index == 0) continue;
 		SetEntityMoveType(index, freezeStatus ? MOVETYPE_NONE : MOVETYPE_WALK);
 	}
@@ -1016,4 +984,41 @@ bool IsIDCaster(const char[] AuthID)
 {
 	int dummy;
 	return casterTrie.GetValue(AuthID, dummy);
+}
+
+void L4D2_CheatCommand(int client, char[] commandName, char[] argument1 = "", char[] argument2 = "")
+{
+    if (GetCommandFlags(commandName) != INVALID_FCVAR_FLAGS)
+	{
+		if (!L4D2_IsValidClient(client))
+		{
+			int[] player = new int[MaxClients];
+			int numplayer = 0;
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (IsClientInGame(i))
+				{
+					player[numplayer] = i;
+					numplayer++;
+				}
+			}
+			client = player[GetRandomInt(0, numplayer - 1)];
+		}
+		if (L4D2_IsValidClient(client))
+		{
+		    int originalUserFlags = GetUserFlagBits(client);
+		    int originalCommandFlags = GetCommandFlags(commandName);            
+		    SetUserFlagBits(client, ADMFLAG_ROOT); 
+		    SetCommandFlags(commandName, originalCommandFlags ^ FCVAR_CHEAT);               
+		    FakeClientCommand(client, "%s %s %s", commandName, argument1, argument2);
+		    SetCommandFlags(commandName, originalCommandFlags);
+		    SetUserFlagBits(client, originalUserFlags);
+		}
+		else
+		{
+			char pluginName[128];
+			GetPluginFilename(INVALID_HANDLE, pluginName, sizeof(pluginName));        
+			LogError("%s could not find or create a client through which to execute cheat command %s", pluginName, commandName);
+		}
+    }
 }
