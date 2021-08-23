@@ -3,6 +3,7 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
 #include <[LIB]left4dhooks>
 #include <[LIB]colors>
 #include <[LIB]l4d2library>
@@ -53,43 +54,45 @@ public void OnMapStart()
 	commonTank = L4D_GetMapValueInt("horde_tank", -1);
 }
 
-public void OnEntitySpawned(int entity, const char[] classname)
+public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (!IsValidEntity(entity) || !IsValidEdict(entity)) return;
 	if (StrEqual(classname, "infected", false))
+		SDKHook(entity, SDKHook_SpawnPost, OnInfectedSpawned);
+}
+
+public void OnInfectedSpawned(int entity)
+{
+	if (isUncommon(entity))
 	{
-		if (isUncommon(entity))
+		float location[3];
+		GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
+		AcceptEntityInput(entity, "kill");
+		SpawnCommon(location);
+		return;
+	}
+	if (announcedInChat && IsInfiniteHordeActive())
+	{
+		if (commonLimit < 0) return;
+		
+		if (commonTotal >= commonLimit)
 		{
-			float location[3];
-			GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
-			AcceptEntityInput(entity, "kill");
-			SpawnCommon(location);
+			//L4D2Direct_SetPendingMobCount(0);
 			return;
 		}
-		if (announcedInChat && IsInfiniteHordeActive())
+		
+		commonTotal++;
+		
+		if (commonLimit < 120) return;
+		
+		if ((commonTotal >= ((lastCheckpoint + 1) * RoundFloat(float(commonLimit / 4)))))
 		{
-			if (commonLimit < 0) return;
-			
-			if (commonTotal >= commonLimit)
+			int remaining = commonLimit - commonTotal;
+			if (remaining)
 			{
-				//L4D2Direct_SetPendingMobCount(0);
-				return;
+				CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
+				EmitSoundToAll(HORDE_SOUND);
 			}
-			
-			commonTotal++;
-			
-			if (commonLimit < 120) return;
-			
-			if ((commonTotal >= ((lastCheckpoint + 1) * RoundFloat(float(commonLimit / 4)))))
-			{
-				int remaining = commonLimit - commonTotal;
-				if (remaining)
-				{
-					CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
-					EmitSoundToAll(HORDE_SOUND);
-				}
-				lastCheckpoint++;
-			}
+			lastCheckpoint++;
 		}
 	}
 }
@@ -175,15 +178,15 @@ bool isUncommon(int entity)
 	if (StrContains(model, "_mud", false) != -1) return true;
 	if (StrContains(model, "_riot", false) != -1) return true;
 	if (StrContains(model, "_roadcrew", false) != -1) return true;
-    return false;
+	return false;
 }
 
 void SpawnCommon(float location[3])
 {
-    int zombie = CreateEntityByName("infected");
-    int ticktime = RoundToNearest( GetGameTime() / GetTickInterval() ) + 5;
-    SetEntProp(zombie, Prop_Data, "m_nNextThinkTick", ticktime);
-    DispatchSpawn(zombie);
-    ActivateEntity(zombie);
-    TeleportEntity(zombie, location, NULL_VECTOR, NULL_VECTOR);
+	int zombie = CreateEntityByName("infected");
+	int ticktime = RoundToNearest( GetGameTime() / GetTickInterval() ) + 5;
+	SetEntProp(zombie, Prop_Data, "m_nNextThinkTick", ticktime);
+	DispatchSpawn(zombie);
+	ActivateEntity(zombie);
+	TeleportEntity(zombie, location, NULL_VECTOR, NULL_VECTOR);
 }
