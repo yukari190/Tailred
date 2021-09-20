@@ -9,6 +9,7 @@
 #include <l4d2lib>
 #include <l4d2util>
 #include <colors>
+#include <DirectInfectedSpawn>
 #undef REQUIRE_PLUGIN
 #include <readyup>
 #define REQUIRE_PLUGIN
@@ -467,8 +468,17 @@ public Action TankSpawnPercentCheck(Handle timer)
 	{
 		float spawnPos[3];
 		int client = L4D_GetHighestFlowSurvivor();
-		if (client && L4D_GetRandomPZSpawnPosition(client, 8, 100, spawnPos))
+		if (client)
 		{
+			if (!L4D_GetRandomPZSpawnPosition(client, view_as<int>(L4D2Infected_Tank), 30, spawnPos))
+			{
+				if (!GridSpawn(L4D2Infected_Tank, 100, spawnPos))
+				{
+					PrintToChatAll("[SM] Failed to find a spawn for tank in maximum allowed attempts");
+					AllowTankSpawn(true, true);
+					return Plugin_Stop;
+				}
+			}
 			L4D2_SpawnTank(spawnPos, NULL_VECTOR);
 		}
 		else

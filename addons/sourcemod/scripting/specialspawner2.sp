@@ -375,14 +375,14 @@ void GenerateAndExecuteSpawnQueue()
 			// Execute the spawn queue
 			L4D2_Infected SIClass = view_as<L4D2_Infected>(SpawnQueue[i] + 1);
 			float spawnPos[3];
-			if (L4D_GetRandomPZSpawnPosition(L4D2_GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
+			if (!L4D_GetRandomPZSpawnPosition(L4D2_GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
 			{
-				TriggerSpawn(SIClass, spawnPos); // all spawn conditions satisifed
+				if (!GridSpawn(SIClass, 100, spawnPos))
+				{
+					return;
+				}
 			}
-			else if (GridSpawn(SIClass, 100, spawnPos))
-			{
-				TriggerSpawn(SIClass, spawnPos); // all spawn conditions satisifed
-			}
+			TriggerSpawn(SIClass, spawnPos); // all spawn conditions satisifed
 		}
 	}
 }

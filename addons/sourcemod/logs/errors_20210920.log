@@ -1,0 +1,88 @@
+L 09/20/2021 - 13:29:19: SourceMod error session started
+L 09/20/2021 - 13:29:19: Info (map "c2m1_highway") (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\errors_20210920.log")
+L 09/20/2021 - 13:29:19: [optional\readyup.smx] Failed to PrepSDKCall of "CDirector_IsInTransition"
+L 09/20/2021 - 13:29:36: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:29:37: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:29:37: [SM] Call stack trace:
+L 09/20/2021 - 13:29:37: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:29:37: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:29:37: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:29:48: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:29:49: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:29:49: [SM] Call stack trace:
+L 09/20/2021 - 13:29:49: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:29:49: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:29:49: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:29:59: Error log file session closed.
+L 09/20/2021 - 13:34:14: SourceMod error session started
+L 09/20/2021 - 13:34:14: Info (map "c2m1_highway") (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\errors_20210920.log")
+L 09/20/2021 - 13:34:14: [optional\readyup.smx] Failed to PrepSDKCall of "CDirector_IsInTransition"
+L 09/20/2021 - 13:34:26: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:34:27: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:34:27: [SM] Call stack trace:
+L 09/20/2021 - 13:34:27: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:34:27: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:34:27: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:34:46: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:34:46: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:34:46: [SM] Call stack trace:
+L 09/20/2021 - 13:34:46: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:34:46: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:34:46: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:34:56: Error log file session closed.
+L 09/20/2021 - 13:38:11: SourceMod error session started
+L 09/20/2021 - 13:38:11: Info (map "c2m1_highway") (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\errors_20210920.log")
+L 09/20/2021 - 13:38:11: [SM] Exception reported: Client 1 is not in game
+L 09/20/2021 - 13:38:11: [SM] Blaming: optional\coopbosses.smx
+L 09/20/2021 - 13:38:11: [SM] Call stack trace:
+L 09/20/2021 - 13:38:11: [SM]   [0] IsPlayerAlive
+L 09/20/2021 - 13:38:11: [SM]   [1] Line 661, coopbosses.sp::Tank_Distance
+L 09/20/2021 - 13:38:11: [SM] Exception reported: Client 1 is not in game
+L 09/20/2021 - 13:38:11: [SM] Blaming: optional\l4d2lib.smx
+L 09/20/2021 - 13:38:11: [SM] Call stack trace:
+L 09/20/2021 - 13:38:12: [SM]   [0] IsPlayerAlive
+L 09/20/2021 - 13:38:12: [SM]   [1] Line 808, l4d2lib.sp::_native_GetRandomSurvivor
+L 09/20/2021 - 13:38:12: [SM]   [3] L4D2_GetRandomSurvivor
+L 09/20/2021 - 13:38:12: [SM]   [4] Line 830, AI_HardSI.sp::GetClosestSurvivor
+L 09/20/2021 - 13:38:12: [SM]   [5] Line 821, AI_HardSI.sp::GetSurvivorProximity
+L 09/20/2021 - 13:38:12: [SM]   [6] Line 625, AI_HardSI.sp::OnChargerRunCmd
+L 09/20/2021 - 13:38:12: [SM]   [7] Line 723, AI_HardSI.sp::OnPlayerRunCmd
+L 09/20/2021 - 13:38:12: [SM] Exception reported: Client 1 is not in game
+L 09/20/2021 - 13:38:12: [SM] Blaming: optional\l4d2lib.smx
+L 09/20/2021 - 13:38:12: [SM] Call stack trace:
+L 09/20/2021 - 13:38:12: [SM]   [0] IsPlayerAlive
+L 09/20/2021 - 13:38:12: [SM]   [1] Line 808, l4d2lib.sp::_native_GetRandomSurvivor
+L 09/20/2021 - 13:38:12: [SM]   [3] L4D2_GetRandomSurvivor
+L 09/20/2021 - 13:38:12: [SM]   [4] Line 830, AI_HardSI.sp::GetClosestSurvivor
+L 09/20/2021 - 13:38:31: SourceMod error session started
+L 09/20/2021 - 13:38:31: Info (map "c2m1_highway") (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\errors_20210920.log")
+L 09/20/2021 - 13:38:31: [optional\readyup.smx] Failed to PrepSDKCall of "CDirector_IsInTransition"
+L 09/20/2021 - 13:38:43: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:38:43: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:38:43: [SM] Call stack trace:
+L 09/20/2021 - 13:38:43: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:38:43: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:38:43: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:38:59: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:38:59: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:38:59: [SM] Call stack trace:
+L 09/20/2021 - 13:38:59: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:38:59: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:38:59: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:39:09: Error log file session closed.
+L 09/20/2021 - 13:55:19: SourceMod error session started
+L 09/20/2021 - 13:55:19: Info (map "c2m1_highway") (file "d:\steam\steamapps\common\left 4 dead 2\left4dead2\addons\sourcemod\logs\errors_20210920.log")
+L 09/20/2021 - 13:55:19: [optional\readyup.smx] Failed to PrepSDKCall of "CDirector_IsInTransition"
+L 09/20/2021 - 13:55:39: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:55:39: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:55:39: [SM] Call stack trace:
+L 09/20/2021 - 13:55:39: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:55:39: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:55:39: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:55:51: [SM] Exception reported: Script execution timed out
+L 09/20/2021 - 13:55:51: [SM] Blaming: optional\server_function.smx
+L 09/20/2021 - 13:55:51: [SM] Call stack trace:
+L 09/20/2021 - 13:55:51: [SM]   [0] ConVar.SetString
+L 09/20/2021 - 13:55:51: [SM]   [1] Line 108, server_function.sp::SetHostName
+L 09/20/2021 - 13:55:51: [SM]   [2] Line 147, server_function.sp::OnPluginStart
+L 09/20/2021 - 13:56:01: Error log file session closed.
