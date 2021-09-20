@@ -3,9 +3,11 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[LIB]left4dhooks>
-#include <[LIB]colors>
-#include <[LIB]l4d2library>
+#include <sdkhooks>
+#include <left4dhooks>
+#include <colors>
+#include <l4d2lib>
+#include <l4d2util>
 
 #define NO_HORDES 3600.0
 #define HORDE_SOUND	"/npc/mega_mob/mega_mob_incoming.wav"
@@ -35,7 +37,7 @@ public void OnPluginStart()
 	hMobSpawnIntervalMin.AddChangeHook(ConVarChange);
 	hMobSpawnIntervalMax.AddChangeHook(ConVarChange);
 	
-	ConVarChange(view_as<ConVar>(INVALID_HANDLE), "", "");
+	ConVarChange(null, "", "");
 }
 
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -49,13 +51,21 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 public void OnMapStart()
 {
 	PrecacheSound(HORDE_SOUND);
-	commonLimit = L4D_GetMapValueInt("horde_limit", -1);
-	commonTank = L4D_GetMapValueInt("horde_tank", -1);
+	commonLimit = L4D2_GetMapValueInt("horde_limit", -1);
+	commonTank = L4D2_GetMapValueInt("horde_tank", -1);
 }
 
-public void OnEntitySpawned(int entity, const char[] classname)
+public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (!IsValidEntity(entity) || !IsValidEdict(entity)) return;
+	if (entity <= 0 || !IsValidEntity(entity) || !IsValidEdict(entity)) return;
+	SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
+}
+
+public void fOnEntitySpawned(int entity)
+{
+	char classname[64];
+	if (!GetEdictClassname(entity, classname, sizeof(classname))) return;
+	
 	if (StrEqual(classname, "infected", false))
 	{
 		if (isUncommon(entity))
@@ -94,7 +104,7 @@ public void OnEntitySpawned(int entity, const char[] classname)
 	}
 }
 
-public void L4D_OnRoundStart()
+public void L4D2_OnRealRoundStart()
 {
 	bHordesDisabled = false;
 	announcedInChat = false;
@@ -102,12 +112,12 @@ public void L4D_OnRoundStart()
 	lastCheckpoint = 0;
 }
 
-public void L4D_OnTankDeath()
+public void L4D2_OnTankDeath()
 {
 	bHordesDisabled = false;
 }
 
-public void L4D_OnTankSpawn()
+public void L4D2_OnTankFirstSpawn()
 {
 	bHordesDisabled = true;
 }
@@ -123,11 +133,11 @@ public Action OFSLA_ForceMobSpawnTimer(Handle timer)
 	L4D2_CTimerStart(L4D2CT_MobSpawnTimer, NO_HORDES);
 }
 
-public Action L4D_OnSpawnITMob(int &amount)
+/*public Action L4D_OnSpawnITMob(int &amount)
 {
 	amount = iMobSpawnMaxSize;
 	return Plugin_Changed;
-}
+}*/
 
 public Action L4D_OnSpawnMob(int &amount)
 {
@@ -169,7 +179,7 @@ bool IsInfiniteHordeActive()
 bool isUncommon(int entity)
 {
 	char model[128];
-	L4D2_GetEntityModelName(entity, model, sizeof(model));
+	GetEdictModelName(entity, model, sizeof(model));
 	if (StrContains(model, "_ceda", false) != -1) return true;
 	if (StrContains(model, "_clown", false) != -1) return true;
 	if (StrContains(model, "_mud", false) != -1) return true;

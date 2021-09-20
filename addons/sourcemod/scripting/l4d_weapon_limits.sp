@@ -4,17 +4,22 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[LIB]l4d2library>
-#include <[LIB]l4d2_weapon_stocks>
+#include <colors>
+#include <l4d2lib>
+#include <l4d2util>
+
+#define GAMEDATA_FILE          "l4d_wlimits"
+#define GAMEDATA_USE_AMMO      "CWeaponAmmoSpawn_Use"
+#define WEAPON_LIMITS_SOUND    "player/suit_denydevice.wav"
 
 public Plugin myinfo =
 {
 	name = "L4D Weapon Limits",
-	author = "CanadaRox, Stabby",
+	author = "CanadaRox, Stabby, Forgetest",
 	description = "Restrict weapons individually or together",
-	version = "1.3",
-	url = "https://www.github.com/CanadaRox/sourcemod-plugins/tree/master/weapon_limits"
-}
+	version = "1.3.5",
+	url = "https://github.com/SirPlease/L4D2-Competitive-Rework"
+};
 
 enum struct LimitArrayEntry
 {
@@ -22,20 +27,31 @@ enum struct LimitArrayEntry
 	int LAE_WeaponArray[view_as<int>(WeaponId)/32+1];
 }
 
+Handle hSDKGiveDefaultAmmo;
 ArrayList hLimitArray;
 bool bIsLocked;
 bool bIsIncappedWithMelee[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
+	LoadGameData();
+	
 	hLimitArray = new ArrayList(sizeof(LimitArrayEntry));
 	
 	RegServerCmd("l4d_wlimits_add", AddLimit_Cmd, "Add a weapon limit");
 	RegServerCmd("l4d_wlimits_lock", LockLimits_Cmd, "Locks the limits to improve search speeds");
 	RegServerCmd("l4d_wlimits_clear", ClearLimits_Cmd, "Clears all weapon limits (limits must be locked to be cleared)");
 	
-	//HookEvent("player_incapacitated_start", OnIncap);
-	//HookEvent("revive_success", OnRevive);
+	HookEvent("player_incapacitated_start", OnIncap);
+	HookEvent("revive_success", OnRevive);
+	HookEvent("player_death", OnDeath);
+	HookEvent("player_bot_replace", OnBotReplacedPlayer);
+	HookEvent("bot_player_replace", OnPlayerReplacedBot);
+}
+
+public void OnMapStart()
+{
+	PrecacheSound(WEAPON_LIMITS_SOUND);
 }
 
 public Action L4D2_OnJoinSurvivor(int client)
@@ -48,22 +64,12 @@ public Action L4D2_OnAwaySurvivor(int client)
 	SDKUnhook(client, SDKHook_WeaponCanUse, WeaponCanUse);
 }
 
-public void L4D_OnRoundEnd()
+public void L4D2_OnRealRoundStart()
 {
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
 		bIsIncappedWithMelee[i] = false;
 	}
-}
-
-public void L4D_OnRoundStart()
-{
-	CreateTimer(2.0, RoundStartDelay_Timer);
-}
-
-public Action RoundStartDelay_Timer(Handle timer)
-{
-	//FindAmmoSpawn();
 }
 
 public Action AddLimit_Cmd(int args)
@@ -75,7 +81,7 @@ public Action AddLimit_Cmd(int args)
 	}
 	else if (args < 2)
 	{
-		PrintToServer("Usage: l4d_wlimits_add <limit> <ammo> <weapon1> <weapon2> ... <weaponN>");
+		PrintToServer("Usage: l4d_wlimits_add <limit> <weapon1> <weapon2> ... <weaponN>");
 		return Plugin_Handled;
 	}
 
@@ -83,14 +89,14 @@ public Action AddLimit_Cmd(int args)
 	GetCmdArg(1, sTempBuff, sizeof(sTempBuff));
 
 	LimitArrayEntry newEntry;
-	WeaponId wepid;
+	int wepid;
 	newEntry.LAE_iLimit = StringToInt(sTempBuff);
 
 	for (int i = 2; i <= args; ++i)
 	{
 		GetCmdArg(i, sTempBuff, sizeof(sTempBuff));
-		wepid = WeaponNameToId(sTempBuff);
-		newEntry.LAE_WeaponArray[view_as<int>(wepid)/32] |= (1 << (view_as<int>(wepid) % 32));
+		wepid = view_as<int>(WeaponNameToId(sTempBuff));
+		newEntry.LAE_WeaponArray[wepid/32] |= (1 << (wepid % 32));
 	}
 	hLimitArray.PushArray(newEntry);
 	return Plugin_Handled;
@@ -114,28 +120,42 @@ public Action ClearLimits_Cmd(int args)
 	{
 		bIsLocked = false;
 		PrintToChatAll("[L4D Weapon Limits] Weapon limits cleared!");
-		hLimitArray.Clear();
+		if (hLimitArray != null)
+			hLimitArray.Clear();
 	}
 }
 
 public Action WeaponCanUse(int client, int weapon)
 {
-	if (GetClientTeam(client) != 2 || !bIsLocked) return Plugin_Continue;
-	WeaponId wepid = IdentifyWeapon(weapon);
-	LimitArrayEntry arrayEntry;
-	int wep_slot = GetSlotFromWeaponId(wepid);
+	// TODO: There seems to be an issue that this hook will be constantly called
+	//       when client with no weapon on equivalent slot just eyes or walks on it.
+	//       If the weapon meets limit, client will have the warning spamming unexpectedly.
+	
+	if (!IsValidAndInGame(client) || !bIsLocked) return Plugin_Continue;
+	
+	int wepid = view_as<int>(IdentifyWeapon(weapon));
+	int wep_slot = GetSlotFromWeaponId(view_as<WeaponId>(wepid));
 	int player_weapon = GetPlayerWeaponSlot(client, wep_slot);
-	WeaponId player_wepid = IdentifyWeapon(player_weapon);
-	for (int i = 0; i < GetArraySize(hLimitArray); ++i)
+	int player_wepid = view_as<int>(IdentifyWeapon(player_weapon));
+
+	LimitArrayEntry arrayEntry;
+	
+	for (int i = 0; i < hLimitArray.Length; ++i)
 	{
 		hLimitArray.GetArray(i, arrayEntry);
-		if (arrayEntry.LAE_WeaponArray[view_as<int>(wepid)/32] & (1 << (view_as<int>(wepid) % 32)) && GetWeaponCount(arrayEntry.LAE_WeaponArray) >= arrayEntry.LAE_iLimit)
+		if (arrayEntry.LAE_WeaponArray[wepid/32] & (1 << (wepid % 32)) && GetWeaponCount(arrayEntry.LAE_WeaponArray) >= arrayEntry.LAE_iLimit)
 		{
-			if (!player_wepid || wepid == player_wepid || !(arrayEntry.LAE_WeaponArray[view_as<int>(player_wepid)/32] & (1 << (view_as<int>(player_wepid) % 32))))
+			if (!player_wepid || wepid == player_wepid || !(arrayEntry.LAE_WeaponArray[player_wepid/32] & (1 << (player_wepid % 32))))
 			{
-				if (wep_slot == 0) L4D2_GiveDefaultAmmo(client);
-				if (player_wepid == WEPID_MELEE && wepid == WEPID_MELEE) return Plugin_Continue;
-				if (player_wepid) PrintToChat(client, "[Weapon Limits] 该武器组已达到最大数量 %d", arrayEntry.LAE_iLimit);
+				// Swap melee, np
+				if (player_wepid == view_as<int>(WEPID_MELEE) && wepid == view_as<int>(WEPID_MELEE))
+					return Plugin_Continue;
+				
+				if (wep_slot == 0)
+					GiveDefaultAmmo(client);
+					
+				CPrintToChat(client, "{B}[{W}Weapon Limits{B}]{W} 该武器组已达到最大数量 {O}%d", arrayEntry.LAE_iLimit);
+				EmitSoundToClient(client, WEAPON_LIMITS_SOUND);
 				return Plugin_Handled;
 			}
 		}
@@ -143,61 +163,108 @@ public Action WeaponCanUse(int client, int weapon)
 	return Plugin_Continue;
 }
 
-/*public Action:OnIncap(Handle:event, const String:name[], bool:dontBroadcast)
+public void OnIncap(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (GetClientTeam(client) == 2 && IdentifyWeapon(GetPlayerWeaponSlot(client, 1)) == WEPID_MELEE)
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (client > 0 && GetClientTeam(client) == 2 && IdentifyWeapon(GetPlayerWeaponSlot(client, 1)) == WEPID_MELEE)
 	{
 		bIsIncappedWithMelee[client] = true;
 	}
 }
 
-public Action:OnRevive(Handle:event, const String:name[], bool:dontBroadcast)
+public void OnRevive(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "subject"));
-	if (bIsIncappedWithMelee[client])
+	int client = GetClientOfUserId(event.GetInt("subject"));
+	if (client > 0 && bIsIncappedWithMelee[client])
 	{
 		bIsIncappedWithMelee[client] = false;
 	}
-}*/
+}
+
+public void OnDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (client > 0 && GetClientTeam(client) == 2 && bIsIncappedWithMelee[client])
+	{
+		bIsIncappedWithMelee[client] = false;
+	}
+}
+
+public void OnBotReplacedPlayer(Event event, const char[] name, bool dontBroadcast)
+{
+	int bot = GetClientOfUserId(event.GetInt("bot"));
+	if (!bot && GetClientTeam(bot) != 2)
+		return;
+	
+	int player = GetClientOfUserId(event.GetInt("player"));
+	bIsIncappedWithMelee[bot] = bIsIncappedWithMelee[player];
+	bIsIncappedWithMelee[player] = false;
+}
+
+public void OnPlayerReplacedBot(Event event, const char[] name, bool dontBroadcast)
+{
+	int player = GetClientOfUserId(event.GetInt("player"));
+	if (!player && GetClientTeam(player) != 2)
+		return;
+	
+	int bot = GetClientOfUserId(event.GetInt("bot"));
+	bIsIncappedWithMelee[player] = bIsIncappedWithMelee[bot];
+	bIsIncappedWithMelee[bot] = false;
+}
 
 int GetWeaponCount(const int[] mask)
 {
+	bool queryMelee = !!(mask[view_as<int>(WEPID_MELEE) / 32] & (1 << (view_as<int>(WEPID_MELEE) % 32)));
+	
 	int count;
-	WeaponId wepid;
-	for (int i = 1; i <= MaxClients; ++i)
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		if (IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i))
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || !IsPlayerAlive(index)) continue;
+	
+		for (int j = 0; j < 5; ++j)
 		{
-			for (int j = 0; j < 5; ++j)
+			int wepid = view_as<int>(IdentifyWeapon(GetPlayerWeaponSlot(index, j)));
+			if (mask[wepid/32] & (1 << (wepid % 32)) || (j == 1 && queryMelee && bIsIncappedWithMelee[index]))
 			{
-				wepid = IdentifyWeapon(GetPlayerWeaponSlot(i, j));
-				if (mask[view_as<int>(wepid)/32] & (1 << (view_as<int>(wepid) % 32))/* || (j == 1 && bIsIncappedWithMelee[i] && wepid != WEPID_PISTOL_MAGNUM)*/)
-				{
-					++count;
-				}
+				++count;
 			}
 		}
 	}
 	return count;
 }
 
-/*int FindAmmoSpawn()
+void GiveDefaultAmmo(int client)
 {
-	char classname[64];
-	for (int i = MaxClients; i < GetEntityCount(); ++i)
-	{
-		if (IsValidEntity(i))
-		{
-			GetEdictClassname(i, classname, sizeof(classname));
-			if (StrEqual(classname, "weapon_ammo_spawn"))
-			{
-				return i;
-			}
-		}
-	}
-	int ammo = CreateEntityByName("weapon_ammo_spawn");
-	DispatchSpawn(ammo);
-	LogMessage("No ammo pile found, creating one: %d", iAmmoPile);
-	return ammo;
-}*/
+	// NOTE:
+	// Previously the plugin seems to cache an index of one ammo pile in current map, and is supposed to use it here.
+	// For some reason, the caching never runs, and the code is completely wrong either.
+	// Therefore, it has been consistently using an SDKCall like below ('0' should be the index of ammo pile).
+	// However, since it actually has worked without error and crash for a long time, I would decide to leave it still.
+	// If your server suffers from this, please try making use of the functions commented below.
+	
+	SDKCall(hSDKGiveDefaultAmmo, 0, client);
+}
+
+void LoadGameData()
+{
+	/* Preparing SDK Call */
+	/* {{{ */
+	GameData conf = LoadGameConfigFile(GAMEDATA_FILE);
+
+	if (conf == null)
+		SetFailState("Gamedata missing: %s", GAMEDATA_FILE);
+
+	StartPrepSDKCall(SDKCall_Entity);
+
+	if (!PrepSDKCall_SetFromConf(conf, SDKConf_Signature, GAMEDATA_USE_AMMO))
+		SetFailState("Gamedata missing signature: %s", GAMEDATA_USE_AMMO);
+
+	// Client that used the ammo spawn
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	hSDKGiveDefaultAmmo = EndPrepSDKCall();
+	
+	if (hSDKGiveDefaultAmmo == null)
+		SetFailState("Failed to finish SDKCall setup: %s", GAMEDATA_USE_AMMO);
+	/* }}} */
+}

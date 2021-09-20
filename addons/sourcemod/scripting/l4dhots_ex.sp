@@ -2,7 +2,7 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
-#include <[LIB]l4d2library>
+#include <l4d2lib>
 
 public Plugin myinfo = 
 {
@@ -28,7 +28,7 @@ public void OnPluginEnd()
     ResetConVar(FindConVar("pain_pills_health_value"));
 }
 
-public void L4D_OnRoundStart()
+public void L4D2_OnRealRoundStart()
 {
 	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
@@ -43,6 +43,7 @@ public Action PillsUsed_Event(Event event, const char[] name, bool dontBroadcast
     int iPillIncrement = l4d_pills_hot_increment;
     int iPillTotal = l4d_pills_hot_total[client];
     HealEntityOverTime(client, iPillInterval, iPillIncrement, iPillTotal);
+	if (iPillTotal != 30) PrintHintText(client, "药片下次的恢复效果将降低!");
 	l4d_pills_hot_total[client] = 30;
 }
 

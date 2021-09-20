@@ -145,7 +145,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
     iClientPlaying = GetCurrentSurvivor();
 }
 
-public void L4D_OnRoundStart()
+public void L4D2_OnRealRoundStart()
 {
 	bIsRoundLive = false;
 	
@@ -157,7 +157,7 @@ public void L4D_OnRoundStart()
     }
 }
 
-public void L4D_OnRoundEnd()
+public void L4D2_OnRealRoundEnd()
 {
     ResolveOpenShots();
     CreateTimer(3.0, delayedSkeetStatPrint);

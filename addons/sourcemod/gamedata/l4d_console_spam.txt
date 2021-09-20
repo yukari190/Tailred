@@ -229,6 +229,50 @@
 					"signature"	"SpamPatch_Sig20"
 				}
 			}
+			"SpamPatch_Sig21"
+			{
+				"windows"
+				{
+					"signature"	"SpamPatch_Sig21"
+				}
+				"linux"
+				{
+					"signature"	"SpamPatch_Sig21"
+				}
+			}
+			"SpamPatch_Sig22"
+			{
+				"windows"
+				{
+					"signature"	"SpamPatch_Sig22"
+				}
+				"linux"
+				{
+					"signature"	"SpamPatch_Sig22"
+				}
+			}
+			"SpamPatch_Sig23"
+			{
+				"windows"
+				{
+					"signature"	"SpamPatch_Sig23"
+				}
+				"linux"
+				{
+					"signature"	"SpamPatch_Sig23"
+				}
+			}
+			"SpamPatch_Sig24"
+			{
+				"windows"
+				{
+					"signature"	"SpamPatch_Sig24"
+				}
+				"linux"
+				{
+					"signature"	"SpamPatch_Sig24"
+				}
+			}
 		}
 		"Signatures"
 		{
@@ -307,50 +351,74 @@
 			"SpamPatch_Sig13"
 			{
 				"library"		"server"
-				"windows"		"SCRIPT PERF WARNING"
-				"linux"			"SCRIPT PERF WARNING"
+				"windows"		"WARNING: %s at"
+				"linux"			"WARNING: %s at"
 			}
 			"SpamPatch_Sig14"
 			{
 				"library"		"server"
-				"windows"		"WARNING: orator at"
-				"linux"			"WARNING: orator at"
+				"windows"		">>>REMATCH Stats START\n"
+				"linux"			">>>REMATCH Stats START\n"
 			}
 			"SpamPatch_Sig15"
 			{
 				"library"		"server"
-				"windows"		">>>REMATCH Stats"
-				"linux"			">>>REMATCH Stats"
+				"windows"		">>>>REMATCH Stats END\n"
+				"linux"			">>>>REMATCH Stats END\n"
 			}
 			"SpamPatch_Sig16"
-			{
-				"library"		"server"
-				"windows"		">>REMATCH Stats"
-				"linux"			">>REMATCH Stats"
-			}
-			"SpamPatch_Sig17"
 			{
 				"library"		"server"
 				"windows"		"    %d players\n"
 				"linux"			"    %d players\n"
 			}
-			"SpamPatch_Sig18"
+			"SpamPatch_Sig17"
 			{
 				"library"		"server"
 				"windows"		"    %d yes\n"
 				"linux"			"    %d yes\n"
 			}
-			"SpamPatch_Sig19"
+			"SpamPatch_Sig18"
 			{
 				"library"		"server"
 				"windows"		"    %d no\n"
 				"linux"			"    %d no\n"
 			}
-			"SpamPatch_Sig20"
+			"SpamPatch_Sig19"
 			{
 				"library"		"server"
 				"windows"		"Team %d: %s\n"
 				"linux"			"Team %d: %s\n"
+			}
+			"SpamPatch_Sig20"
+			{
+				"library" 		"engine"
+				"windows"		"%s in solid list (not solid)"
+				"linux"			"%s in solid list (not solid)"
+			}
+			"SpamPatch_Sig21"
+			{
+				"library" 		"engine"
+				"windows"		"Entity %d (class '%s') reported ENTITY_CHANGE_NONE but '%s' changed."
+				"linux"			"Entity %d (class '%s') reported ENTITY_CHANGE_NONE but '%s' changed."
+			}
+			"SpamPatch_Sig22"
+			{
+				"library" 		"server"
+				"windows"		"Spitter %d mover is STUCK"
+				"linux"			"Spitter %d mover is STUCK"
+			}
+			"SpamPatch_Sig23"
+			{
+				"library" 		"server"
+				"windows"		"SURVIVORBOT (%s, [%f %f %f]) will not help incap (%s,[%f %f %f]): UNREACHABLE via NAV"
+				"linux"			"SURVIVORBOT (%s, [%f %f %f]) will not help incap (%s,[%f %f %f]): UNREACHABLE via NAV"
+			}
+			"SpamPatch_Sig24"
+			{
+				"library" 		"engine"
+				"windows"		"Can't call GetGuidForLastSoundEmitted from server\n"
+				"linux"			"Can't call GetGuidForLastSoundEmitted from server\n"
 			}
 		}
 	}

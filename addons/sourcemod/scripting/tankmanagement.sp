@@ -3,66 +3,47 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <sdkhooks>
-#include <[LIB]left4dhooks>
-#include <[LIB]colors>
-#include <[LIB]l4d2library>
-
-#define MAX_TANKS		2
-
-int BS_iTankCount[2];
-int g_iQueuedThrow[MAXPLAYERS + 1];
-int iTankCount;
-float BS_fTankSpawn[MAX_TANKS][3];
-char queuedTankSteamId[64];
-bool BS_bFinaleStarted;
-bool bIsBridge;
-bool bFinaleVehicleIncoming;
-ArrayList h_whosHadTank, hTankProps, hTankPropsHit;
+#include <left4dhooks>
+#include <colors>
+#include <l4d2lib>
+#define L4D2UTIL_STOCKS_ONLY
+#include <l4d2util>
 
 public Plugin myinfo = 
 {
 	name = "Tank Management",
-	author = "Mr. Zero, Jacob, Visor, CanadaRox, arti, Stabby, vintik",
+	author = "",
 	description = "",
 	version = "1.0",
 	url = ""
 };
 
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{
-	CreateNative("GetTankSelection", Native_GetTankSelection);
-}
+static const char sDang[] = "ui/pickup_secret01.wav";
 
-public int Native_GetTankSelection(Handle plugin, int numParams) { return getInfectedPlayerBySteamId(queuedTankSteamId); }
+float 
+	throwQueuedAt[MAXPLAYERS+1],
+	fTankSpawn[3];
+
+int 
+	g_iQueuedThrow[MAXPLAYERS + 1],
+	iTankCount;
+
+bool 
+	bFinaleStarted,
+	bIsBridge,
+	bFinaleVehicleIncoming,
+	bTankSpawned;
 
 public void OnPluginStart()
 {
-	h_whosHadTank = new ArrayList(64);
-	hTankProps = new ArrayList();
-	hTankPropsHit = new ArrayList();
-	
-	RegConsoleCmd("sm_tank", Tank_Cmd, "Shows who is becoming the tank.");
-	
-	SetConVarBool(FindConVar("sv_tankpropfade"), false);
-	
 	HookEvent("finale_start", FinaleStart_Event, EventHookMode_PostNoCopy);
 	HookEvent("finale_vehicle_incoming", Event_FinaleVehicleIncoming, EventHookMode_PostNoCopy);
-}
-
-public void OnPluginEnd()
-{
-	ResetConVar(FindConVar("sv_tankpropfade"));
-	CloseHandle(hTankProps);
-	CloseHandle(hTankPropsHit);
-	CloseHandle(h_whosHadTank);
+	HookEvent("player_incapacitated", PlayerIncap);
 }
 
 public void OnMapStart()
 {
-	PrecacheSound("ui/pickup_secret01.wav");
-	BS_iTankCount[0] = 0;
-	BS_iTankCount[1] = 0;
+	PrecacheSound(sDang);
 	char g_sMap[64];
 	GetCurrentMap(g_sMap, 64);
 	if (StrEqual(g_sMap, "c5m5_bridge", false))
@@ -75,98 +56,40 @@ public void OnMapStart()
 	}
 }
 
-public void OnClientDisconnect(int client) 
+public void L4D2_OnRealRoundStart()
 {
-    char tmpSteamId[64];
-    if (client)
-    {
-        GetClientAuthId(client, AuthId_Steam3, tmpSteamId, sizeof(tmpSteamId));
-        if (strcmp(queuedTankSteamId, tmpSteamId) == 0)
-        {
-            chooseTank();
-            outputTankToAll();
-        }
-    }
-}
-
-public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
-{
-    chooseTank();
-    outputTankToAll();
-    return Plugin_Continue;
-}
-
-public void L4D_OnRoundStart()
-{
-	BS_bFinaleStarted = false;
+	bFinaleStarted = false;
 	bFinaleVehicleIncoming = false;
 	iTankCount = 0;
-	UnhookTankProps();
-	ClearArray(hTankPropsHit);
-	CreateTimer(10.0, newGame);
+	bTankSpawned = false;
+	for (int i = 1; i <= MAXPLAYERS; i++)
+	  throwQueuedAt[i] = 0.0;
 }
 
-public Action newGame(Handle timer)
+public void L4D2_OnTankFirstSpawn(int tankClient)
 {
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-    if (teamAScore == 0 && teamBScore == 0) ClearArray(h_whosHadTank);
-}
-
-public void L4D_OnRoundEnd()
-{
-	UnhookTankProps();
-	ClearArray(hTankPropsHit);
-}
-
-public Action L4D2_OnAwayInfected(int client)
-{
-    char tmpSteamId[64];
-    GetClientAuthId(client, AuthId_Steam3, tmpSteamId, sizeof(tmpSteamId));
-    if (strcmp(queuedTankSteamId, tmpSteamId) == 0)
-    {
-        chooseTank();
-        outputTankToAll();
-    }
-}
-
-public void L4D_OnTankSpawn(int tankClient)
-{
-	EmitSoundToAll("ui/pickup_secret01.wav");
-	CPrintToChatAll("{G}Tank{W} 已产生!");
+	CPrintToChatAll("{R}[{W}!{R}] {G}Tank{W} 已产生!");
+	EmitSoundToAll(sDang);
 	
-	UnhookTankProps();
-	ClearArray(hTankPropsHit);
-       
-	for (int i = 1; i <= GetMaxEntities(); i++)
+	if (!bFinaleStarted && !bIsBridge)
 	{
-		if (IsTankProp(i))
+		if (L4D2_GetMapValueInt("tank_z_fix")) FixZDistance(tankClient); // fix stuck tank spawns, ex c1m1
+		if (!bTankSpawned)
 		{
-			SDKHook(i, SDKHook_OnTakeDamagePost, PropDamaged);
-			PushArrayCell(hTankProps, i);
-		}
-	}
-	
-	if (!BS_bFinaleStarted && !bIsBridge)
-	{
-		if (L4D_GetMapValueInt("tank_z_fix")) FixZDistance(tankClient); // fix stuck tank spawns, ex c1m1
-		if (BS_iTankCount[(!L4D2_IsSecondRound() ? 0 : 1)] < MAX_TANKS)
-		{
-			if (!L4D2_IsSecondRound())
+			if (!L4D2_InSecondHalfOfRound())
 			{
-				GetClientAbsOrigin(tankClient, BS_fTankSpawn[BS_iTankCount[0]]);
-				BS_iTankCount[0]++;
+				GetClientAbsOrigin(tankClient, fTankSpawn);
 			}
-			else if (BS_iTankCount[0] > BS_iTankCount[1])
+			else
 			{
-				TeleportEntity(tankClient, BS_fTankSpawn[BS_iTankCount[1]], NULL_VECTOR, NULL_VECTOR);
-				BS_iTankCount[1]++;
+				TeleportEntity(tankClient, fTankSpawn, NULL_VECTOR, NULL_VECTOR);
 			}
+			bTankSpawned = true;
 		}
 	}
 }
 
-public void L4D_OnTankPass(int oldTank, int newTank, int passCount)
+public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
 {
 	if (!IsFakeClient(newTank))
 	{
@@ -184,18 +107,15 @@ public void L4D_OnTankPass(int oldTank, int newTank, int passCount)
 	}
 }
 
-public void PropDamaged(int victim, int attacker, int inflictor, float damage, int damageType)
+public void L4D2_OnPlayerHurt(int victim, int attacker, int health, char[] weapon, int damage, int dmgtype)
 {
-    if ((L4D2_IsValidClient(attacker) && L4D2_IsInfected(attacker) && L4D2_GetInfectedClass(attacker) == L4D2Infected_Tank) || FindValueInArray(hTankPropsHit, inflictor) != -1)
-	{
-        if (FindValueInArray(hTankPropsHit, victim) == -1) PushArrayCell(hTankPropsHit, victim);
-    }
+	if (IsValidSurvivor(victim) && L4D2Util_IsValidClient(attacker) && IsTank(attacker) && !IsFakeClient(attacker) && damage >= 5)
+	  SetTankFrustration(attacker, 100);
 }
 
-//tank_limit
 public Action FinaleStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	BS_bFinaleStarted = true;
+	bFinaleStarted = true;
 }
 
 public Action Event_FinaleVehicleIncoming(Event event, const char[] name, bool dontBroadcast)
@@ -203,79 +123,78 @@ public Action Event_FinaleVehicleIncoming(Event event, const char[] name, bool d
 	bFinaleVehicleIncoming = true;
 }
 
-public void L4D_OnTankDeath(int tankClient)
+public Action PlayerIncap(Event event, char[] name, bool dontBroadcast)
 {
-	int tankId = GetClientUserId(tankClient);
-	if (tankId)  chooseTank();
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	if (!IsValidSurvivor(victim) || !L4D2Util_IsValidClient(attacker) || !IsTank(attacker)) return;
 	
-	if (L4D2_FindAnyTank() == -1)
+	char weapon[16];
+	event.GetString("weapon", weapon, 16);
+	if (StrEqual(weapon, "tank_claw", false))
 	{
-		UnhookTankProps();
-		CreateTimer(4.5, FadeTankProps);
+		SetEntProp(victim, Prop_Send, "m_isIncapacitated", 0);
+		SetEntityHealth(victim, 1);
+		CreateTimer(0.4, IncapTimer_Function, victim, TIMER_REPEAT);
 	}
+	if (IsFakeClient(attacker)) return;
+	SetTankFrustration(attacker, 100);
 }
 
-public Action FadeTankProps(Handle timer)
+public Action IncapTimer_Function(Handle timer, any victim)
 {
-    for (int i = 0; i < GetArraySize(hTankPropsHit); i++)
-	{
-        if (IsValidEdict(GetArrayCell(hTankPropsHit, i))) AcceptEntityInput(GetArrayCell(hTankPropsHit, i), "kill");
-    }
-    ClearArray(hTankPropsHit);
+	if (!IsValidAndInGame(victim)) return Plugin_Stop;
+	SetEntProp(victim, Prop_Send, "m_isIncapacitated", 1);
+	SetEntityHealth(victim, 300);
+	return Plugin_Stop;
 }
 
-// ////////////////////////////////////////////////////////
-// Command
-// ////////////////////////////////////////////////////////
-public Action Tank_Cmd(int client, int args)
+public Action OnPlayerRunCmd(int client, int &buttons)
 {
-    int tankClientId;
-    char tankClientName[128];
-    
-    if (! strcmp(queuedTankSteamId, "")) return Plugin_Handled;
-    
-    tankClientId = getInfectedPlayerBySteamId(queuedTankSteamId);
-    if (tankClientId != -1)
-    {
-        GetClientName(tankClientId, tankClientName, sizeof(tankClientName));
-        if (L4D2_IsInfected(client))
-        {
-            for (int i = 1; i <= MaxClients; i++)
-            {
-                if (IsClientInGame(i) && !IsFakeClient(i) && L4D2_IsInfected(i))
-				  CPrintToChat(i, "{O}%s {W}将成为 tank!", tankClientName);
-            }
-        }
-        else CPrintToChat(client, "{O}%s {W}将成为 tank!", tankClientName);
-    }
-    return Plugin_Handled;
-}
-
-// ////////////////////////////////////////////////////////
-// Private functions
-// ////////////////////////////////////////////////////////
-
-public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
-{
-	if (!L4D2_IsValidClient(client) || IsFakeClient(client) || !L4D2_IsInfected(client) || L4D2_GetInfectedClass(client) != L4D2Infected_Tank)
-	{
-		return Plugin_Continue;
-	}
+	if (!L4D2Util_IsValidClient(client) || !IsTank(client)) return Plugin_Continue;
 	
-	if (buttons & IN_RELOAD)
+	if (IsFakeClient(client))
 	{
-		g_iQueuedThrow[client] = 3; //two hand overhand
-		buttons |= IN_ATTACK2;
-	}
-	else if (buttons & IN_USE)
-	{
-		g_iQueuedThrow[client] = 2; //underhand
-		buttons |= IN_ATTACK2;
+		int sequence = GetEntProp(client, Prop_Send, "m_nSequence");
+		if (sequence == 54 || sequence == 55 || sequence == 57) SetEntProp(client, Prop_Send, "m_nSequence", 0);
+		if (sequence == 56) buttons |= IN_ATTACK;
+		if ((buttons & IN_ATTACK2)) buttons |= IN_ATTACK;
+		return Plugin_Changed;
 	}
 	else
 	{
-		g_iQueuedThrow[client] = 1; //one hand overhand
+		if ((buttons & IN_JUMP) && (1.5 > GetGameTime() - throwQueuedAt[client]))
+		{
+			buttons &= ~IN_JUMP;
+		}
+		if (buttons & IN_RELOAD)
+		{
+			g_iQueuedThrow[client] = 3; //two hand overhand
+			buttons |= IN_ATTACK2;
+		}
+		else if (buttons & IN_USE)
+		{
+			g_iQueuedThrow[client] = 2; //underhand
+			buttons |= IN_ATTACK2;
+		}
+		else
+		{
+			g_iQueuedThrow[client] = 1; //one hand overhand
+		}
 	}
+	return Plugin_Continue;
+}
+
+public Action L4D_OnCThrowActivate(int ability)
+{
+	if (!IsValidEntity(ability))
+	{
+		LogMessage("无效 'ability_throw' 索引: %d. 继续投掷.", ability);
+		return Plugin_Continue;
+	}
+	int client = GetEntPropEnt(ability, Prop_Data, "m_hOwnerEntity");
+	if (GetClientButtons(client) & IN_ATTACK) return Plugin_Handled;
+	throwQueuedAt[client] = GetGameTime();
 	return Plugin_Continue;
 }
 
@@ -297,24 +216,6 @@ public Action L4D_OnTryOfferingTankBot(int tank_index, bool &enterStasis)
 	{
 		return Plugin_Handled;
 	}
-	if (!IsFakeClient(tank_index)) 
-	{
-		PrintHintText(tank_index, "开始第二次控制权");
-		for (int i = 1; i <= MaxClients; i++) 
-		{
-			if (!IsClientInGame(i) || !L4D2_IsInfected(i)) continue;
-			CPrintToChat(i, "[Tank Control] {O}(%N) {G}开始第二次控制权!", tank_index);
-		}
-		L4D2_SetTankFrustration(tank_index, 100);
-		L4D2Direct_SetTankPassedCount(L4D2Direct_GetTankPassedCount() + 1);
-		return Plugin_Handled;
-	}
-	if (!strcmp(queuedTankSteamId, "")) chooseTank();
-	if (strcmp(queuedTankSteamId, "") != 0)
-	{
-		setTankTickets(queuedTankSteamId, 20000);
-		PushArrayString(h_whosHadTank, queuedTankSteamId);
-	}
 	return Plugin_Continue;
 }
 
@@ -334,105 +235,21 @@ public Action L4D2_OnSelectTankAttack(int client, int &sequence)
 	return Plugin_Continue;
 }
 
-public void chooseTank()
-{
-    ArrayList infectedPool = teamSteamIds(L4D2Team_Infected);
-    if (GetArraySize(infectedPool) == 0) return;
-    infectedPool = removeTanksFromPool(infectedPool, h_whosHadTank);
-    if (GetArraySize(infectedPool) == 0)
-    {
-        Handle infectedTeam = teamSteamIds(L4D2Team_Infected);
-        if (GetArraySize(infectedTeam) > 1)
-        {
-            h_whosHadTank = removeTanksFromPool(h_whosHadTank, teamSteamIds(L4D2Team_Infected));
-            chooseTank();
-        }
-        else queuedTankSteamId = "";
-        return;
-    }
-    int rndIndex = GetRandomInt(0, GetArraySize(infectedPool) - 1);
-    GetArrayString(infectedPool, rndIndex, queuedTankSteamId, sizeof(queuedTankSteamId));
-}
-
-public void setTankTickets(const char[] steamId, const int tickets)
-{
-    int tankClientId = getInfectedPlayerBySteamId(steamId);
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (IsClientInGame(i) && !IsFakeClient(i) && L4D2_IsInfected(i))
-        {
-            L4D2Direct_SetTankTickets(i, (i == tankClientId) ? tickets : 0);
-        }
-    }
-}
-
-public void outputTankToAll()
-{
-    char tankClientName[128];
-    int tankClientId = getInfectedPlayerBySteamId(queuedTankSteamId);
-    if (tankClientId != -1)
-    {
-        GetClientName(tankClientId, tankClientName, sizeof(tankClientName));
-        CPrintToChatAll("{O}%s {W}将成为 tank!", tankClientName);
-    }
-}
-
-public ArrayList teamSteamIds(L4D2_Team team)
-{
-    ArrayList steamIds = new ArrayList(64);
-    char steamId[64];
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (IsClientInGame(i) && !IsFakeClient(i))
-        {
-            if (view_as<L4D2_Team>(GetClientTeam(i)) != team) continue;
-            GetClientAuthId(i, AuthId_Steam3, steamId, sizeof(steamId));
-            PushArrayString(steamIds, steamId);
-        }
-    }
-    return steamIds;
-}
-
-public ArrayList removeTanksFromPool(ArrayList steamIdTankPool, Handle tanks)
-{
-    int index;
-    char steamId[64];
-    for (int i = 0; i < GetArraySize(tanks); i++)
-    {
-        GetArrayString(tanks, i, steamId, sizeof(steamId));
-        index = FindStringInArray(steamIdTankPool, steamId);
-        if (index != -1) RemoveFromArray(steamIdTankPool, index);
-    }
-    return steamIdTankPool;
-}
-
-public int getInfectedPlayerBySteamId(const char[] steamId) 
-{
-    char tmpSteamId[64];
-    for (int i = 1; i <= MaxClients; i++) 
-    {
-        if (!IsClientConnected(i) || !L4D2_IsInfected(i)) continue;
-        GetClientAuthId(i, AuthId_Steam3, tmpSteamId, sizeof(tmpSteamId));     
-        if (StrEqual(steamId, tmpSteamId)) return i;
-    }
-    return -1;
-}
-
-stock void FixZDistance(int client)
+void FixZDistance(int client)
 {
 	float TankLocation[3], TempSurvivorLocation[3];
 	int index;
 	GetClientAbsOrigin(client, TankLocation);
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		float distance = L4D_GetMapValueFloat("max_tank_z", 99999999999999.9);
-		index = L4D_GetSurvivorOfIndex(i);
+		float distance = L4D2_GetMapValueFloat("max_tank_z", 99999999999999.9);
+		index = L4D2_GetSurvivorOfIndex(i);
 		if (index == 0 || !IsPlayerAlive(index)) continue;
 		GetClientAbsOrigin(index, TempSurvivorLocation);
 		if (FloatAbs(TempSurvivorLocation[2] - TankLocation[2]) > distance)
 		{
 			float WarpToLocation[3];
-			L4D_GetMapValueVector("tank_warpto", WarpToLocation);
+			L4D2_GetMapValueVector("tank_warpto", WarpToLocation);
 			if (!GetVectorLength(WarpToLocation, true))
 			{
 				LogMessage("[BS] tank_warpto missing from mapinfo.txt");
@@ -441,23 +258,4 @@ stock void FixZDistance(int client)
 			TeleportEntity(client, WarpToLocation, NULL_VECTOR, NULL_VECTOR);
 		}
 	}
-}
-
-bool IsTankProp(int iEntity)
-{
-    if (!IsValidEdict(iEntity)) return false;
-    char className[64];
-    GetEdictClassname(iEntity, className, sizeof(className));
-    if (StrEqual(className, "prop_physics", false))
-	{
-        if (GetEntProp(iEntity, Prop_Send, "m_hasTankGlow", 1)) return true;
-    }
-    else if (StrEqual(className, "prop_car_alarm", false)) return true;
-    return false;
-}
-
-void UnhookTankProps()
-{
-    for (int i = 0; i < GetArraySize(hTankProps); i++) SDKUnhook(GetArrayCell(hTankProps, i), SDKHook_OnTakeDamagePost, PropDamaged);
-    ClearArray(hTankProps);
 }

@@ -237,11 +237,12 @@ typeset SDKHookCB
 	function void (int client);
 
 	// Spawn
+	// Think
 	function Action (int entity);
 
 	// GroundEntChanged
 	// SpawnPost
-	// Think/Post
+	// ThinkPost
 	// VPhysicsUpdate/Post
 	function void (int entity);
 
@@ -348,16 +349,6 @@ typeset SDKHookCB
 forward void OnEntityCreated(int entity, const char[] classname);
 
 /**
- * When an entity is spawned
- *
- * @param entity        Entity index
- * @param classname     Class name
- *
- * @note Check for support at runtime using GetFeatureStatus on SDKHook_OnEntitySpawned capability.
- */
-forward void OnEntitySpawned(int entity, const char[] classname);
-
-/**
  * When an entity is destroyed
  *
  * @param entity        Entity index or edict reference.
@@ -378,9 +369,10 @@ forward Action OnGetGameDescription(char gameDesc[64]);
  * When the level is initialized
  *
  * @param mapName       Name of the map
- * @param mapEntities   Entities of the map
- * @return              Plugin_Changed if mapEntities has been edited, else no change.
+ * @param mapEntities   Unused, always empty
+ * @return              Unused, return value is ignored
  */
+#pragma deprecated Use OnMapInit() instead
 forward Action OnLevelInit(const char[] mapName, char mapEntities[2097152]);
 
 /**

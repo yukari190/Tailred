@@ -5,8 +5,9 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
-#include <[LIB]left4dhooks>
-#include <[LIB]l4d2library>
+#include <left4dhooks>
+#include <l4d2lib>
+#include <l4d2util>
 
 /*
 * Version 1.0
@@ -70,7 +71,7 @@ public void OnPluginStart()
     HookEvent("player_incapacitated", OnIncap);
 }
 
-public void L4D_OnRoundStart()
+public void L4D2_OnRealRoundStart()
 {
     //Reset Clientside Tracking and Total.
     for(int i = 1; i <= MAXPLAYERS; i++)
@@ -183,7 +184,7 @@ public Action Door_Open(Event event, const char[] name, bool dontBroadcast)
 
 public Action FadeBrokenDoor(Handle timer, any ent_brokendoor)
 {
-	if (IsValidEntity(ent_brokendoor))
+	if (ent_brokendoor > 0 && IsValidEntity(ent_brokendoor))
 	{
 		SetEntityRenderFx(ent_brokendoor, RENDERFX_FADE_FAST); //RENDERFX_FADE_SLOW 3.5
 		CreateTimer(1.5, KillBrokenDoorEntity, ent_brokendoor);
@@ -200,7 +201,7 @@ public Action Player_Entered_Checkpoint(Event event, const char[] name, bool don
     int entered = GetClientOfUserId(event.GetInt("userid"));
     int door = event.GetInt("door");
     
-    if (L4D2_IsValidClient(entered))
+    if (IsValidAndInGame(entered))
     {
         //Is Actual End Saferoom?
         //Check if there are multiple "End Saferoom" Doors.
@@ -223,7 +224,7 @@ public Action Player_Left_Checkpoint(Event event, const char[] name, bool dontBr
 {
     int left = GetClientOfUserId(event.GetInt("userid"));
     
-    if (L4D2_IsValidClient(left) && checkpointreached[left] == 1)
+    if (IsValidAndInGame(left) && checkpointreached[left] == 1)
     {
         //Survivor Left
         checkpointreached[left] = 0;
@@ -237,7 +238,7 @@ public Action Player_Left_Checkpoint(Event event, const char[] name, bool dontBr
 public Action OnRevive(Event event, const char[] name, bool dontBroadcast)
 {
     int revive = GetClientOfUserId(event.GetInt("subject"));
-    if (!L4D2_IsValidClient(revive) || GetClientTeam(revive ) != 2) return;
+    if (!IsValidAndInGame(revive) || GetClientTeam(revive ) != 2) return;
     
     //Incapped, do a check.
     IsIncapped[revive] = 0;
@@ -251,7 +252,7 @@ public Action OnDeath(Event event, const char[] name, bool dontBroadcast)
     char victim[64];
     event.GetString("victimname", victim, sizeof(victim));
     
-    if (!L4D2_IsValidClient(death)) return;
+    if (!IsValidAndInGame(death)) return;
     
     //Survivor Died.
     if(GetClientTeam(death) != 2 && checkpointreached[death] == 1)
@@ -267,7 +268,7 @@ public Action OnDeath(Event event, const char[] name, bool dontBroadcast)
 public Action OnIncap(Event event, const char[] name, bool dontBroadcast)
 {
     int incap = GetClientOfUserId(event.GetInt("userid"));
-    if (!L4D2_IsValidClient(incap) || GetClientTeam(incap) != 2) return;
+    if (!IsValidAndInGame(incap) || GetClientTeam(incap) != 2) return;
     
     //Incapped, do a check.
     IsIncapped[incap] = 1;
@@ -283,7 +284,7 @@ void CanWeClose()
 
 bool CheckClose()
 {
-    if(L4D2_AnyTankInPlay())
+    if(AnyTankInPlay())
     {
         //Block 1v1 and 2v2 Tank Rushes
         if (GetConVarInt(g_hSurvivorLimit) <= 2) return false;
@@ -301,9 +302,9 @@ int FindSurvivors()
 {
     int Outsiders = 0;
     
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		int outsider = L4D_GetSurvivorOfIndex(i);
+		int outsider = L4D2_GetSurvivorOfIndex(i);
 		if (outsider == 0 || !IsPlayerAlive(outsider)) continue;
         if (!checkpointreached[outsider] && !IsIncapped[outsider])
           Outsiders++;

@@ -4,8 +4,9 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <[LIB]left4dhooks>
-#include <[LIB]l4d2library>
+#include <left4dhooks>
+#include <l4d2lib>
+#include <l4d2util>
 
 #define SMOKER_TONGUE_DELAY 1.0
 #define ASSAULT_DELAY 0.3 // using 0.3 to be safe (command does not register in the first 0.2 seconds after spawn)
@@ -39,11 +40,9 @@
 #define JOCKEY_JUMP_NEAR_RANGE 400.0 // この範囲に生存者がいたら荒ぶる
 #define JOCKEY_JUMP_MIN_SPEED 130.0
 #define BOMMER_SCAN_DELAY 0.5
-#define SPITTER_RUN 200.0
 #define SPITTER_SPIT_DELAY 2.0
 #define SPITTER_JUMP_DELAY 0.1
 #define CHARGER_MELEE_DELAY 0.2
-#define CHARGER_MELEE_RANGE 400.0
 
 #define MOVESPEED_MAX     1000
 
@@ -73,7 +72,6 @@ static const int ai_aim_offset_sensitivity_hunter = 360;  //如果猎人有目�
 static const int ai_wall_detection_distance = -1;  //被感染的机器人在他自己面前多远会检查一堵墙。 使用“-1”禁用功能
 static const int ai_charge_proximity = 250;  //充电前充电器会靠近多远
 static const int ai_health_threshold_charger = 300;  //如果充电器的生命值下降到这个水平，它就会充电
-static const int ai_hop_activation_proximity = 500;
 //static const int ai_jockey_stumble_radius = 50;
 static const int ai_aim_offset_sensitivity_charger = 20;
 
@@ -85,8 +83,6 @@ ConVar cvChokeDamageInterrupt;
 ConVar cvTankAttackRange;
 ConVar cvTongueRange;
 ConVar cvVomitRange;
-
-ArrayList arraySurvivors;
 
 bool bHasQueuedLunge[MAXPLAYERS+1];
 bool bCanLunge[MAXPLAYERS+1];
@@ -112,8 +108,6 @@ int g_state[MAXPLAYERS+1][8];
 
 public void OnPluginStart()
 {
-	arraySurvivors = new ArrayList();
-	
 	cvLungeInterval = FindConVar("z_lunge_interval");
 	cvJockeyLeapAgainTimer = FindConVar("z_jockey_leap_again_timer");
 	cvTankAttackRange = FindConVar("tank_attack_range");
@@ -166,7 +160,7 @@ public void OnTongueCvarChange(ConVar convar, const char[] oldValue, const char[
 	cvChokeDamageInterrupt.SetInt(cvSmokerHealth.IntValue);
 }
 
-public void L4D_OnRoundStart()
+public void L4D2_OnRealRoundStart()
 {
 	float time = GetGameTime();
 	for (int i = 1; i <= MAXPLAYERS; i++)
@@ -188,10 +182,10 @@ public void L4D_OnRoundStart()
 public Action OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsBotInfected(client)) return;
+	if (!IsBotInfected(client)) return;
 	CreateTimer(ASSAULT_DELAY, Timer_PostSpawnAssault, client, TIMER_FLAG_NO_MAPCHANGE);
 	if (IsCapper(client)) g_targetSurvivor[client] = GetTargetSurvivor();
-	switch (L4D2_GetInfectedClass(client))
+	switch (GetInfectedClass(client))
 	{
 		case (L4D2Infected_Hunter):
 		{
@@ -266,7 +260,7 @@ public Action OnAbilityUse(Event event, const char[] name, bool dontBroadcast)
 		else if (StrEqual(abilityName, "ability_charge"))
 		{
 			int aimTarget = GetClientAimTarget(client);
-			if (!L4D2_IsValidSurvivor(aimTarget) || IsTargetWatchingAttacker(client, ai_aim_offset_sensitivity_charger))
+			if (!IsValidSurvivor(aimTarget) || IsTargetWatchingAttacker(client, ai_aim_offset_sensitivity_charger))
 			{	
 				float chargerPos[3];
 				GetClientAbsOrigin(client, chargerPos);
@@ -275,9 +269,12 @@ public Action OnAbilityUse(Event event, const char[] name, bool dontBroadcast)
 				{
 					aimTarget = newTarget;
 				}
+				
+				if (!IsBotInfected(client) || !IsCharger(client) || !IsValidSurvivor(aimTarget)) return Plugin_Continue;
 				float survivorPos[3];
 				float attackDirection[3];
 				float attackAngle[3];
+				GetClientAbsOrigin(client, chargerPos);
 				GetClientAbsOrigin(aimTarget, survivorPos);
 				MakeVectorFromPoints(chargerPos, survivorPos, attackDirection);
 				GetVectorAngles(attackDirection, attackAngle);	
@@ -307,7 +304,7 @@ public Action OnPlayerShoved(Event event, const char[] name, bool dontBroadcast)
 	if (IsJockey(shovedPlayer))
 	{
 		bHasJockeyShoved[shovedPlayer] = true;
-		if (L4D2_GetInfectedClass(shovedPlayer) == L4D2Infected_Jockey )
+		if (GetInfectedClass(shovedPlayer) == L4D2Infected_Jockey )
 		{
 			bCanLeap[shovedPlayer] = false;
 			CreateTimer(fJockeyLeapAgainTimer, Timer_LeapCooldown, shovedPlayer, TIMER_FLAG_NO_MAPCHANGE) ;
@@ -323,10 +320,10 @@ public Action Timer_LeapCooldown(Handle timer, any jockey)
 public Action OnPlayerImmobilised(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (L4D2_IsValidClient(client))
+	if (IsValidAndInGame(client))
 	{
 		if (
-			(StrEqual(name, "player_incapacitated") && L4D2_IsSurvivor(client)) || 
+			(StrEqual(name, "player_incapacitated") && IsSurvivor(client)) || 
 			(StrEqual(name, "player_death"))
 		) RefreshTargets();
 	}	
@@ -335,7 +332,7 @@ public Action OnPlayerImmobilised(Event event, const char[] name, bool dontBroad
 public Action OnTankRunCmd(int client, int &buttons)
 {
 	int target = GetClientAimTarget(client, true);
-	if (target > 0 && L4D2_IsSurvivor(target) && isVisibleTo(client, target))
+	if (IsValidSurvivor(target) && isVisibleTo(client, target))
 	{
 		float target_pos[3];
 		float self_pos[3];
@@ -369,7 +366,7 @@ public Action OnSmokerRunCmd(int client, int &buttons)
 	{
 		g_delay[client][0] = GetGameTime();
 		int target = GetClientAimTarget(client, true);
-		if (target > 0 && L4D2_IsSurvivor(target) && isVisibleTo(client, target))
+		if (IsValidSurvivor(target) && isVisibleTo(client, target))
 		{
 			float target_pos[3], self_pos[3], dist;
 			GetClientAbsOrigin(client, self_pos);
@@ -444,45 +441,48 @@ public Action OnJockeyRunCmd(int client, int &buttons)
 	int flags = GetEntityFlags(client);
 	float fVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
-	//float currentspeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0));
+	float currentspeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0));
 	float clientEyeAngles[3];
 	GetClientEyeAngles(client, clientEyeAngles);
 	float jockeyPos[3];
 	GetClientAbsOrigin(client, jockeyPos);
 	int iSurvivorsProximity = GetSurvivorProximity(jockeyPos, -1);
-	/*if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") && 600 > iSurvivorsProximity > 250 && currentspeed > 200.0)
+	if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") && 1500 > iSurvivorsProximity > 250)
 	{
-		if (flags & 1)
+		if (currentspeed > 200.0)
 		{
-			buttons = buttons | IN_DUCK;
-			buttons = buttons | IN_JUMP;
-			if (buttons & IN_FORWARD)
+			if (flags & 1)
 			{
-				Client_Push(client, clientEyeAngles, BoostForward, 6436);
+				buttons = buttons | IN_DUCK;
+				buttons = buttons | IN_JUMP;
+				if (buttons & IN_FORWARD)
+				{
+					Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+				}
+				if (buttons & IN_BACK)
+				{
+					clientEyeAngles[1] += 180.0;
+					Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+				}
+				if (buttons & IN_MOVELEFT)
+				{
+					clientEyeAngles[1] += 90.0;
+					Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+				}
+				if (buttons & IN_MOVERIGHT)
+				{
+					clientEyeAngles[1] += -90.0;
+					Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+				}
 			}
-			if (buttons & IN_BACK)
+			if (GetEntityMoveType(client) & MOVETYPE_LADDER)
 			{
-				Client_Push(client, clientEyeAngles, BoostForward, 6448);
+				buttons = buttons & -3;
+				buttons = buttons & -5;
 			}
-			if (buttons & IN_MOVELEFT)
-			{
-				Client_Push(client, clientEyeAngles, BoostForward, 6460);
-			}
-			if (buttons & IN_MOVERIGHT)
-			{
-				Client_Push(client, clientEyeAngles, BoostForward, 6472);
-			}
+			return Plugin_Changed;
 		}
-		if (GetEntityMoveType(client) & MOVETYPE_LADDER)
-		{
-			buttons = buttons & -3;
-			buttons = buttons & -5;
-		}
-		return Plugin_Changed;
-	}*/
-	
-	if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") && (iSurvivorsProximity < ai_hop_activation_proximity))
-	{
+		
 		buttons |= IN_FORWARD;
 		
 		if (!bHasJockeyShoved[client] && (flags & FL_ONGROUND))
@@ -515,6 +515,45 @@ public Action OnJockeyRunCmd(int client, int &buttons)
 
 public Action OnBoomerRunCmd(int client, int &buttons)
 {
+	int flags = GetEntityFlags(client);
+	float clientEyeAngles[3];
+	GetClientEyeAngles(client, clientEyeAngles);
+	float boomerPos[3];
+	GetClientAbsOrigin(client, boomerPos);
+	int iSurvivorsProximity = GetSurvivorProximity(boomerPos, -1);
+	if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") && 1500 > iSurvivorsProximity > 200)
+	{
+		if (flags & FL_ONGROUND)
+		{
+			buttons |= IN_DUCK;
+			buttons |= IN_JUMP;
+			if (buttons & IN_FORWARD)
+			{
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_BACK)
+			{
+				clientEyeAngles[1] += 180.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_MOVELEFT)
+			{
+				clientEyeAngles[1] += 90.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_MOVERIGHT)
+			{
+				clientEyeAngles[1] += -90.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+		}
+		if (GetEntityMoveType(client) & MOVETYPE_LADDER)
+		{
+			buttons &= ~IN_JUMP;
+			buttons &= ~IN_DUCK;
+		}
+	}
+	
 	if (buttons & IN_ATTACK)
 	{
 		buttons &= ~IN_ATTACK;
@@ -524,7 +563,7 @@ public Action OnBoomerRunCmd(int client, int &buttons)
 	{
 		g_delay[client][0] = GetGameTime();
 		int target = GetClientAimTarget(client, true);
-		if (target > 0 && L4D2_IsSurvivor(target) && isVisibleTo(client, target))
+		if (IsValidSurvivor(target) && isVisibleTo(client, target))
 		{
 			float target_pos[3];
 			float self_pos[3];
@@ -544,7 +583,10 @@ public Action OnBoomerRunCmd(int client, int &buttons)
 
 public Action OnSpitterRunCmd(int client, int &buttons, float vel[3])
 {
-	if (g_move_speed[client] > SPITTER_RUN && GetGameTime() - g_delay[client][0] > SPITTER_JUMP_DELAY)
+	float fVelocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+	float currentspeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0));
+	if (currentspeed > 200.0 && GetGameTime() - g_delay[client][0] > SPITTER_JUMP_DELAY)
 	{
 		g_delay[client][0] = GetGameTime();
 		buttons |= IN_JUMP;
@@ -576,12 +618,52 @@ public Action OnSpitterRunCmd(int client, int &buttons, float vel[3])
 
 public Action OnChargerRunCmd(int client, int &buttons)
 {
+	int flags = GetEntityFlags(client);
 	float chargerPos[3];
 	GetClientAbsOrigin(client, chargerPos);
 	int target = GetClientAimTarget(client, true);
 	int iProximity = GetSurvivorProximity(chargerPos, target);
 	int chargerHealth = GetEntProp(client, Prop_Send, "m_iHealth");
 	int chargeDistance = GetRandomInt(ai_charge_proximity, MAX_CHARGE_PROXIMITY);
+	float clientEyeAngles[3];
+	GetClientEyeAngles(client, clientEyeAngles);
+	float fVelocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", fVelocity);
+	float currentspeed = SquareRoot(Pow(fVelocity[0], 2.0) + Pow(fVelocity[1], 2.0));
+	
+	if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") && 1500 > iProximity > chargeDistance && currentspeed > 150.0)
+	{
+		if (flags & FL_ONGROUND)
+		{
+			buttons |= IN_DUCK;
+			buttons |= IN_JUMP;
+			if (buttons & IN_FORWARD)
+			{
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_BACK)
+			{
+				clientEyeAngles[1] += 180.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_MOVELEFT)
+			{
+				clientEyeAngles[1] += 90.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+			if (buttons & IN_MOVERIGHT)
+			{
+				clientEyeAngles[1] += -90.0;
+				Client_Push(client, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None}));
+			}
+		}
+		if (GetEntityMoveType(client) & MOVETYPE_LADDER)
+		{
+			buttons &= ~IN_JUMP;
+			buttons &= ~IN_DUCK;
+		}
+	}
+	
 	if (chargerHealth > ai_health_threshold_charger && iProximity > chargeDistance)
 	{
 		if (!bShouldCharge[client] || IsPinned(target))
@@ -595,23 +677,22 @@ public Action OnChargerRunCmd(int client, int &buttons)
 		bShouldCharge[client] = true;
 	}
 	
-	if (!(buttons & IN_ATTACK)
-		&& GetGameTime() - g_delay[client][0] > CHARGER_MELEE_DELAY && L4D2_NearestSurvivorDistance(client) < CHARGER_MELEE_RANGE)
+	if (target > 0 && 150 >= iProximity && !IsIncapacitated(target))
 	{
-		g_delay[client][0] = GetGameTime();
 		buttons |= IN_ATTACK2;
-		return Plugin_Changed;
+		buttons |= IN_ATTACK;
 	}
 	return Plugin_Continue;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-	if (	!L4D2_IsValidClient(client) || !IsFakeClient(client) || !L4D2_IsInfected(client) || !IsPlayerAlive(client)) return Plugin_Continue;
+	if (!IsValidInfected(client) || !IsFakeClient(client) || !IsPlayerAlive(client)) return Plugin_Continue;
+	if (!AnySurvivorAlive()) return Plugin_Continue;
 	
 	if (!GetEntProp(client, Prop_Send, "m_isGhost"))
 	{
-		switch (L4D2_GetInfectedClass(client))
+		switch (GetInfectedClass(client))
 		{
 			case L4D2Infected_Tank:
 			{
@@ -672,22 +753,27 @@ public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 
 bool IsBotInfected(int client)
 {
-	return L4D2_IsValidInfected(client) && IsFakeClient(client);
+	return IsValidInfected(client) && IsFakeClient(client);
 }
 
 bool IsHunter(int client)
 {
-	return L4D2_GetInfectedClass(client) == L4D2Infected_Hunter;
+	return GetInfectedClass(client) == L4D2Infected_Hunter;
 }
 
 bool IsJockey(int client)
 {
-	return L4D2_GetInfectedClass(client) == L4D2Infected_Jockey;
+	return GetInfectedClass(client) == L4D2Infected_Jockey;
+}
+
+bool IsCharger(int client)
+{
+	return GetInfectedClass(client) == L4D2Infected_Charger;
 }
 
 bool IsCapper(int client)
 {
-	L4D2_Infected zombieClass = L4D2_GetInfectedClass(client);
+	L4D2_Infected zombieClass = GetInfectedClass(client);
 	if (zombieClass != L4D2Infected_Boomer && zombieClass != L4D2Infected_Spitter && zombieClass != L4D2Infected_Tank)
 	{
 		return true;
@@ -708,7 +794,7 @@ void BlockCharge(int charger)
 bool IsPinned(int client)
 {
 	bool bIsPinned = false;
-	if (L4D2_IsValidSurvivor(client))
+	if (IsValidSurvivor(client))
 	{
 		if (GetEntPropEnt(client, Prop_Send, "m_tongueOwner") > 0) bIsPinned = true; // smoker
 		if (GetEntPropEnt(client, Prop_Send, "m_pounceAttacker") > 0) bIsPinned = true; // hunter
@@ -726,7 +812,7 @@ int GetSurvivorProximity(const float rp[3], int specificSurvivor = -1)
 	referencePos[0] = rp[0];
 	referencePos[1] = rp[1];
 	referencePos[2] = rp[2];
-	if (L4D2_IsValidSurvivor(specificSurvivor))
+	if (IsValidSurvivor(specificSurvivor))
 	{
 		targetSurvivor = specificSurvivor;		
 	}
@@ -742,17 +828,17 @@ int GetClosestSurvivor(float referencePos[3], int excludeSurvivor = -1)
 {
 	float survivorPos[3];
 	int closestSurvivor = L4D2_GetRandomSurvivor();	
-	if (!L4D2_IsValidClient(closestSurvivor)) 
+	if (!IsValidAndInGame(closestSurvivor)) 
 	{
 		LogError("GetClosestSurvivor([%f, %f, %f], %d) = invalid client %d", referencePos[0], referencePos[1], referencePos[2], excludeSurvivor, closestSurvivor);
 		return -1;
 	}
 	GetClientAbsOrigin(closestSurvivor, survivorPos);
 	int iClosestAbsDisplacement = RoundToNearest(GetVectorDistance(referencePos, survivorPos));
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		int client = L4D_GetSurvivorOfIndex(i);
-		if (client == 0 || !IsPlayerAlive(client) || client == excludeSurvivor) continue;
+		int client = L4D2_GetSurvivorOfIndex(i);
+		if (client == 0 || !IsClientInGame(client) || !IsPlayerAlive(client) || client == excludeSurvivor) continue;
 		GetClientAbsOrigin( client, survivorPos );
 		int displacement = RoundToNearest(GetVectorDistance(referencePos, survivorPos));			
 		if (displacement < iClosestAbsDisplacement || iClosestAbsDisplacement < 0)
@@ -770,7 +856,7 @@ void L4D2_CheatCommand(int client, char[] commandName, char[] argument1 = "", ch
 {
     if (GetCommandFlags(commandName) != INVALID_FCVAR_FLAGS)
 	{
-		if (!L4D2_IsValidClient(client))
+		if (!IsValidAndInGame(client))
 		{
 			int[] player = new int[MaxClients];
 			int numplayer = 0;
@@ -784,7 +870,7 @@ void L4D2_CheatCommand(int client, char[] commandName, char[] argument1 = "", ch
 			}
 			client = player[GetRandomInt(0, numplayer - 1)];
 		}
-		if (L4D2_IsValidClient(client))
+		if (IsValidAndInGame(client))
 		{
 		    int originalUserFlags = GetUserFlagBits(client);
 		    int originalCommandFlags = GetCommandFlags(commandName);            
@@ -902,10 +988,9 @@ float GaussianRNG(float mean, float std)
 	else return z2;
 }
 
-/*void Client_Push(int client, float clientEyeAngle[3], float power, VelocityOverride override[3] = VelocityOvr_None)
+void Client_Push(int client, float clientEyeAngle[3], float power, VelocityOverride override[3] = VelocityOvr_None)
 {
-	float forwardVector[3],
-	float newVel[3];
+	float forwardVector[3], newVel[3];
 	GetAngleVectors(clientEyeAngle, forwardVector, NULL_VECTOR, NULL_VECTOR);
 	NormalizeVector(forwardVector, forwardVector);
 	ScaleVector(forwardVector, power);
@@ -937,13 +1022,13 @@ float GaussianRNG(float mean, float std)
 		newVel[i] += forwardVector[i];
 	}
 	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, newVel);
-}*/
+}
 
 void AttackTarget(int client)
 {
 	int botID = GetClientUserId(client);
 	int target = g_targetSurvivor[client];
-	if (L4D2_IsValidSurvivor(target))
+	if (IsValidSurvivor(target))
 	{
 		if (IsMobile(target))
 		{
@@ -970,9 +1055,9 @@ void ScriptCommand(const char[] arguments, any ...)
 bool IsMobile(int client)
 {
 	bool bIsMobile = true;
-	if (L4D2_IsValidSurvivor(client))
+	if (IsValidSurvivor(client))
 	{
-		if (IsPinned(client) || L4D2_IsPlayerIncap(client) || !IsPlayerAlive(client))
+		if (IsPinned(client) || IsIncapacitated(client) || !IsPlayerAlive(client))
 		{
 			bIsMobile = false;
 		}
@@ -982,17 +1067,9 @@ bool IsMobile(int client)
 
 void RefreshTargets()
 {
-	arraySurvivors.Clear();
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
-	{
-		int index = L4D_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
-		arraySurvivors.Push(index);
-	}
-	
 	for (int i = 1; i < MaxClients; i++)
 	{
-		if (IsClientInGame(i) && IsFakeClient(i) && L4D2_IsInfected(i) && IsCapper(i) && IsPlayerAlive(i))
+		if (IsInfected(i) && IsFakeClient(i) && IsCapper(i) && IsPlayerAlive(i))
 		{
 			g_targetSurvivor[i] = GetTargetSurvivor();
 		}
@@ -1002,54 +1079,35 @@ void RefreshTargets()
 int GetTargetSurvivor()
 {
 	int target = -1;
-	int arraySize = GetArraySize(arraySurvivors);
-	if (arraySize > 0)
-	{
-		int lastIndex = arraySize - 1;
-		bool bDoesPermHealthRemain = false;
-		for (int i = 0; i < arraySize; i++)
-		{
-			int survivor = arraySurvivors.Get(i);
-			if (GetEntProp(survivor, Prop_Send, "m_currentReviveCount") < 1  && IsMobile(survivor))
-			{
-				bDoesPermHealthRemain = true;
-			}
-		}
-		
-		if (bDoesPermHealthRemain)
-		{
-			int randomIndex;
-			int randomSurvivor;
-			do
-			{
-				randomIndex = GetRandomInt(0, lastIndex);		
-				randomSurvivor = arraySurvivors.Get(randomIndex);		 
-			} while (GetEntProp(randomSurvivor, Prop_Send, "m_currentReviveCount") > 0);
-			target = randomSurvivor;
-		}		
-	}	
+	bool bDoesPermHealthRemain = false;
 	
-	return target;
-}
-
-any L4D2_NearestSurvivorDistance(int client)
-{
-	float self[3];
-	float min_dist = 100000.0;
-	GetClientAbsOrigin(client, self);
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	int[] survivors = new int[L4D2_GetSurvivorCount()];
+	int numSurvivors = 0;
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		int index = L4D_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		float target[3];
-		GetClientAbsOrigin(index, target);
-		float dist = GetVectorDistance(self, target);
-		if (dist < min_dist)
+		int survivor = L4D2_GetSurvivorOfIndex(i);
+		if (survivor == 0 || !IsPlayerAlive(survivor)) continue;
+	    survivors[numSurvivors] = survivor;
+	    numSurvivors++;
+		
+		if (GetSurvivorIncapCount(survivor) < 1 && IsMobile(survivor))
 		{
-			min_dist = dist;
+			bDoesPermHealthRemain = true;
 		}
 	}
-	return min_dist;
+	
+	if (bDoesPermHealthRemain)
+	{
+		int iRandomSurvivor;
+		do
+		{
+			iRandomSurvivor = survivors[GetRandomInt(0, numSurvivors - 1)];
+		}
+		while (GetSurvivorIncapCount(iRandomSurvivor) > 0);
+		target = iRandomSurvivor;
+	}		
+	
+	return target;
 }
 
 any L4D2_NearestActiveSurvivorDistance(int client)
@@ -1057,11 +1115,11 @@ any L4D2_NearestActiveSurvivorDistance(int client)
 	float self[3];
 	float min_dist = 100000.0;
 	GetClientAbsOrigin(client, self);
-	for (int i = 0; i < NUM_OF_SURVIVORS; i++)
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
-		int index = L4D_GetSurvivorOfIndex(i);
+		int index = L4D2_GetSurvivorOfIndex(i);
 		if (index == 0 || !IsPlayerAlive(index)) continue;
-		if (!L4D2_IsPlayerIncap(client))
+		if (!IsIncapacitated(client))
 		{
 			float target[3];
 			GetClientAbsOrigin(index, target);
@@ -1081,7 +1139,7 @@ bool IsTargetWatchingAttacker(int attacker, int offsetThreshold)
 	if (GetClientTeam(attacker) == 3 && IsPlayerAlive(attacker))
 	{
 		int target = GetClientAimTarget(attacker);
-		if (L4D2_IsValidSurvivor(target))
+		if (IsValidSurvivor(target))
 		{
 			int aimOffset = RoundToNearest(GetPlayerAimOffset(target, attacker));
 			if (aimOffset <= offsetThreshold)
@@ -1121,4 +1179,18 @@ float GetPlayerAimOffset(int attacker, int target)
 	
 	resultAngle = RadToDeg(ArcCosine(GetVectorDotProduct(aimVector, directVector)));
 	return resultAngle;
+}
+
+bool AnySurvivorAlive()
+{
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	{
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || !IsClientInGame(index)) continue;
+		if (IsPlayerAlive(index) && !IsIncapacitated(index))
+		{
+			return true;
+		}
+	}
+	return false;
 }
