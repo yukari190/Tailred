@@ -6,7 +6,7 @@
 #include <l4d2util>
 #include <l4d2lib>
 
-#define SPAWNCOUNT 4
+#define SPAWNCOUNT 3
 
 public Plugin myinfo = 
 {
@@ -21,7 +21,6 @@ static const WeaponId safeSpawns[SPAWNCOUNT] =
 {
 	WEPID_SHOTGUN_CHROME,
 	WEPID_SMG_SILENCED,
-	WEPID_SNIPER_SCOUT,
 	WEPID_AMMO
 };
 

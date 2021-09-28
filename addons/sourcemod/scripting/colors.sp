@@ -85,7 +85,7 @@ public any _native_CPrintToChatEx(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	int author = GetNativeCell(2);
 	char szMessage[MAX_MESSAGE_LENGTH];
-	FormatNativeString(0, 2, 4, sizeof(szMessage), _, szMessage);
+	FormatNativeString(0, 3, 4, sizeof(szMessage), _, szMessage);
 	CPrintToChatEx(client, author, "%s", szMessage);
 }
 
@@ -93,7 +93,7 @@ public any _native_CPrintToChatAllEx(Handle plugin, int numParams)
 {
 	int author = GetNativeCell(1);
 	char szMessage[MAX_MESSAGE_LENGTH];
-	FormatNativeString(0, 1, 3, sizeof(szMessage), _, szMessage);
+	FormatNativeString(0, 2, 3, sizeof(szMessage), _, szMessage);
 	
 	if (author < 0 || author > MaxClients)
 		ThrowError("Invalid client index %d", author);

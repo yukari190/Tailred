@@ -47,7 +47,7 @@ public void OnPluginStart()
 	RegServerCmd("l4d2_addweaponrule", AddWeaponRuleCb);
 	RegServerCmd("l4d2_resetweaponrules", ResetWeaponRulesCb);
 	
-	HookEvent("spawner_give_item", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
 }
 
 public void L4D2_OnRealRoundStart()

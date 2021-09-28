@@ -44,7 +44,8 @@ KeyValues g_hInfoKV;
 
 Handle 
 	top_menu,
-	admin_menu;
+	admin_menu,
+	SpecTimer[MAXPLAYERS+1];
 
 TopMenuObject 
 	spawn_special_infected_menu,
@@ -59,12 +60,15 @@ ConVar
 	hMaxPlayerZombies,
 	hHostNamePath;
 
-bool casterSystemAvailable;
-bool alltp;
+bool 
+	casterSystemAvailable,
+	alltp,
+	blockVotes[MAXPLAYERS+1];
 
 int 
 	iSlot,
-	g_originClient = -1;
+	g_originClient = -1,
+	TimerLive = 0;
 
 float g_pos[3];
 
@@ -136,6 +140,8 @@ public void OnPluginStart()
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != null))
 	  OnAdminMenuReady(top_menu);
 	
+	AddCommandListener(Vote_Listener, "vote");
+	AddCommandListener(Vote_Listener, "callvote");
 	AddCommandListener(TeamSay_Callback, "say_team");
 	
 	HookEvent("player_changename", Event_NameChange, EventHookMode_Pre);
@@ -203,6 +209,17 @@ public void OnClientPostAdminCheck(int client)
 		Format(rawmsg, sizeof(rawmsg), "%c%s @ 加入游戏.", 1, rawmsg);
 		CPrintToChatAll("%s", rawmsg);
 	}
+}
+
+public void OnRoundIsLive()
+{
+	TimerLive = 0;
+}
+
+public void OnTimerStart()
+{
+	if (TimerLive == 0) TimerLive = 1;
+	else TimerLive = 0;
 }
 
 public void L4D2_OnRealRoundEnd()
@@ -301,6 +318,11 @@ public Action Event_PlayerDisconnectPre(Event event, const char[] name, bool don
 }
 
 
+public Action Vote_Listener(int client, const char[] command, int argc)
+{
+	return blockVotes[client] ? Plugin_Handled : Plugin_Continue;
+}
+
 public Action TeamSay_Callback(int client, char[] command, int args)
 {
 	if (!IsValidAndInGame(client)) return Plugin_Continue;
@@ -346,37 +368,57 @@ public Action Command_Spectate(int client, int args)
 {
 	if (!IsValidAndInGame(client)) return Plugin_Handled;
 	L4D2_Team team = view_as<L4D2_Team>(GetClientTeam(client));
+	
+	if (team != L4D2Team_Spectator && SpecTimer[client] == null)
+	{
+		CPrintToChatAllEx(client, "{teamcolor}%N{default} 表示要去趴会_(:зゝ∠)_", client);
+	}
+	
 	if (team == L4D2Team_Survivor)
 	{
-		L4D2_ChangeClientTeam(client, L4D2Team_Spectator, true);
-		PrintToChatAll("\x01玩家 \x03%N\x01 表示要去趴会_(:зゝ∠)_", client);
+		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
 	}
 	else if (team == L4D2Team_Infected)
 	{
-		if (GetInfectedClass(client) != L4D2Infected_Tank)
+		if (GetInfectedClass(client) != L4D2Infected_Tank && !IsInfectedGhost(client))
 		{
 			ForcePlayerSuicide(client);
 		}
-		L4D2_ChangeClientTeam(client, L4D2Team_Spectator, true);
-		PrintToChatAll("\x01玩家 \x03%N\x01 表示要去趴会_(:зゝ∠)_", client);
+		else if (GetInfectedClass(client) == L4D2Infected_Tank) return Plugin_Handled;
+		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
 	}
-	else if (team == L4D2Team_Spectator)
+	else
 	{
-		L4D2_ChangeClientTeam(client, L4D2Team_Infected, true);
-		CreateTimer(0.1, RespecDelay_Timer, client);
+		if (TimerLive == 0)
+		{
+			blockVotes[client] = true;
+			ChangeClientTeamEx(client, L4D2Team_Infected, true);
+			CreateTimer(0.1, RespecDelay_Timer, client);
+		}
 	}
+	if (SpecTimer[client] == null) SpecTimer[client] = CreateTimer(7.0, SecureSpec, client);
 	return Plugin_Handled;
+}
+
+public Action SecureSpec(Handle timer, any client)
+{
+	KillTimer(SpecTimer[client]);
+	SpecTimer[client] = null;
 }
 
 public Action RespecDelay_Timer(Handle timer, any client)
 {
-	L4D2_ChangeClientTeam(client, L4D2Team_Spectator, true);
+	if (IsValidAndInGame(client))
+	{
+		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
+		blockVotes[client] = false;
+	}
 }
 
 public Action Command_JoinSurvivor(int client, int args)
 {
 	if (!IsValidAndInGame(client)) return Plugin_Handled;
-	L4D2_ChangeClientTeam(client, L4D2Team_Survivor, false);
+	ChangeClientTeamEx(client, L4D2Team_Survivor, false);
 	return Plugin_Handled;
 }
 
@@ -1040,7 +1082,7 @@ public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, i
 	}
 }
 
-bool L4D2_ChangeClientTeam(int client, L4D2_Team team, bool force = false)
+bool ChangeClientTeamEx(int client, L4D2_Team team, bool force = false)
 {
 	if (view_as<L4D2_Team>(GetClientTeam(client)) == team) return true;
 	if (!force)

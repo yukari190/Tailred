@@ -28,7 +28,7 @@ public void OnPluginStart()
 	hReplaceFinaleKits = CreateConVar("sm_replace_finalekits", "1", "Replaces finale medkits with pills");
 	hRemoveKits = CreateConVar("sm_remove_statickits", "1", "Remove all static medkits (medkits such as the gun shop, these are compiled into the map)");
 	
-	HookEvent("spawner_give_item", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
 }
 
 public void L4D2_OnRealRoundStart()

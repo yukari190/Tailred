@@ -252,9 +252,14 @@ stock bool IsSurvivorAttacked(int survivor)
 
 stock int IsBeingAttacked(int survivor)
 {
+	int attacker = -1;
     for (int i = 0; i < sizeof(L4D2_AttackerNetProps); i++)
 	{
-		return GetEntPropEnt(survivor, Prop_Send, L4D2_AttackerNetProps[i]);
+		attacker = GetEntPropEnt(survivor, Prop_Send, L4D2_AttackerNetProps[i]);
+		if (attacker != -1)
+		{
+			return attacker;
+		}
     }
 	return -1;
 }
