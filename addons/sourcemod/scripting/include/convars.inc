@@ -49,7 +49,6 @@ enum ConVarBounds
  */
 enum ConVarQueryResult
 {
-	ConVarQuery_Cancelled = -1,         //< Client disconnected during query */
 	ConVarQuery_Okay = 0,               //< Retrieval of client convar value was successful. */
 	ConVarQuery_NotFound,               //< Client convar was not found. */
 	ConVarQuery_NotValid,               //< A console command with the same name was found, but there is no convar. */
@@ -120,11 +119,6 @@ methodmap ConVar < Handle
 	property int Flags {
 		public native get();
 		public native set(int flags);
-	}
-
-	// Retrieves the plugin handle of the convar's creator
-	property Handle Plugin {
-		public native get();
 	}
 
 	// Sets the boolean value of a console variable.
@@ -229,12 +223,6 @@ methodmap ConVar < Handle
 	// @param name       Buffer to store the name of the convar.
 	// @param maxlength  Maximum length of string buffer.
 	public native void GetName(char[] name, int maxlength);
-
-	// Retrieves the description of a console variable.
-	//
-	// @param buffer     Buffer to store the description of the convar.
-	// @param maxlength  Maximum length of string buffer.
-	public native void GetDescription(char[] buffer, int maxlength);
 
 	// Replicates a convar value to a specific client. This does not change the actual convar value.
 	//

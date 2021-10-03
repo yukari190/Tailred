@@ -4,10 +4,6 @@
 	{
 		"name" "Tailred Coop"
 	}
-	"tailredcoopold"
-	{
-		"name" "Tailred Coop Old"
-	}
 	"tailred"
 	{
 		"name" "Tailred Versus"

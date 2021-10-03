@@ -199,13 +199,12 @@ native Regex CompileRegex(const char[] pattern, int flags = 0, char[] error="", 
  * @param regex         Regex Handle from CompileRegex()
  * @param str           The string to check.
  * @param ret           Error code, if applicable.
- * @param offset        Offset in the string to start searching from.
  * @return              Number of captures found or -1 on failure.
  *
  * @note Use the regex handle passed to this function to extract
  *       matches with GetRegexSubString().
  */
-native int MatchRegex(Handle regex, const char[] str, RegexError &ret = REGEX_ERROR_NONE, int offset = 0);
+native int MatchRegex(Handle regex, const char[] str, RegexError &ret = REGEX_ERROR_NONE);
 
 /**
  * Returns a matched substring from a regex handle.

@@ -50,8 +50,7 @@ GlobalForward
 
 ConVar 
 	hGameMode,
-	hSurvivorLimit,
-	hTankLotterySelectionTime;
+	hSurvivorLimit;
 
 int 
 	iGameMode,
@@ -61,8 +60,7 @@ int
 	iTankPassCount;
 
 bool 
-	bPause[MAXPLAYERS+1],
-	IsMapInStart,
+	bIsMapInit,
 	bInSecondRound,
 	bRoundEnd,
 	bInRound,
@@ -75,7 +73,6 @@ bool
 	MapDataAvailable;
 
 float 
-	fTankLotterySelectionTime,
 	g_fStartLocA[3],
 	g_fStartLocB[3],
 	g_fStartLocC[3],
@@ -118,7 +115,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("SAFEDETECT_IsEntityInEndSaferoom", _native_SAFEDETECT_IsEntityInEndSaferoom);
 	CreateNative("SAFEDETECT_IsEntityInSaferoom", _native_SAFEDETECT_IsEntityInSaferoom);
 	CreateNative("L4D2_InSecondHalfOfRound", _native_InSecondHalfOfRound);
-	CreateNative("L4D2_PauseClient", _native_PauseClient);
 	CreateNative("L4D2_GetRandomSurvivor", _native_GetRandomSurvivor);
 	CreateNative("L4D2_IsCoop", _native_IsCoop);
 	CreateNative("L4D2_IsVersus", _native_IsVersus);
@@ -170,11 +166,9 @@ public void OnPluginStart()
 	
 	hGameMode = FindConVar("mp_gamemode");
 	hSurvivorLimit = FindConVar("survivor_limit");
-	hTankLotterySelectionTime = FindConVar("director_tank_lottery_selection_time");
 	
 	hGameMode.AddChangeHook(ConVarChange);
 	hSurvivorLimit.AddChangeHook(ConVarChange);
-	hTankLotterySelectionTime.AddChangeHook(ConVarChange);
 	
 	ConVarChange(null, "", "");
 	
@@ -212,8 +206,6 @@ public void OnPluginStart()
 
 public int ConVarChange(ConVar convar, char[] oldValue, char[] newValue)
 {
-	fTankLotterySelectionTime = hTankLotterySelectionTime.FloatValue;
-	
 	char gmode[20];
 	hGameMode.GetString(gmode, sizeof(gmode));
 	if(
@@ -257,8 +249,6 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
-	IsMapInStart = true;
-	
     g_bHasStart = false;        g_bHasStartExtra = false;
     g_bHasEnd = false;          g_bHasEndExtra = false;
     g_fStartLocA = NULL_VECTOR; g_fStartLocB = NULL_VECTOR; g_fStartLocC = NULL_VECTOR; g_fStartLocD = NULL_VECTOR;
@@ -337,11 +327,15 @@ public void OnMapStart()
 		End_Dist = -1.0;
 		LogMessage("[MI] MapInfo for %s is missing.", g_sMapname);
 	}
+	
+	bRoundEnd = false;
+	bInSecondRound = false;
+	bIsMapInit = true;
 }
 
 public void OnMapEnd()
 {
-	IsMapInStart = false;
+	bIsMapInit = false;
 	KvRewind(kvMapInfo);
 	KvRewind(kvSafeRoomInfo);
 	bRoundEnd = false;
@@ -361,21 +355,10 @@ public Action L4D_OnSpawnTank(const float vector[3], const float qangle[3])
 	return Plugin_Continue;
 }
 
-public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
-{
-	if (
-		client <= 0 || client > MaxClients ||
-		!IsClientInGame(client) || !IsFakeClient(client) ||
-		GetClientTeam(client) != 3 || !IsPlayerAlive(client)
-	) return Plugin_Continue;
-	if (bPause[client]) return Plugin_Handled;
-	return Plugin_Continue;
-}
-
 
 
 /* Events */
-public Action RoundEnd_Event(Event event, const char[] name, bool dontBroadcast)
+public void RoundEnd_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (bInRound)
 	{
@@ -387,35 +370,34 @@ public Action RoundEnd_Event(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-public Action RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
+public void RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	CreateTimer(0.5, RoundStart_Delay, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+	if (bRoundEnd)
+	{
+		bInSecondRound = true;
+	}
+	CreateTimer(0.25, RoundStart_Delay, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
 public Action RoundStart_Delay(Handle timer)
 {
-	if (IsMapInStart)
+	if (bIsMapInit)
 	{
 		if (!bInRound)
 		{
 			bInRound = true;
 			iRoundNumber++;
-			if (bRoundEnd)
-			{
-				bInSecondRound = true;
-			}
 			Call_StartForward(hFwdRoundStart);
 			Call_PushCell(iRoundNumber);
 			Call_Finish();
 		}
-		InitStatus();
 		ResetStatus();
 		PrintToServer("%s", g_sMapname);
 		KillTimer(timer);
 	}
 }
 
-public Action TankSpawn_Event(Event event, const char[] name, bool dontBroadcast)
+public void TankSpawn_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bExpectTankSpawn) return;
 	bExpectTankSpawn = false;
@@ -423,32 +405,14 @@ public Action TankSpawn_Event(Event event, const char[] name, bool dontBroadcast
 	bIsTankActive = true;
 	
 	iTank = GetClientOfUserId(event.GetInt("userid"));
-	if (
-		iTank <= 0 || iTank > MaxClients || !IsClientInGame(iTank) || 
-		GetClientTeam(iTank) != 3 || GetEntProp(iTank, Prop_Send, "m_zombieClass") != 8
-	)
-	{
-		return;
-	}
-	
-	if (IsFakeClient(iTank))
-	{
-		PauseClient(iTank, true);
-		CreateTimer(fTankLotterySelectionTime, ResumeTankTimer);
-	}
+	if (!IsValidAndInGame(iTank) || GetClientTeam(iTank) != 3 || GetEntProp(iTank, Prop_Send, "m_zombieClass") != 8) return;
 	
 	Call_StartForward(hFwdFirstTankSpawn);
 	Call_PushCell(iTank);
 	Call_Finish();
 }
 
-public Action ResumeTankTimer(Handle timer)
-{
-	if(!IsValidEntity(iTank)) return;
-	PauseClient(iTank, false);
-}
-
-public Action ItemPickup_Event(Event event, const char[] name, bool dontBroadcast)
+public void ItemPickup_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bIsTankActive)
 	{
@@ -460,10 +424,8 @@ public Action ItemPickup_Event(Event event, const char[] name, bool dontBroadcas
 	{
 		int iPrevTank = iTank;
 		iTank = GetClientOfUserId(event.GetInt("userid"));
-		if (
-			iTank <= 0 || iTank > MaxClients || !IsClientInGame(iTank) || 
-			GetClientTeam(iTank) != 3 || GetEntProp(iTank, Prop_Send, "m_zombieClass") != 8
-		) return;
+		if (!IsValidAndInGame(iTank) || GetClientTeam(iTank) != 3 || GetEntProp(iTank, Prop_Send, "m_zombieClass") != 8) return;
+		
 		if (hTankDeathTimer != null)
 		{
 			KillTimer(hTankDeathTimer);
@@ -478,7 +440,7 @@ public Action ItemPickup_Event(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
-public Action PlayerDeath_Event(Event event, const char[] name, bool dontBroadcast)
+public void PlayerDeath_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!bIsTankActive)
 	{
@@ -486,14 +448,9 @@ public Action PlayerDeath_Event(Event event, const char[] name, bool dontBroadca
 	}
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
-	if (client <= 0 || client > MaxClients || !IsClientInGame(client))
-	{
-		return;
-	}
-	if (iTank != client)
-	{
-		return;
-	}
+	if (!IsValidAndInGame(client)) return;
+	if (iTank != client) return;
+	
 	hTankDeathTimer = CreateTimer(0.5, TankDeath_Timer, attacker);
 }
 
@@ -506,7 +463,7 @@ public Action TankDeath_Timer(Handle timer, any attacker)
 	ResetStatus();
 }
 
-public Action PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
+public void PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	int victim = GetClientOfUserId(event.GetInt("userid"));
 	int attacker;
@@ -516,7 +473,7 @@ public Action PlayerHurt_Event(Event event, const char[] name, bool dontBroadcas
 	int damage = event.GetInt("dmg_health");
 	int dmgtype = event.GetInt("type");
 	int hitgroup = event.GetInt("hitgroup");
-	if (victim <= 0 || victim > MaxClients || !IsClientInGame(victim) || !IsPlayerAlive(victim)) return;
+	if (!IsValidAndInGame(victim) || !IsPlayerAlive(victim)) return;
 	
 	Call_StartForward(hFwdPlayerHurt);
 	Call_PushCell(victim);
@@ -543,10 +500,8 @@ public Action PlayerTeam_Event(Event event, const char[] name, bool dontBroadcas
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	int oldteam = event.GetInt("oldteam");
 	int team = event.GetInt("team");
-	if (client <= 0 || client > MaxClients || !IsClientInGame(client))
-	{
-		return;
-	}
+	if (!IsValidAndInGame(client)) return;
+	
 	Action aResult = Plugin_Continue;
 	if (team == 2)
 	{
@@ -569,7 +524,6 @@ public Action PlayerTeam_Event(Event event, const char[] name, bool dontBroadcas
 	}
 	else if (oldteam == 3)
 	{
-		bPause[client] = false;
 		Call_StartForward(hFwdAwayInfected);
 		Call_PushCell(client);
 		Call_Finish(aResult);
@@ -595,7 +549,7 @@ public Action BuildArray_Timer(Handle timer)
 	Survivors_RebuildArray();
 }
 
-public Action SI_BuildIndex_Event(Event event, const char[] name, bool dontBroadcast)
+public void SI_BuildIndex_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	Survivors_RebuildArray();
 }
@@ -791,13 +745,6 @@ public any _native_SAFEDETECT_IsEntityInSaferoom(Handle plugin, int numParams)
 	return IsPointInStartSaferoom(location) || IsPointInEndSaferoom(location);
 }
 
-public any _native_PauseClient(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	bool b = GetNativeCell(2);
-	PauseClient(client, b);
-}
-
 public any _native_GetRandomSurvivor(Handle plugin, int numParams)
 {
 	int[] survivors = new int[GetSurvivorCount()];
@@ -805,7 +752,7 @@ public any _native_GetRandomSurvivor(Handle plugin, int numParams)
 	for (int i = 0; i < GetSurvivorCount(); i++)
 	{
 		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0 || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
 	    survivors[numSurvivors] = index;
 	    numSurvivors++;
 	}
@@ -1021,14 +968,6 @@ bool IsPointInEndSaferoom(float location[3])
 	return inSaferoom;
 }
 
-void InitStatus()
-{
-	for (int i = 1; i <= MAXPLAYERS; i++)
-	{
-		bPause[i] = false;
-	}
-}
-
 void ResetStatus()
 {
 	bExpectTankSpawn = false;
@@ -1066,22 +1005,6 @@ void Survivors_RebuildArray()
 	}
 }
 
-void PauseClient(int client, bool b)
-{
-	bPause[client] = b;
-	if (!IsValidEntity(client)) return;
-	if (b)
-	{
-		SetEntityMoveType(client, MOVETYPE_NONE);
-		SetEntProp(client, Prop_Send, "m_isGhost", 1);
-	}
-	else
-	{
-		SetEntityMoveType(client, MOVETYPE_CUSTOM);
-		SetEntProp(client, Prop_Send, "m_isGhost", 0);
-	}
-}
-
 float FindStartPointHeuristic(float result[3])
 {
 	int kits, entcount = GetEntityCount();
@@ -1111,4 +1034,9 @@ float FindStartPointHeuristic(float result[3])
 	}
 	result = averageOrigin;
 	return greatestDist+1.0;
+}
+
+bool IsValidAndInGame(int client)
+{
+	return client > 0 && client <= MaxClients && IsClientInGame(client);
 }

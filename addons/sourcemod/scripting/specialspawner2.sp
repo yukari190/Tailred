@@ -60,7 +60,8 @@ float
 
 bool 
 	g_bHasSpawnTimerStarted = true,
-	bScaleWeights;
+	bScaleWeights,
+	bFirstLeftSafeArea;
 
 /***********************************************************************************************************************************************************************************
      					All credit for the spawn timer, quantities and queue modules goes to the developers of the 'l4d2_autoIS' plugin                            
@@ -88,7 +89,7 @@ public void OnPluginStart()
 	// Timer
 	hSpawnTimeMin = FindConVar("z_ghost_delay_min");
 	hSpawnTimeMax = FindConVar("z_ghost_delay_max");
-	hSpawnTimeMode = CreateConVar("ss_time_mode", "1", "The spawn time mode [ 0 = RANDOMIZED | 1 = INCREMENTAL | 2 = DECREMENTAL ]", _, true, 0.0, true, 2.0);
+	hSpawnTimeMode = CreateConVar("ss_time_mode", "0", "The spawn time mode [ 0 = RANDOMIZED | 1 = INCREMENTAL | 2 = DECREMENTAL ]", _, true, 0.0, true, 2.0);
 
 	// Grace period
 	hIncapAllowance = CreateConVar( "ss_incap_allowance", "15", "Grace period(sec) per incapped survivor" );
@@ -177,8 +178,14 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
 	if (!L4D2_IsSurvival()) 
 	{ // would otherwise cause spawns in survival before button is pressed
 		g_bHasSpawnTimerStarted = false;
+		bFirstLeftSafeArea = true;
 		StartSpawnTimer();
 	}
+}
+
+public void L4D2_OnRealRoundStart()
+{
+	bFirstLeftSafeArea = false;
 }
 
 public void L4D2_OnRealRoundEnd()
@@ -234,7 +241,7 @@ void StartSpawnTimer()
 
 public Action SpawnInfectedAuto(Handle timer)
 {
-	if (IsInReady())
+	if (IsInReady() || !bFirstLeftSafeArea)
 	{
 		StartSpawnTimer();
 		return Plugin_Handled;

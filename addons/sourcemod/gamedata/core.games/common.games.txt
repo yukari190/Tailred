@@ -20,11 +20,6 @@
 				"class"			"CBasePlayer"
 				"prop"			"m_lifeState"
 			}
-			"CSendPropExtra_UtlVector::m_Offset"
-			{
-				"windows"		"16"
-				"linux"			"16"
-			}
 		}
 	}
 	
@@ -112,7 +107,6 @@
 			"GetDataDescMap"
 			{
 				"windows"		"11"
-				"windows64"		"11"
 				"linux"			"12"
 				"linux64"		"12"
 				"mac"			"12"
@@ -197,7 +191,7 @@
 		}
 	}
 	
-	"#default"
+		"#default"
 	{
 		"#supported"
 		{
@@ -364,21 +358,6 @@
 		"Keys"
 		{
 			"RadioMenuMaxPageItems"	"6"
-		}
-	}
-
-	"#default"
-	{
-		"#supported"
-		{
-			"engine"	"left4dead"
-			"engine"	"left4dead2"
-			"engine"	"nucleardawn"
-		}
-
-		"Keys"
-		{
-			"RadioMenuClosesOnInvalidSlot"	"yes"
 		}
 	}
 }

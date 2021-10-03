@@ -309,14 +309,6 @@ native bool SAFEDETECT_IsEntityInSaferoom(int entity);
  * @param 
  * @return 
  */
-native void L4D2_PauseClient(int client, bool b);
-
-/**
- * 
- *
- * @param 
- * @return 
- */
 native int L4D2_GetRandomSurvivor();
 
 /**
@@ -386,7 +378,6 @@ public void __pl_l4d2lib_SetNTVOptional()
 	MarkNativeAsOptional("SAFEDETECT_IsEntityInStartSaferoom");
 	MarkNativeAsOptional("SAFEDETECT_IsEntityInEndSaferoom");
 	MarkNativeAsOptional("SAFEDETECT_IsEntityInSaferoom");
-	MarkNativeAsOptional("L4D2_PauseClient");
 	MarkNativeAsOptional("L4D2_GetRandomSurvivor");
 	MarkNativeAsOptional("L4D2_IsCoop");
 	MarkNativeAsOptional("L4D2_IsVersus");

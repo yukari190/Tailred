@@ -56,25 +56,20 @@ public Plugin myinfo =
 
 ConVar 
 	Cvar_Enabled,
-	Cvar_M2,
-	Cvar_Reload;
+	Cvar_M2;
 
-bool 
-	bM2,
-	bReload;
+bool bM2;
 
 public void OnPluginStart()
 {
 	CreateConVar("l4d2_cs_ladders", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	Cvar_Enabled	= CreateConVar("cssladders_enabled",			"1",	"Enable the Survivors to shoot from ladders? 1 to enable, 0 to disable.");
 	Cvar_M2			= CreateConVar("cssladders_allow_m2",			"0",	"Allow shoving whilst on a ladder? 1 to allow M2, 0 to block.");
-	Cvar_Reload		= CreateConVar("cssladders_allow_reload",		"1",	"Allow reloading whilst on a ladder? 1 to allow M2, 0 to block. Keep in mind that shotguns are broken and won't reload on ladders no matter what.");
 	
 	Cvar_Enabled.AddChangeHook(Enabled_Change);
 	Enabled_Change(Cvar_Enabled, "", "");
 	
 	Cvar_M2.AddChangeHook(ConVarChange);
-	Cvar_Reload.AddChangeHook(ConVarChange);
 	
 	ConVarChange(null, "", "");
 }
@@ -90,7 +85,6 @@ public void Enabled_Change(ConVar convar, const char[] oldValue, const char[] ne
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	bM2 = Cvar_M2.BoolValue;
-	bReload = Cvar_Reload.BoolValue;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons)
@@ -100,9 +94,6 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	
 	if (!bM2)
 		SetEntPropFloat(client, Prop_Send, "m_flNextShoveTime", GetGameTime() + 0.3);
-	
-	if (!bReload)
-		buttons &= ~IN_RELOAD;
 	
 	return Plugin_Continue;
 }

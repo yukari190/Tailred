@@ -38,7 +38,8 @@ int
 ConVar 
 	g_hCvarEnabled,
 	g_hCvarTankHealth,
-	g_hCvarSurvivorLimit;
+	g_hCvarSurvivorLimit,
+	g_hCvarDifficulty;
 
 bool 
 	g_bEnabled,
@@ -50,6 +51,7 @@ public void OnPluginStart()
 	g_hCvarEnabled = CreateConVar("l4d_tankdamage_enabled", "1", "Announce damage done to tanks when enabled", FCVAR_NONE|FCVAR_SPONLY|FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_hCvarSurvivorLimit = FindConVar("survivor_limit");
 	g_hCvarTankHealth = FindConVar("z_tank_health");
+	g_hCvarDifficulty = FindConVar("z_difficulty");
 	
 	g_hCvarEnabled.AddChangeHook(ConVarChange);
 	g_hCvarSurvivorLimit.AddChangeHook(ConVarChange);
@@ -64,9 +66,25 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 	g_bEnabled = g_hCvarEnabled.BoolValue;
 	g_iSurvivorLimit = g_hCvarSurvivorLimit.IntValue;
 	
-	if (L4D2_IsVersus()) g_fMaxTankHealth = g_hCvarTankHealth.FloatValue * 1.5;
-	else g_fMaxTankHealth = g_hCvarTankHealth.FloatValue;
-	if (g_fMaxTankHealth <= 0.0) g_fMaxTankHealth = 1.0; // No dividing by 0!
+	g_fMaxTankHealth = g_hCvarTankHealth.FloatValue;
+	if (g_fMaxTankHealth <= 0.0) g_fMaxTankHealth = 1.0;
+
+	// Versus or Realism Versus
+	if (L4D2_IsVersus())
+		g_fMaxTankHealth *= 1.5;
+
+	// Anything else (should be fine...?)
+	else 
+	{
+		g_fMaxTankHealth = g_hCvarTankHealth.FloatValue;
+
+		char sDifficulty[16];
+		g_hCvarDifficulty.GetString(sDifficulty, sizeof(sDifficulty));
+
+		if (sDifficulty[0] == 'E') g_fMaxTankHealth *= 0.75;     // Easy
+		else if (sDifficulty[0] == 'H'
+		|| sDifficulty[0] == 'I') g_fMaxTankHealth *= 2.0; // Advanced or Expert
+	}
 }
 
 public void L4D2_OnRealRoundStart()

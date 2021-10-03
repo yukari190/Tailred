@@ -20,6 +20,8 @@
 #define PLAYER_LIMIT 1
 #define PATH_MAP "../../cfg/cfgogl/shared/maplists.txt"
 
+#define GAMEDATA "l4d2_si_ability"
+
 public Plugin myinfo =
 {
 	name = "Server Function",
@@ -44,8 +46,7 @@ KeyValues g_hInfoKV;
 
 Handle 
 	top_menu,
-	admin_menu,
-	SpecTimer[MAXPLAYERS+1];
+	admin_menu;
 
 TopMenuObject 
 	spawn_special_infected_menu,
@@ -55,22 +56,15 @@ TopMenuObject
 	respawn_menu,
 	teleport_menu;
 
-ConVar 
-	hSurvivorLimit,
-	hMaxPlayerZombies,
-	hHostNamePath;
+ConVar hHostNamePath;
 
 bool 
 	casterSystemAvailable,
-	alltp,
-	blockVotes[MAXPLAYERS+1];
+	alltp;
 
 int 
 	iSlot,
-	g_originClient = -1,
-	TimerLive = 0;
-
-float g_pos[3];
+	g_originClient = -1;
 
 char 
 	TargetMap_Code[128],
@@ -119,19 +113,9 @@ public void OnPluginStart()
 	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), PATH_MAP);
 	if (!FileToKeyValues(g_hInfoKV, sBuffer)) LogMessage("找不到 <maplists.txt>.");
 	
-	hSurvivorLimit = FindConVar("survivor_limit");
-	hMaxPlayerZombies = FindConVar("z_max_player_zombies");
-	
 	hHostNamePath = CreateConVar("hostname_path", "../../cfg/cfgogl/shared/", "");
 	
-	RegConsoleCmd("sm_spectate", Command_Spectate);
-	RegConsoleCmd("sm_spec", Command_Spectate);
-	RegConsoleCmd("sm_s", Command_Spectate);
-	RegConsoleCmd("sm_join", Command_JoinSurvivor);
-	RegConsoleCmd("sm_j", Command_JoinSurvivor);
-	RegConsoleCmd("sm_fixbots", FixBots);
 	RegConsoleCmd("sm_zs", Command_Suicide, "玩家自杀");
-	
 	RegConsoleCmd("sm_vmp", SlotsRequest);
 	RegConsoleCmd("sm_vhp", Command_RestoreHealth);
 	RegConsoleCmd("sm_vcm", ChangeMaps);
@@ -140,8 +124,6 @@ public void OnPluginStart()
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != null))
 	  OnAdminMenuReady(top_menu);
 	
-	AddCommandListener(Vote_Listener, "vote");
-	AddCommandListener(Vote_Listener, "callvote");
 	AddCommandListener(TeamSay_Callback, "say_team");
 	
 	HookEvent("player_changename", Event_NameChange, EventHookMode_Pre);
@@ -211,28 +193,9 @@ public void OnClientPostAdminCheck(int client)
 	}
 }
 
-public void OnRoundIsLive()
-{
-	TimerLive = 0;
-}
-
-public void OnTimerStart()
-{
-	if (TimerLive == 0) TimerLive = 1;
-	else TimerLive = 0;
-}
-
 public void L4D2_OnRealRoundEnd()
 {
 	if (L4D2_IsVersus() && L4D_IsMissionFinalMap() && L4D2_InSecondHalfOfRound())
-	{
-		CheckMapForChange();
-	}
-}
-
-public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
-{
-	if (strcmp(mapname, "c13m4_cutthroatcreek") == 0 && L4D2_IsCoop() && AnySurvivorAlive())
 	{
 		CheckMapForChange();
 	}
@@ -318,11 +281,6 @@ public Action Event_PlayerDisconnectPre(Event event, const char[] name, bool don
 }
 
 
-public Action Vote_Listener(int client, const char[] command, int argc)
-{
-	return blockVotes[client] ? Plugin_Handled : Plugin_Continue;
-}
-
 public Action TeamSay_Callback(int client, char[] command, int args)
 {
 	if (!IsValidAndInGame(client)) return Plugin_Continue;
@@ -342,84 +300,6 @@ public Action TeamSay_Callback(int client, char[] command, int args)
         }
     }
     return Plugin_Continue;
-}
-
-
-public Action FixBots(int client, int args)
-{
-	CreateTimer(0.1, Timer_FillBots, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-	return Plugin_Handled;
-}
-
-public Action Timer_FillBots(Handle timer)
-{
-	if (GetTeamClientCount(view_as<int>(L4D2Team_Survivor)) < hSurvivorLimit.IntValue)
-	{
-		ServerCommand("sb_add");
-		return Plugin_Continue;
-	}
-	else
-	{
-		return Plugin_Stop;
-	}
-}
-
-public Action Command_Spectate(int client, int args)
-{
-	if (!IsValidAndInGame(client)) return Plugin_Handled;
-	L4D2_Team team = view_as<L4D2_Team>(GetClientTeam(client));
-	
-	if (team != L4D2Team_Spectator && SpecTimer[client] == null)
-	{
-		CPrintToChatAllEx(client, "{teamcolor}%N{default} 表示要去趴会_(:зゝ∠)_", client);
-	}
-	
-	if (team == L4D2Team_Survivor)
-	{
-		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
-	}
-	else if (team == L4D2Team_Infected)
-	{
-		if (GetInfectedClass(client) != L4D2Infected_Tank && !IsInfectedGhost(client))
-		{
-			ForcePlayerSuicide(client);
-		}
-		else if (GetInfectedClass(client) == L4D2Infected_Tank) return Plugin_Handled;
-		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
-	}
-	else
-	{
-		if (TimerLive == 0)
-		{
-			blockVotes[client] = true;
-			ChangeClientTeamEx(client, L4D2Team_Infected, true);
-			CreateTimer(0.1, RespecDelay_Timer, client);
-		}
-	}
-	if (SpecTimer[client] == null) SpecTimer[client] = CreateTimer(7.0, SecureSpec, client);
-	return Plugin_Handled;
-}
-
-public Action SecureSpec(Handle timer, any client)
-{
-	KillTimer(SpecTimer[client]);
-	SpecTimer[client] = null;
-}
-
-public Action RespecDelay_Timer(Handle timer, any client)
-{
-	if (IsValidAndInGame(client))
-	{
-		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
-		blockVotes[client] = false;
-	}
-}
-
-public Action Command_JoinSurvivor(int client, int args)
-{
-	if (!IsValidAndInGame(client)) return Plugin_Handled;
-	ChangeClientTeamEx(client, L4D2Team_Survivor, false);
-	return Plugin_Handled;
 }
 
 public Action Command_Suicide(int client, int args)
@@ -546,7 +426,7 @@ void PrintFormattedMessageToAll(char rawmsg[301], int client)
 	client, steamid, country);
 }
 
-void RespawnPlayer(int client, int player_id)
+void RespawnPlayer(int player_id)
 {
 	//bool canTeleport = SetTeleportEndPoint(client);
 	L4D_RespawnPlayer(player_id);
@@ -554,9 +434,15 @@ void RespawnPlayer(int client, int player_id)
 	
 	if(canTeleport)
 		PerformTeleport(client,player_id,g_pos);*/
-	GetClientAbsOrigin(client, g_pos);
-	g_pos[2]+=40.0;
-	TeleportEntity(player_id, g_pos, NULL_VECTOR, NULL_VECTOR);
+	float g_pos[3];
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	{
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || index == player_id || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
+		GetClientAbsOrigin(index, g_pos);
+		g_pos[2]+=40.0;
+		TeleportEntity(player_id, g_pos, NULL_VECTOR, NULL_VECTOR);
+	}
 }
 
 void SpawnTank(int client)
@@ -1071,7 +957,7 @@ public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, i
 		Format(name, sizeof(name)-13, "%N", client);
 		
 		if (GetClientTeam(client) != 2 || IsPlayerAlive(client)) return;
-		RespawnPlayer(cindex, client);
+		RespawnPlayer(client);
 		ShowActivity2(cindex, "[SM] ", "Respawned target '%s'", name);
 		Menu_CreateRespawnMenu(cindex, false);
 	}
@@ -1080,45 +966,6 @@ public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, i
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
-}
-
-bool ChangeClientTeamEx(int client, L4D2_Team team, bool force = false)
-{
-	if (view_as<L4D2_Team>(GetClientTeam(client)) == team) return true;
-	if (!force)
-	{
-		int humans = 0;
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (IsClientInGame(i) && !IsFakeClient(i) && view_as<L4D2_Team>(GetClientTeam(i)) == team) humans++;
-		}
-		if (
-			humans >= ((team == L4D2Team_Survivor) ? hSurvivorLimit.IntValue : (
-				(team == L4D2Team_Infected) ? hMaxPlayerZombies.IntValue : MaxClients
-			))
-		)
-		{
-			PrintToChat(client, "您选择的团队已经满了.");
-			return false;
-		}
-	}
-	if (team != L4D2Team_Survivor)
-	{
-		ChangeClientTeam(client, view_as<int>(team));
-		return true;
-	}
-	else
-	{
-		for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
-		{
-			int index = L4D2_GetSurvivorOfIndex(i);
-			if (index == 0 || !IsFakeClient(index)) continue;
-			CheatCommand(client, "sb_takecontrol");
-			if (GetClientTeam(client) != 2) CheatCommand(client, "jointeam 2");
-			return true;
-		}
-	}
-	return false;
 }
 
 bool IsLanIP(char[] src)
@@ -1150,20 +997,6 @@ bool IsClientAdmin(int client)
 		GetAdminFlag(id, Admin_Kick) || 
 		GetAdminFlag(id, Admin_Generic)
 	) return true;
-	return false;
-}
-
-bool AnySurvivorAlive()
-{
-	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
-	{
-		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
-		if (IsPlayerAlive(index) && !IsIncapacitated(index))
-		{
-			return true;
-		}
-	}
 	return false;
 }
 
@@ -1226,6 +1059,7 @@ void CheatCommand(int client, char[] commandName, char[] argument1 = "", char[] 
 		}
     }
 }
+
 
 public void BuiltinVotes_VoteResult()
 {

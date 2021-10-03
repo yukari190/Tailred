@@ -328,7 +328,7 @@ enum TFResourceType
 	TFResource_PlayerClass
 };
 
-static const char TFResourceNames[][] =
+static const char TFResourceNames[TFResourceType][] =
 {
 	"m_iPing",
 	"m_iScore",
