@@ -15,7 +15,7 @@
 public Plugin myinfo = 
 {
 	name = "LGOFNOC Config Manager",
-	author = "Confogl Team",
+	author = "Confogl Team, Yukari190",
 	description = "A competitive configuration management system for Source games",
 	version = "1.4",
 	url = ""
@@ -42,7 +42,8 @@ char
 	configsPath[PLATFORM_MAX_PATH],
 	cfgPath[PLATFORM_MAX_PATH],
 	customCfgPath[PLATFORM_MAX_PATH],
-	matchName[32];
+	matchName[32],
+	map[64];
 
 int DirSeparator;
 
@@ -110,6 +111,7 @@ public void OnPluginEnd()
 	SetConVarInt(hAllBotGame, 0);
 	ServerCommand("sm plugins load_unlock");
 	ServerCommand("sm plugins refresh");
+	ServerCommand("changelevel %s", map);
 }
 
 public int _native_BuildConfigPath(Handle plugin, int numParams)
@@ -138,6 +140,11 @@ void BuildConfigPath(char[] buffer, int maxlength, const char[] sFileName)
 	}
 	
 	Format(buffer, maxlength, "%s%s", configsPath, sFileName);
+}
+
+public void OnMapStart()
+{
+	GetCurrentMap(map, sizeof(map));
 }
 
 public void OnConfigsExecuted()
@@ -548,8 +555,6 @@ int RestartMapCountdown(float time)
 
 public Action RestartMapCallback(Handle timer)
 {
-	char map[64];
-	GetCurrentMap(map, sizeof(map));
 	ForceChangeLevel(map, "Restarting Map for Lgofnoc");
 }
 
