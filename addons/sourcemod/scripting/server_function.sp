@@ -178,7 +178,7 @@ public Action Announce_Timer(Handle timer, any client)
 {
 	if (IsValidAndInGame(client) && !IsFakeClient(client))
 	{
-		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血)");
+		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血) | !curhud(开关进度提示)");
 	}
 }
 
