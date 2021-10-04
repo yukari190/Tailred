@@ -190,7 +190,6 @@ public Action Reset_Command(int args) {
 
 public Action Cmd_BossPercent(int client, int args)
 {
-	CreateTimer(0.1, SaveBossFlows);
 	int iTeam = GetClientTeam(client);
 	if (iTeam == 1)
 	{
@@ -447,19 +446,7 @@ public void L4D2_OnRealRoundStart()
 	AllowTankSpawn(true, false);
 	CreateTimer(0.5, TankSpawnPercentCheck, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	CreateTimer(0.1, AdjustBossFlow, _, TIMER_FLAG_NO_MAPCHANGE);
-	CreateTimer(1.0, SaveBossFlows);
 	CreateTimer(2.0, AddReadyFooter);
-}
-
-public Action SaveBossFlows(Handle timer)
-{
-	if (!L4D2_InSecondHalfOfRound())
-	{
-		if (GetTankToSpawn())
-		{
-			iTankPercent = RoundToFloor(GetTankFlowPercent() * 100);
-		}
-	}
 }
 
 public Action TankSpawnPercentCheck(Handle timer)
@@ -805,6 +792,7 @@ void SetTankPercent(int percent) {
 		fTankFlow = p_newPercent;
 		bTankSpawn = true;
 	}
+	iTankPercent = RoundToFloor(GetTankFlowPercent() * 100);
 }
 
 void SetWitchPercent(int percent) {
@@ -976,7 +964,12 @@ bool IsWitchPercentValid(int flow){
 
 bool IsExceptStatic()
 {
-	if(StrEqual(g_sCurrentMap, "c7m1_docks") || StrEqual(g_sCurrentMap, "c13m2_southpinestream"))
+	if (
+	StrEqual(g_sCurrentMap, "c7m1_docks") || 
+	StrEqual(g_sCurrentMap, "c13m2_southpinestream") || 
+	StrEqual(g_sCurrentMap, "c5m5_bridge") || 
+	StrEqual(g_sCurrentMap, "c13m4_cutthroatcreek")
+	)
 	{
 		return true;
 	}

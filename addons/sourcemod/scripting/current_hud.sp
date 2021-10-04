@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <left4dhooks>
 #include <l4d2lib>
+#include <l4d2util>
 #include <readyup>
 
 public Plugin myinfo = 
@@ -43,7 +44,7 @@ public void L4D2_OnRealRoundEnd()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
+		if (index == 0 || !IsValidAndInGame(index)) continue;
 		ShowVGUIPanel(index, "ready_countdown", _, false);
 		bCur[index] = false;
 	}
@@ -54,7 +55,7 @@ public void OnRoundIsLive()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
+		if (index == 0 || !IsValidAndInGame(index)) continue;
 		ShowVGUIPanel(index, "ready_countdown", _, true);
 		bCur[index] = true;
 	}

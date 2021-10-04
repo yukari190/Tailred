@@ -335,6 +335,8 @@ public void OnMapStart()
 
 public void OnMapEnd()
 {
+	RoundEnd_Event(null, "", false);
+	
 	bIsMapInit = false;
 	KvRewind(kvMapInfo);
 	KvRewind(kvSafeRoomInfo);

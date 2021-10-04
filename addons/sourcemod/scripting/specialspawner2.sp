@@ -40,7 +40,7 @@ ConVar
 	hIncapAllowance,
 	hSurvivorLimit;
 
-Handle hSpawnTimer;
+Handle hSpawnTimer = null;
 
 int 
 	iSpawnLimits[NUM_TYPES_INFECTED],
@@ -50,18 +50,18 @@ int
 	iSpawnTimeMode,
 	iIncapAllowance,
 	iSurvivorLimit,
-	SpawnCounts[NUM_TYPES_INFECTED];
+	SpawnCounts[NUM_TYPES_INFECTED],
+	gracePeriod;
 
 float 
 	fSpawnTimeMin,
 	fSpawnTimeMax,
 	SpawnTimes[MAXPLAYERS],
-	IntervalEnds[NUM_TYPES_INFECTED];
+	IntervalEnds[NUM_TYPES_INFECTED],
+	fInterval,
+	g_fTimeLOS[100000]; // not sure what the largest possible userid is
 
-bool 
-	g_bHasSpawnTimerStarted = true,
-	bScaleWeights,
-	bFirstLeftSafeArea;
+bool bScaleWeights;
 
 /***********************************************************************************************************************************************************************************
      					All credit for the spawn timer, quantities and queue modules goes to the developers of the 'l4d2_autoIS' plugin                            
@@ -121,6 +121,7 @@ public void OnPluginStart()
 	FindConVar("z_finale_spawn_safety_range").SetInt(0);
 	
 	HookEvent("player_death", OnPlayerDeath);
+	HookEvent("player_spawn", OnPlayerSpawn);
 }
 
 public void DirectorNoSpecials_Change(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -136,7 +137,6 @@ public void OnPluginEnd()
 	FindConVar("z_spawn_safety_range").RestoreDefault();
 	FindConVar("z_discard_range").RestoreDefault();
 	FindConVar("z_finale_spawn_safety_range").RestoreDefault();
-	CloseHandle(hSpawnTimer);
 }
 
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -177,20 +177,13 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
 {
 	if (!L4D2_IsSurvival()) 
 	{ // would otherwise cause spawns in survival before button is pressed
-		g_bHasSpawnTimerStarted = false;
-		bFirstLeftSafeArea = true;
 		StartSpawnTimer();
 	}
 }
 
-public void L4D2_OnRealRoundStart()
-{
-	bFirstLeftSafeArea = false;
-}
-
 public void L4D2_OnRealRoundEnd()
 {
-	EndSpawnTimer(true);
+	EndSpawnTimer();
 }
 
 public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
@@ -210,6 +203,64 @@ public Action Timer_KickBot(Handle timer, any client)
 	}
 }
 
+// Slay infected if they have not had LOS to survivors for a defined (hSpawnTimeMin/z_ghost_delay_min) period
+public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+	int userid = GetEventInt(event, "userid");
+	int client = GetClientOfUserId(userid);
+	if (IsBotInfected(client) && !IsTank(client) && userid >= 0)
+	{
+		g_fTimeLOS[userid] = 0.0;
+		// Checking LOS
+		CreateTimer(0.5, Timer_StarvationLOS, userid, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
+public Action Timer_StarvationLOS(Handle timer, any userid)
+{
+	int client = GetClientOfUserId(userid);
+	// increment tracked LOS time
+	if (IsBotInfected(client) && IsPlayerAlive(client))
+	{
+		if (GetEntProp(client, Prop_Send, "m_hasVisibleThreats") || IsValidSurvivor(GetInfectedVictim(client)))
+		{
+			g_fTimeLOS[userid] = 0.0;
+		}
+		else
+		{
+			g_fTimeLOS[userid] += 0.5; 
+		}
+		// If an SI has not seen the survivors for a while, clone them closer to survivors
+		if (g_fTimeLOS[userid] > hSpawnTimeMin.FloatValue)
+		{
+
+			L4D2_Infected SIClass = GetInfectedClass(client);
+			if (SIClass == L4D2Infected_Tank) return Plugin_Stop;
+			
+			ForcePlayerSuicide(client);
+			return Plugin_Stop;
+			
+			/*float spawnPos[3];
+			if (!L4D_GetRandomPZSpawnPosition(L4D2_GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
+			{
+				if (!GridSpawn(SIClass, 100, spawnPos))
+				{
+					ForcePlayerSuicide(client);
+					return Plugin_Stop;
+				}
+			}
+			g_fTimeLOS[userid] = 0.0;
+			TeleportEntity(client, spawnPos, NULL_VECTOR, NULL_VECTOR);
+			return Plugin_Continue;*/
+		}
+	}
+	else
+	{
+		return Plugin_Stop;
+	}
+	return Plugin_Continue;
+}
+
 /***********************************************************************************************************************************************************************************
 
                                                                            START TIMERS
@@ -221,16 +272,9 @@ void StartSpawnTimer()
 {
 	//prevent multiple timer instances
 	EndSpawnTimer();
-	//only start spawn timer if plugin is enabled
-	float time;
-	
-	if( iSpawnTimeMode > 0 ) { //NOT randomization spawn time mode
-		time = SpawnTimes[CountSpecialInfectedBots()]; //a spawn time based on the current amount of special infected
-	} else { //randomization spawn time mode
-		time = GetRandomFloat( fSpawnTimeMin, fSpawnTimeMax ); //a random spawn time between min and max inclusive
-	}
-	g_bHasSpawnTimerStarted = true;
-	hSpawnTimer = CreateTimer( time, SpawnInfectedAuto, TIMER_FLAG_NO_MAPCHANGE );
+
+	fInterval = GetGameTime() + 1.0;
+	hSpawnTimer = CreateTimer(1.0, SpawnInfectedAuto, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
 /***********************************************************************************************************************************************************************************
@@ -241,42 +285,33 @@ void StartSpawnTimer()
 
 public Action SpawnInfectedAuto(Handle timer)
 {
-	if (IsInReady() || !bFirstLeftSafeArea)
-	{
-		StartSpawnTimer();
-		return Plugin_Handled;
-	}
-	g_bHasSpawnTimerStarted = false; 
-	// Grant grace period before allowing a wave to spawn if there are incapacitated survivors
-	int numIncappedSurvivors = 0;
-	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
-	{
-		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
-		if(IsIncapacitated(index) && !IsPinned(index))
+	if (IsInReady()) return Plugin_Continue;
+	
+	if (fInterval - GetGameTime() <= 0.0)
+	{ // spawn immediately
+		if (fInterval != 0.0)
 		{
-			numIncappedSurvivors++;			
+			GenerateAndExecuteSpawnQueue();
+			fInterval = 0.0;
+		}
+		if (fInterval == 0.0 && !AnyInfectedBotsAlive())
+		{
+			fInterval = GetGameTime() + GetSpawnTime();
+			gracePeriod = 0;
 		}
 	}
-	if( numIncappedSurvivors > 0 && numIncappedSurvivors != iSurvivorLimit )
+	
+	int iIncappedCount = GetIncappedSurvivorsCount();
+	if (gracePeriod == 0 && iIncappedCount > 0 && iIncappedCount != iSurvivorLimit)
 	{ // grant grace period
-		int gracePeriod = numIncappedSurvivors * iIncapAllowance;
-		CreateTimer( float(gracePeriod), Timer_GracePeriod, _, TIMER_FLAG_NO_MAPCHANGE );
-		CPrintToChatAll("{G}[{W}SS{G}]{W} {B}%d{W}s {G}grace period{W} was granted because of {B}%d{W} incapped survivor(s)", gracePeriod, numIncappedSurvivors);
+		gracePeriod = iIncappedCount * iIncapAllowance;
+		
+		fInterval += float(gracePeriod);
+		CPrintToChatAll("{G}[{W}SS{G}]{W} 因为{B}%d{W}个幸存者无法行动, 授予{B}%d{W}秒{G}宽限期.", iIncappedCount, gracePeriod);
 	}
-	else
-	{ // spawn immediately
-		GenerateAndExecuteSpawnQueue();
-	}
-	// Start timer for next spawn group
-	StartSpawnTimer();
-	return Plugin_Handled;
-}
-
-public Action Timer_GracePeriod(Handle timer)
-{
-	GenerateAndExecuteSpawnQueue();
-	return Plugin_Handled;
+	//CPrintToChatAll("%0.0f", (fInterval - GetGameTime() <= 0.0 ? 0.0 : fInterval - GetGameTime()));
+	
+	return Plugin_Continue;
 }
 
 /***********************************************************************************************************************************************************************************
@@ -285,16 +320,12 @@ public Action Timer_GracePeriod(Handle timer)
                                                                     
 ***********************************************************************************************************************************************************************************/
 
-void EndSpawnTimer(bool bForce = false)
+void EndSpawnTimer()
 {
-	if (g_bHasSpawnTimerStarted || bForce)
+	if (hSpawnTimer != null)
 	{
-		if (hSpawnTimer != null)
-		{
-			KillTimer(hSpawnTimer);
-			hSpawnTimer = null;
-		}
-		g_bHasSpawnTimerStarted = false;
+		KillTimer(hSpawnTimer);
+		hSpawnTimer = null;
 	}
 }
 
@@ -468,19 +499,29 @@ int GenerateIndex()
 	return -1; //no selection because all weights were negative or 0
 }
 
-
-
 int CountSpecialInfectedBots()
 {
     int count = 0;
     for (int i = 1; i < MaxClients; i++)
 	{
-        if (IsBotInfected(i) && IsPlayerAlive(i))
+        if (IsInfected(i) && IsFakeClient(i) && IsPlayerAlive(i))
 		{
             count++;
         }
     }
     return count;
+}
+
+bool AnyInfectedBotsAlive()
+{
+    for (int i = 1; i < MaxClients; i++)
+	{
+        if (IsInfected(i) && IsFakeClient(i) && IsPlayerAlive(i) && GetInfectedClass(i) != L4D2Infected_Tank)
+		{
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -495,21 +536,6 @@ bool IsBotInfected(int client)
     return false; // otherwise
 }
 
-bool IsPinned(int client)
-{
-	bool bIsPinned = false;
-	if (IsValidSurvivor(client))
-	{
-		// check if held by:
-		if( GetEntPropEnt(client, Prop_Send, "m_tongueOwner") > 0 ) bIsPinned = true; // smoker
-		if( GetEntPropEnt(client, Prop_Send, "m_pounceAttacker") > 0 ) bIsPinned = true; // hunter
-		if( GetEntPropEnt(client, Prop_Send, "m_carryAttacker") > 0 ) bIsPinned = true; // charger carry
-		if( GetEntPropEnt(client, Prop_Send, "m_pummelAttacker") > 0 ) bIsPinned = true; // charger pound
-		if( GetEntPropEnt(client, Prop_Send, "m_jockeyAttacker") > 0 ) bIsPinned = true; // jockey
-	}		
-	return bIsPinned;
-}
-
 bool AnySurvivorAlive()
 {
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
@@ -522,4 +548,34 @@ bool AnySurvivorAlive()
 		}
 	}
 	return false;
+}
+
+float GetSpawnTime()
+{
+	//only start spawn timer if plugin is enabled
+	float time;
+	
+	if( iSpawnTimeMode > 0 ) { //NOT randomization spawn time mode
+		time = SpawnTimes[CountSpecialInfectedBots()]; //a spawn time based on the current amount of special infected
+	} else { //randomization spawn time mode
+		time = GetRandomFloat( fSpawnTimeMin, fSpawnTimeMax ); //a random spawn time between min and max inclusive
+	}
+	
+	return time;
+}
+
+int GetIncappedSurvivorsCount()
+{
+	// Grant grace period before allowing a wave to spawn if there are incapacitated survivors
+	int numIncappedSurvivors = 0;
+	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	{
+		int index = L4D2_GetSurvivorOfIndex(i);
+		if (index == 0 || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
+		if (IsIncapacitated(index) && !IsSurvivorAttacked(index))
+		{
+			numIncappedSurvivors++;			
+		}
+	}
+	return numIncappedSurvivors;
 }

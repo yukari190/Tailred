@@ -133,7 +133,7 @@ void PrintRemainingHealth()
 	bPrintedHealth = true;
 	if (!g_bEnabled) return;
 	int tankclient = FindAnyTank();
-	if (!tankclient) return;
+	if (!IsValidAndInGame(tankclient)) return;
 	
 	char name[MAX_NAME_LENGTH];
 	if (IsFakeClient(tankclient)) name = "AI";
