@@ -3,6 +3,7 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
+#include <left4dhooks>
 #include <colors>
 #include <l4d2lib>
 #define L4D2UTIL_STOCKS_ONLY
@@ -70,7 +71,7 @@ public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newV
 	if (g_fMaxTankHealth <= 0.0) g_fMaxTankHealth = 1.0;
 
 	// Versus or Realism Versus
-	if (L4D2_IsVersus())
+	if (L4D_IsVersusMode())
 		g_fMaxTankHealth *= 1.5;
 
 	// Anything else (should be fine...?)

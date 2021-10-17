@@ -16,6 +16,7 @@ public Plugin myinfo =
 static const float l4d_pills_hot_interval = 0.1;
 static const int l4d_pills_hot_increment = 2;
 int l4d_pills_hot_total[MAXPLAYERS+1];
+static const int l4d_pills_nerf = 35;
 
 public void OnPluginStart()
 {
@@ -43,8 +44,8 @@ public Action PillsUsed_Event(Event event, const char[] name, bool dontBroadcast
     int iPillIncrement = l4d_pills_hot_increment;
     int iPillTotal = l4d_pills_hot_total[client];
     HealEntityOverTime(client, iPillInterval, iPillIncrement, iPillTotal);
-	if (iPillTotal != 30) PrintHintText(client, "药片下次的恢复效果将降低!");
-	l4d_pills_hot_total[client] = 30;
+	if (iPillTotal != l4d_pills_nerf) PrintHintText(client, "药片的后续恢复值降低至 %d, 直到下一回合.", l4d_pills_nerf);
+	l4d_pills_hot_total[client] = l4d_pills_nerf;
 }
 
 void HealEntityOverTime(int client, float interval, int increment, int total)

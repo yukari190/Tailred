@@ -2,6 +2,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 #include <sourcemod>
+#include <sdktools>
+#include <sdkhooks>
 #include <left4dhooks>
 #undef REQUIRE_PLUGIN
 #include <lgofnoc>
@@ -25,41 +27,211 @@ enum Saferoom
 	Saferoom_Both = 3
 };
 
-//static const char MAPINFO_PATH[] = "../../cfg/cfgogl/shared/mapinfo.txt";
-static const char SAFEROOMINFO_PATH[] = "../../cfg/cfgogl/shared/saferoominfo.txt";
-const int NUM_OF_SURVIVORS = 4;
+enum SurvivorCharacter
+{
+	SurvivorCharacter_Invalid = -1,
 
-KeyValues 
+	SurvivorCharacter_Nick = 0,
+	SurvivorCharacter_Rochelle,
+	SurvivorCharacter_Coach,
+	SurvivorCharacter_Ellis,
+	SurvivorCharacter_Bill,
+	SurvivorCharacter_Zoey,
+	SurvivorCharacter_Louis,
+	SurvivorCharacter_Francis,
+
+	SurvivorCharacter_Size //8 size
+};
+
+static const char SurvivorModels[view_as<int>(SurvivorCharacter_Size)][] =
+{
+	"models/survivors/survivor_gambler.mdl",	//MODEL_NICK
+	"models/survivors/survivor_producer.mdl",	//MODEL_ROCHELLE
+	"models/survivors/survivor_coach.mdl",		//MODEL_COACH
+	"models/survivors/survivor_mechanic.mdl",	//MODEL_ELLIS
+	"models/survivors/survivor_namvet.mdl",		//MODEL_BILL
+	"models/survivors/survivor_teenangst.mdl",	//MODEL_ZOEY
+	"models/survivors/survivor_manager.mdl",	//MODEL_LOUIS
+	"models/survivors/survivor_biker.mdl"		//MODEL_FRANCIS
+};
+
+enum WeaponId
+{
+	WEPID_NONE,             // 0
+	WEPID_PISTOL,           // 1
+	WEPID_SMG,              // 2
+	WEPID_PUMPSHOTGUN,      // 3
+	WEPID_AUTOSHOTGUN,      // 4
+	WEPID_RIFLE,            // 5
+	WEPID_HUNTING_RIFLE,    // 6
+	WEPID_SMG_SILENCED,     // 7
+	WEPID_SHOTGUN_CHROME,   // 8
+	WEPID_RIFLE_DESERT,     // 9
+	WEPID_SNIPER_MILITARY,  // 10
+	WEPID_SHOTGUN_SPAS,     // 11
+	WEPID_FIRST_AID_KIT,    // 12
+	WEPID_MOLOTOV,          // 13
+	WEPID_PIPE_BOMB,        // 14
+	WEPID_PAIN_PILLS,       // 15
+	WEPID_GASCAN,           // 16
+	WEPID_PROPANE_TANK,     // 17
+	WEPID_OXYGEN_TANK,      // 18
+	WEPID_MELEE,            // 19
+	WEPID_CHAINSAW,         // 20
+	WEPID_GRENADE_LAUNCHER, // 21
+	WEPID_AMMO_PACK,        // 22
+	WEPID_ADRENALINE,       // 23
+	WEPID_DEFIBRILLATOR,    // 24
+	WEPID_VOMITJAR,         // 25
+	WEPID_RIFLE_AK47,       // 26
+	WEPID_GNOME_CHOMPSKI,   // 27
+	WEPID_COLA_BOTTLES,     // 28
+	WEPID_FIREWORKS_BOX,    // 29
+	WEPID_INCENDIARY_AMMO,  // 30
+	WEPID_FRAG_AMMO,        // 31
+	WEPID_PISTOL_MAGNUM,    // 32
+	WEPID_SMG_MP5,          // 33
+	WEPID_RIFLE_SG552,      // 34
+	WEPID_SNIPER_AWP,       // 35
+	WEPID_SNIPER_SCOUT,     // 36
+	WEPID_RIFLE_M60,        // 37
+	WEPID_TANK_CLAW,        // 38
+	WEPID_HUNTER_CLAW,      // 39
+	WEPID_CHARGER_CLAW,     // 40
+	WEPID_BOOMER_CLAW,      // 41
+	WEPID_SMOKER_CLAW,      // 42
+	WEPID_SPITTER_CLAW,     // 43
+	WEPID_JOCKEY_CLAW,      // 44
+	WEPID_MACHINEGUN,       // 45
+	WEPID_VOMIT,            // 46
+	WEPID_SPLAT,            // 47
+	WEPID_POUNCE,           // 48
+	WEPID_LOUNGE,           // 49
+	WEPID_PULL,             // 50
+	WEPID_CHOKE,            // 51
+	WEPID_ROCK,             // 52
+	WEPID_PHYSICS,          // 53
+	WEPID_AMMO,             // 54
+	WEPID_UPGRADE_ITEM,     // 55
+
+	WEPID_SIZE //56 size
+};
+
+enum MeleeWeaponId
+{
+	WEPID_MELEE_NONE,
+	WEPID_KNIFE,
+	WEPID_BASEBALL_BAT,
+	WEPID_MELEE_CHAINSAW,
+	WEPID_CRICKET_BAT,
+	WEPID_CROWBAR,
+	WEPID_DIDGERIDOO,
+	WEPID_ELECTRIC_GUITAR,
+	WEPID_FIREAXE,
+	WEPID_FRYING_PAN,
+	WEPID_GOLF_CLUB,
+	WEPID_KATANA,
+	WEPID_MACHETE,
+	WEPID_RIOT_SHIELD,
+	WEPID_TONFA,
+	WEPID_SHOVEL,
+	WEPID_PITCHFORK,
+	
+	WEPID_MELEES_SIZE //15 size
+};
+
+static const char WeaponNames[view_as<int>(WEPID_SIZE)][] =
+{
+	"weapon_none", "weapon_pistol", "weapon_smg",                                            // 0
+	"weapon_pumpshotgun", "weapon_autoshotgun", "weapon_rifle",                              // 3
+	"weapon_hunting_rifle", "weapon_smg_silenced", "weapon_shotgun_chrome",                  // 6
+	"weapon_rifle_desert", "weapon_sniper_military", "weapon_shotgun_spas",                  // 9
+	"weapon_first_aid_kit", "weapon_molotov", "weapon_pipe_bomb",                            // 12
+	"weapon_pain_pills", "weapon_gascan", "weapon_propanetank",                              // 15
+	"weapon_oxygentank", "weapon_melee", "weapon_chainsaw",                                  // 18
+	"weapon_grenade_launcher", "weapon_ammo_pack", "weapon_adrenaline",                      // 21
+	"weapon_defibrillator", "weapon_vomitjar", "weapon_rifle_ak47",                          // 24
+	"weapon_gnome", "weapon_cola_bottles", "weapon_fireworkcrate",                           // 27
+	"weapon_upgradepack_incendiary", "weapon_upgradepack_explosive", "weapon_pistol_magnum", // 30
+	"weapon_smg_mp5", "weapon_rifle_sg552", "weapon_sniper_awp",                             // 33
+	"weapon_sniper_scout", "weapon_rifle_m60", "weapon_tank_claw",                           // 36
+	"weapon_hunter_claw", "weapon_charger_claw", "weapon_boomer_claw",                       // 39
+	"weapon_smoker_claw", "weapon_spitter_claw", "weapon_jockey_claw",                       // 42
+	"weapon_machinegun", "vomit", "splat",                                                   // 45
+	"pounce", "lounge", "pull",                                                              // 48
+	"choke", "rock", "physics",                                                              // 51
+	"ammo", "upgrade_item"                                                                   // 54
+};
+
+static const char MeleeWeaponNames[view_as<int>(WEPID_MELEES_SIZE)][] =
+{
+	"",
+	"knife",
+	"baseball_bat",
+	"chainsaw",
+	"cricket_bat",
+	"crowbar",
+	"didgeridoo",
+	"electric_guitar",
+	"fireaxe",
+	"frying_pan",
+	"golfclub",
+	"katana",
+	"machete",
+	"riotshield",
+	"tonfa",
+	"shovel",
+	"pitchfork"
+};
+
+static const char MeleeWeaponModels[view_as<int>(WEPID_MELEES_SIZE)][] =
+{
+	"",
+	"/w_models/weapons/w_knife_t.mdl",
+	"/weapons/melee/w_bat.mdl",
+	"/weapons/melee/w_chainsaw.mdl",
+	"/weapons/melee/w_cricket_bat.mdl",
+	"/weapons/melee/w_crowbar.mdl",
+	"/weapons/melee/w_didgeridoo.mdl",
+	"/weapons/melee/w_electric_guitar.mdl",
+	"/weapons/melee/w_fireaxe.mdl",
+	"/weapons/melee/w_frying_pan.mdl",
+	"/weapons/melee/w_golfclub.mdl",
+	"/weapons/melee/w_katana.mdl",
+	"/weapons/melee/w_machete.mdl",
+	"/weapons/melee/w_riotshield.mdl",
+	"/weapons/melee/w_tonfa.mdl",
+	"/weapons/melee/w_shovel.mdl",
+	"/weapons/melee/w_pitchfork.mdl"
+};
+
+const int
+	NUM_OF_SURVIVORS = 4;
+KeyValues
 	kvMapInfo,
 	kvSafeRoomInfo;
-
-Handle hTankDeathTimer;
-
-GlobalForward 
+Handle
+	hTankDeathTimer = null;
+GlobalForward
 	hFwdRoundStart,
 	hFwdRoundEnd,
 	hFwdFirstTankSpawn,
 	hFwdTankPassControl,
 	hFwdTankDeath,
 	hFwdPlayerHurt,
-	hFwdJoinSurvivor,
-	hFwdAwaySurvivor,
-	hFwdJoinInfected,
-	hFwdAwayInfected,
-	hFwdTeamChanged;
-
-ConVar 
-	hGameMode,
-	hSurvivorLimit;
-
-int 
-	iGameMode,
+	hFwdTeamChanged,
+	hFwdOnTakeDamage;
+StringMap
+	hSurvivorModelsTrie,
+	hWeaponNamesTrie,
+	hMeleeWeaponNamesTrie,
+	hMeleeWeaponModelsTrie;
+int
 	iRoundNumber = 0,
 	iSurvivorIndex[NUM_OF_SURVIVORS],
 	iTank,
 	iTankPassCount;
-
-bool 
+bool
 	bIsMapInit,
 	bInSecondRound,
 	bRoundEnd,
@@ -70,9 +242,9 @@ bool
 	g_bHasStartExtra,
 	g_bHasEnd,
 	g_bHasEndExtra,
-	MapDataAvailable;
-
-float 
+	MapDataAvailable,
+	SaferoomDataAvailable;
+float
 	g_fStartLocA[3],
 	g_fStartLocB[3],
 	g_fStartLocC[3],
@@ -84,12 +256,10 @@ float
 	g_fEndLocD[3],
 	g_fEndRotate,
 	Start_Point[3],
-	End_Point[3],
 	Start_Dist,
-	Start_Extra_Dist,
-	End_Dist;
-
-char g_sMapname[64];
+	Start_Extra_Dist;
+char
+	g_sMapname[64];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -100,26 +270,19 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_GetSurvivorOfIndex", _native_GetSurvivorOfIndex);
 	CreateNative("L4D2_IsMapDataAvailable", _native_IsMapDataAvailable);
 	CreateNative("L4D2_IsEntityInSaferoom", _native_IsEntityInSaferoom);
-	CreateNative("L4D2_GetMapStartOrigin", _native_GetMapStartOrigin);
-	CreateNative("L4D2_GetMapEndOrigin", _native_GetMapEndOrigin);
-	CreateNative("L4D2_GetMapStartDistance", _native_GetMapStartDist);
-	CreateNative("L4D2_GetMapStartExtraDistance", _native_GetMapStartExtraDist);
-	CreateNative("L4D2_GetMapEndDistance", _native_GetMapEndDist);
 	CreateNative("L4D2_GetMapValueInt", _native_GetMapValueInt);
 	CreateNative("L4D2_GetMapValueFloat", _native_GetMapValueFloat);
 	CreateNative("L4D2_GetMapValueVector", _native_GetMapValueVector);
 	CreateNative("L4D2_GetMapValueString", _native_GetMapValueString);
 	CreateNative("L4D2_CopyMapSubsection", _native_CopyMapSubsection);
 	
-	CreateNative("SAFEDETECT_IsEntityInStartSaferoom", _native_SAFEDETECT_IsEntityInStartSaferoom);
-	CreateNative("SAFEDETECT_IsEntityInEndSaferoom", _native_SAFEDETECT_IsEntityInEndSaferoom);
-	CreateNative("SAFEDETECT_IsEntityInSaferoom", _native_SAFEDETECT_IsEntityInSaferoom);
-	CreateNative("L4D2_InSecondHalfOfRound", _native_InSecondHalfOfRound);
-	CreateNative("L4D2_GetRandomSurvivor", _native_GetRandomSurvivor);
-	CreateNative("L4D2_IsCoop", _native_IsCoop);
-	CreateNative("L4D2_IsVersus", _native_IsVersus);
-	CreateNative("L4D2_IsScavenge", _native_IsScavenge);
-	CreateNative("L4D2_IsSurvival", _native_IsSurvival);
+	CreateNative("ClientModelToSC", _native_ClientModelToSC);
+	CreateNative("WeaponNameToId", _native_WeaponNameToId);
+	CreateNative("GetMeleeWeaponIdFromName", _native_GetMeleeWeaponIdFromName);
+	CreateNative("GetMeleeWeaponNameFromModel", _native_GetMeleeWeaponNameFromModel);
+	
+	CreateNative("InSecondHalfOfRound", _native_InSecondHalfOfRound);
+	CreateNative("IsInTransition", _native_IsInTransition);
 	
 	
 	/* Plugin Forward Declarations */
@@ -130,11 +293,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	hFwdTankDeath = new GlobalForward("L4D2_OnTankDeath", ET_Ignore, Param_Cell, Param_Cell);
 	
 	hFwdPlayerHurt = new GlobalForward("L4D2_OnPlayerHurt", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_Cell, Param_Cell);
-	hFwdJoinSurvivor = new GlobalForward("L4D2_OnJoinSurvivor", ET_Event, Param_Cell);
-	hFwdAwaySurvivor = new GlobalForward("L4D2_OnAwaySurvivor", ET_Event, Param_Cell);
-	hFwdJoinInfected = new GlobalForward("L4D2_OnJoinInfected", ET_Event, Param_Cell);
-	hFwdAwayInfected = new GlobalForward("L4D2_OnAwayInfected", ET_Event, Param_Cell);
-	hFwdTeamChanged = new GlobalForward("L4D2_OnPlayerTeamChanged", ET_Event, Param_Cell, Param_Cell, Param_Cell);
+	hFwdTeamChanged = new GlobalForward("L4D2_OnPlayerTeamChanged", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	hFwdOnTakeDamage = new GlobalForward("L4D2_OnTakeDamage", ET_Event, Param_Cell, Param_CellByRef, Param_CellByRef, Param_FloatByRef, Param_CellByRef, Param_CellByRef, Param_Array, Param_Array);
 	
 	/* Register our library */
 	RegPluginLibrary(LIBRARYNAME);
@@ -145,32 +305,38 @@ public void OnPluginStart()
 {
 	char sNameBuff[PLATFORM_MAX_PATH];
 	kvSafeRoomInfo = new KeyValues("SaferoomInfo");
-	BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), SAFEROOMINFO_PATH);
+	BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), "configs/l4d2lib/saferoominfo.txt");
 	if (!FileToKeyValues(kvSafeRoomInfo, sNameBuff))
 	{
-		BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), "configs/saferoominfo.txt");
-		if (!FileToKeyValues(kvSafeRoomInfo, sNameBuff))
-		{
-			LogError("[MI] 找不到 saferoominfo.txt 文件信息");
-			delete kvSafeRoomInfo;
-		}
+		LogError("[MI] 找不到 saferoominfo.txt 文件信息");
+		delete kvSafeRoomInfo;
 	}
 	
 	kvMapInfo = new KeyValues("MapInfo");
 	LGO_BuildConfigPath(sNameBuff, sizeof(sNameBuff), "mapinfo.txt"); //Build our filepath
 	if (!FileToKeyValues(kvMapInfo, sNameBuff))
 	{
-		LogError("[MI] 找不到 mapinfo.txt 文件信息");
-		delete kvMapInfo;
+		BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), "configs/l4d2lib/mapinfo.txt");
+		if (!FileToKeyValues(kvMapInfo, sNameBuff))
+		{
+			LogError("[MI] 找不到 mapinfo.txt 文件信息");
+			delete kvMapInfo;
+		}
 	}
 	
-	hGameMode = FindConVar("mp_gamemode");
-	hSurvivorLimit = FindConVar("survivor_limit");
+	hSurvivorModelsTrie = new StringMap();
+	for (int i = 0; i < view_as<int>(SurvivorCharacter_Size); i++) { hSurvivorModelsTrie.SetValue(SurvivorModels[i], i); }
 	
-	hGameMode.AddChangeHook(ConVarChange);
-	hSurvivorLimit.AddChangeHook(ConVarChange);
+	hWeaponNamesTrie = new StringMap();
+	for (int i = 0; i < view_as<int>(WEPID_SIZE); i++) { hWeaponNamesTrie.SetValue(WeaponNames[i], i); }
 	
-	ConVarChange(null, "", "");
+	hMeleeWeaponNamesTrie = new StringMap();
+	hMeleeWeaponModelsTrie = new StringMap();
+    for (int i = 0; i < view_as<int>(WEPID_MELEES_SIZE); ++i)
+    {
+        hMeleeWeaponNamesTrie.SetValue(MeleeWeaponNames[i], i);
+        hMeleeWeaponModelsTrie.SetString(MeleeWeaponModels[i], MeleeWeaponNames[i]);
+    }
 	
 	FindConVar("director_no_bosses").SetBool(true);
 	
@@ -191,37 +357,17 @@ public void OnPluginStart()
 	HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
 	HookEvent("player_hurt", PlayerHurt_Event, EventHookMode_Post);
 	
-	HookEvent("round_start", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("round_end", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("player_spawn", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("player_disconnect", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("player_death", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("player_bot_replace", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("bot_player_replace", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
-	HookEvent("defibrillator_used", SI_BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("round_start", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("round_end", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_spawn", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_disconnect", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_death", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("player_bot_replace", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("bot_player_replace", BuildIndex_Event, EventHookMode_PostNoCopy);
+	HookEvent("defibrillator_used", BuildIndex_Event, EventHookMode_PostNoCopy);
 	
 	HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 	HookEvent("server_cvar", Event_ServerConVar, EventHookMode_Pre);
-}
-
-public int ConVarChange(ConVar convar, char[] oldValue, char[] newValue)
-{
-	char gmode[20];
-	hGameMode.GetString(gmode, sizeof(gmode));
-	if(
-		StrEqual(gmode, "coop") || StrEqual(gmode, "realism") || StrEqual(gmode, "mutation1") || StrEqual(gmode, "mutation2") || 
-		StrEqual(gmode, "mutation3") || StrEqual(gmode, "mutation4") || StrEqual(gmode, "mutation5") || StrEqual(gmode, "mutation7") || 
-		StrEqual(gmode, "mutation8") || StrEqual(gmode, "mutation9") || StrEqual(gmode, "mutation10") || StrEqual(gmode, "mutation14") || 
-		StrEqual(gmode, "mutation16") || StrEqual(gmode, "mutation17") || StrEqual(gmode, "mutation20") || StrEqual(gmode, "community1") || 
-		StrEqual(gmode, "community2") || StrEqual(gmode, "community5")
-	) iGameMode = 0;
-	else if(
-		StrEqual(gmode,"versus") || StrEqual(gmode, "teamversus") || StrEqual(gmode, "mutation11") || StrEqual(gmode, "mutation12") || 
-		StrEqual(gmode, "mutation18") || StrEqual(gmode, "mutation19") || StrEqual(gmode, "community3")
-	) iGameMode = 1;
-	else if(StrEqual(gmode, "scavenge") || StrEqual(gmode, "teamscavenge") || StrEqual(gmode, "mutation13")) iGameMode = 2;
-	else if(StrEqual(gmode, "survival") || StrEqual(gmode, "mutation15") || StrEqual(gmode, "community4")) iGameMode = 3;
-	else iGameMode = -1;
 }
 
 public void OnPluginEnd()
@@ -231,102 +377,11 @@ public void OnPluginEnd()
 	FindConVar("director_no_bosses").RestoreDefault();
 }
 
-/*public void LGO_OnMatchModeLoaded()
-{
-	char sNameBuff[PLATFORM_MAX_PATH];
-	kvMapInfo = new KeyValues("MapInfo");
-	BuildPath(Path_SM, sNameBuff, sizeof(sNameBuff), MAPINFO_PATH);
-	if (!FileToKeyValues(kvMapInfo, sNameBuff))
-	{
-		LGO_BuildConfigPath(sNameBuff, sizeof(sNameBuff), "mapinfo.txt"); //Build our filepath
-		if (!FileToKeyValues(kvMapInfo, sNameBuff))
-		{
-			LogError("[MI] 找不到 mapinfo.txt 文件信息");
-			delete kvMapInfo;
-		}
-	}
-}*/
-
 public void OnMapStart()
 {
-    g_bHasStart = false;        g_bHasStartExtra = false;
-    g_bHasEnd = false;          g_bHasEndExtra = false;
-    g_fStartLocA = NULL_VECTOR; g_fStartLocB = NULL_VECTOR; g_fStartLocC = NULL_VECTOR; g_fStartLocD = NULL_VECTOR;
-    g_fEndLocA = NULL_VECTOR;   g_fEndLocB = NULL_VECTOR;   g_fEndLocC = NULL_VECTOR;   g_fEndLocD = NULL_VECTOR;
-    g_fStartRotate = 0.0;       g_fEndRotate = 0.0;
-	
 	GetCurrentMap(g_sMapname, 64);
 	
-    if (KvJumpToKey(kvSafeRoomInfo, g_sMapname))
-    {
-        KvGetVector(kvSafeRoomInfo, "start_loc_a", g_fStartLocA);
-        KvGetVector(kvSafeRoomInfo, "start_loc_b", g_fStartLocB);
-        KvGetVector(kvSafeRoomInfo, "start_loc_c", g_fStartLocC);
-        KvGetVector(kvSafeRoomInfo, "start_loc_d", g_fStartLocD);
-        g_fStartRotate = KvGetFloat(kvSafeRoomInfo, "start_rotate", g_fStartRotate);
-        KvGetVector(kvSafeRoomInfo, "end_loc_a", g_fEndLocA);
-        KvGetVector(kvSafeRoomInfo, "end_loc_b", g_fEndLocB);
-        KvGetVector(kvSafeRoomInfo, "end_loc_c", g_fEndLocC);
-        KvGetVector(kvSafeRoomInfo, "end_loc_d", g_fEndLocD);
-        g_fEndRotate = KvGetFloat(kvSafeRoomInfo, "end_rotate", g_fEndRotate);
-        
-        if (g_fStartLocA[0] != 0.0 && g_fStartLocA[1] != 0.0 && g_fStartLocA[2] != 0.0 && g_fStartLocB[0] != 0.0 && g_fStartLocB[1] != 0.0 && g_fStartLocB[2] != 0.0) { g_bHasStart = true; }
-        if (g_fStartLocC[0] != 0.0 && g_fStartLocC[1] != 0.0 && g_fStartLocC[2] != 0.0 && g_fStartLocD[0] != 0.0 && g_fStartLocD[1] != 0.0 && g_fStartLocD[2] != 0.0) { g_bHasStartExtra = true; }
-        if (g_fEndLocA[0] != 0.0 && g_fEndLocA[1] != 0.0 && g_fEndLocA[2] != 0.0 && g_fEndLocB[0] != 0.0 && g_fEndLocB[1] != 0.0 && g_fEndLocB[2] != 0.0) { g_bHasEnd = true; }
-        if (g_fEndLocC[0] != 0.0 && g_fEndLocC[1] != 0.0 && g_fEndLocC[2] != 0.0 && g_fEndLocD[0] != 0.0 && g_fEndLocD[1] != 0.0 && g_fEndLocD[2] != 0.0) { g_bHasEndExtra = true; }
-        
-        if (g_fStartRotate != 0.0)
-		{
-            RotatePoint(g_fStartLocA, g_fStartLocB[0], g_fStartLocB[1], g_fStartRotate);
-            if (g_bHasStartExtra)
-			{
-                RotatePoint(g_fStartLocA, g_fStartLocC[0], g_fStartLocC[1], g_fStartRotate);
-                RotatePoint(g_fStartLocA, g_fStartLocD[0], g_fStartLocD[1], g_fStartRotate);
-            }
-        }
-        if (g_fEndRotate != 0.0)
-		{
-            RotatePoint(g_fEndLocA, g_fEndLocB[0], g_fEndLocB[1], g_fEndRotate);
-            if (g_bHasEndExtra)
-			{
-                RotatePoint(g_fEndLocA, g_fEndLocC[0], g_fEndLocC[1], g_fEndRotate);
-                RotatePoint(g_fEndLocA, g_fEndLocD[0], g_fEndLocD[1], g_fEndRotate);
-            }
-        }
-    }
-    else
-    {
-        LogMessage("[SI] SaferoomInfo for %s is missing.", g_sMapname);
-    }
-	
-	if (KvJumpToKey(kvMapInfo, g_sMapname))
-	{
-		KvGetVector(kvMapInfo, "start_point", Start_Point);
-		KvGetVector(kvMapInfo, "end_point", End_Point);
-		Start_Dist = KvGetFloat(kvMapInfo, "start_dist");
-		Start_Extra_Dist = KvGetFloat(kvMapInfo, "start_extra_dist");
-		End_Dist = KvGetFloat(kvMapInfo, "end_dist");
-		MapDataAvailable = true;
-	}
-	else
-	{
-		MapDataAvailable = false;
-		Start_Dist = FindStartPointHeuristic(Start_Point);
-		if(Start_Dist > 0.0)
-		{
-			Start_Extra_Dist = 500.0;
-		}
-		else
-		{
-			Start_Point = NULL_VECTOR;
-			Start_Dist = -1.0;
-			Start_Extra_Dist = -1.0;
-		}
-		
-		End_Point = NULL_VECTOR;
-		End_Dist = -1.0;
-		LogMessage("[MI] MapInfo for %s is missing.", g_sMapname);
-	}
+	Update_MapInfo();
 	
 	bRoundEnd = false;
 	bInSecondRound = false;
@@ -345,6 +400,7 @@ public void OnMapEnd()
 	bInRound = false;
 	iRoundNumber = 0;
 	MapDataAvailable = false;
+	SaferoomDataAvailable = false;
 }
 
 public Action L4D_OnSpawnTank(const float vector[3], const float qangle[3])
@@ -385,6 +441,8 @@ public Action RoundStart_Delay(Handle timer)
 {
 	if (bIsMapInit)
 	{
+		ResetStatus();
+		
 		if (!bInRound)
 		{
 			bInRound = true;
@@ -393,10 +451,10 @@ public Action RoundStart_Delay(Handle timer)
 			Call_PushCell(iRoundNumber);
 			Call_Finish();
 		}
-		ResetStatus();
 		PrintToServer("%s", g_sMapname);
-		KillTimer(timer);
+		return Plugin_Stop;
 	}
+	return Plugin_Continue;
 }
 
 public void TankSpawn_Event(Event event, const char[] name, bool dontBroadcast)
@@ -433,6 +491,7 @@ public void ItemPickup_Event(Event event, const char[] name, bool dontBroadcast)
 			KillTimer(hTankDeathTimer);
 			hTankDeathTimer = null;
 		}
+		
 		Call_StartForward(hFwdTankPassControl);
 		Call_PushCell(iPrevTank);
 		Call_PushCell(iTank);
@@ -504,46 +563,47 @@ public Action PlayerTeam_Event(Event event, const char[] name, bool dontBroadcas
 	int team = event.GetInt("team");
 	if (!IsValidAndInGame(client)) return;
 	
-	Action aResult = Plugin_Continue;
-	if (team == 2)
-	{
-		Call_StartForward(hFwdJoinSurvivor);
-		Call_PushCell(client);
-		Call_Finish(aResult);
-	}
-	else if (team == 3)
-	{
-		Call_StartForward(hFwdJoinInfected);
-		Call_PushCell(client);
-		Call_Finish(aResult);
-	}
-	
-	if (oldteam == 2)
-	{
-		Call_StartForward(hFwdAwaySurvivor);
-		Call_PushCell(client);
-		Call_Finish(aResult);
-	}
-	else if (oldteam == 3)
-	{
-		Call_StartForward(hFwdAwayInfected);
-		Call_PushCell(client);
-		Call_Finish(aResult);
-	}
-	
 	Call_StartForward(hFwdTeamChanged);
 	Call_PushCell(client);
 	Call_PushCell(oldteam);
 	Call_PushCell(team);
-	Call_Finish(aResult);
-	if (aResult == Plugin_Handled)
+	Call_Finish();
+	
+	if (team > 1 && oldteam <= 1)
 	{
-		ChangeClientTeam(client, oldteam);
+		SDKHook(client, SDKHook_OnTakeDamage, fOnTakeDamage);
 	}
+	else if (team <= 1 && oldteam > 1)
+	{
+		SDKUnhook(client, SDKHook_OnTakeDamage, fOnTakeDamage);
+	}
+	
 	if (oldteam == 2 || team == 2)
 	{
 		CreateTimer(0.3, BuildArray_Timer);
 	}
+}
+
+public Action fOnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damageType, int &weapon, float damageForce[3], float damagePosition[3])
+{
+	if (!IsValidAndInGame(victim))
+	{
+		return Plugin_Continue;
+	}
+	
+	Action aResult = Plugin_Continue;
+    Call_StartForward(hFwdOnTakeDamage);
+    Call_PushCell(victim);
+	Call_PushCellRef(attacker);
+	Call_PushCellRef(inflictor);
+	Call_PushFloatRef(damage);
+	Call_PushCellRef(damageType);
+	Call_PushCellRef(weapon);
+	Call_PushArray(damageForce, 3);
+	Call_PushArray(damagePosition, 3);
+    Call_Finish(aResult);
+	
+	return aResult;
 }
 
 public Action BuildArray_Timer(Handle timer)
@@ -551,7 +611,7 @@ public Action BuildArray_Timer(Handle timer)
 	Survivors_RebuildArray();
 }
 
-public void SI_BuildIndex_Event(Event event, const char[] name, bool dontBroadcast)
+public void BuildIndex_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	Survivors_RebuildArray();
 }
@@ -577,63 +637,60 @@ public Action Say_Callback(int client, char[] command, int args)
 /* Plugin Natives */
 public any _native_GetCurrentRound(Handle plugin, int numParams)
 {
-	return GetCurrentRound();
+	return iRoundNumber;
 }
 
 public any _native_CurrentlyInRound(Handle plugin, int numParams)
 {
-	return CurrentlyInRound();
+	return bInRound;
 }
 
 public any _native_GetSurvivorCount(Handle plugin, int numParams)
 {
-	return GetSurvivorCount();
+	return NUM_OF_SURVIVORS;
 }
 
 public any _native_GetSurvivorOfIndex(Handle plugin, int numParams)
 {
-	return GetSurvivorOfIndex(GetNativeCell(1));
+	int index = GetNativeCell(1);
+	if (index < 0 || index > 3)
+	{
+		return 0;
+	}
+	return iSurvivorIndex[index];
 }
 
 public any _native_IsMapDataAvailable(Handle plugin, int numParams)
 {
-	return IsMapDataAvailable();
+	return MapDataAvailable;
 }
 
 public any _native_IsEntityInSaferoom(Handle plugin, int numParams)
 {
-	return IsEntityInSaferoom(GetNativeCell(1));
-}
-
-public any _native_GetMapStartOrigin(Handle plugin, int numParams)
-{
-	float origin[3];
-	GetNativeArray(1, origin, 3);
-	GetMapStartOrigin(origin);
-	SetNativeArray(1, origin, 3);
-}
-
-public any _native_GetMapEndOrigin(Handle plugin, int numParams)
-{
-	float origin[3];
-	GetNativeArray(1, origin, 3);
-	GetMapEndOrigin(origin);
-	SetNativeArray(1, origin, 3);
-}
-
-public any _native_GetMapStartDist(Handle plugin, int numParams)
-{
-	return GetMapStartDist();
-}
-
-public any _native_GetMapStartExtraDist(Handle plugin, int numParams)
-{
-	return GetMapStartExtraDist();
-}
-
-public any _native_GetMapEndDist(Handle plugin, int numParams)
-{
-	return GetMapEndDist();
+    int entity = GetNativeCell(1);
+	if (!IsValidEntity(entity) || GetEntSendPropOffs(entity, "m_vecOrigin", true) == -1) return false;
+	float location[3];
+	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
+	Saferoom result = Saferoom_Neither;
+	if (SaferoomDataAvailable)
+	{
+		if (IsPointInStartSaferoom(location))
+		{
+			result |= Saferoom_Start;
+		}
+		if (IsPointInEndSaferoom(location))
+		{
+			result |= Saferoom_End;
+		}
+	}
+	else
+	{
+		if ((GetVectorDistance(location, Start_Point) <= (Start_Extra_Dist > Start_Dist ? Start_Extra_Dist : Start_Dist)))
+		{
+			result |= Saferoom_Start;
+		}
+	}
+	return result;
 }
 
 public any _native_GetMapValueInt(Handle plugin, int numParams)
@@ -647,7 +704,7 @@ public any _native_GetMapValueInt(Handle plugin, int numParams)
 	
 	defval = GetNativeCell(2);
 	
-	return GetMapValueInt(key, defval);
+	return KvGetNum(kvMapInfo, key, defval); 
 }
 
 public any _native_GetMapValueFloat(Handle plugin, int numParams)
@@ -662,7 +719,7 @@ public any _native_GetMapValueFloat(Handle plugin, int numParams)
 	
 	defval = GetNativeCell(2);
 	
-	return GetMapValueFloat(key, defval);
+	return KvGetFloat(kvMapInfo, key, defval); 
 }
 
 public any _native_GetMapValueVector(Handle plugin, int numParams)
@@ -677,7 +734,7 @@ public any _native_GetMapValueVector(Handle plugin, int numParams)
 	
 	GetNativeArray(3, defval, 3);
 	
-	GetMapValueVector(key, value, defval);
+	KvGetVector(kvMapInfo, key, value, defval);
 	
 	SetNativeArray(2, value, 3);
 }
@@ -696,7 +753,7 @@ public any _native_GetMapValueString(Handle plugin, int numParams)
 	len = GetNativeCell(3);
 	char[] buf = new char[len+1];
 	
-	GetMapValueString(key, buf, len, defval);
+	KvGetString(kvMapInfo, key, buf, len, defval);
 	
 	SetNativeString(2, buf, len);
 }
@@ -711,189 +768,169 @@ public any _native_CopyMapSubsection(Handle plugin, int numParams)
 	
 	kv = GetNativeCell(1);
 	
-	CopyMapSubsection(kv, key);
-}
-
-
-public any _native_InSecondHalfOfRound(Handle plugin, int numParams)
-{
-	return bInSecondRound;
-}
-
-public any _native_SAFEDETECT_IsEntityInStartSaferoom(Handle plugin, int numParams)
-{
-    int entity = GetNativeCell(1);
-	if (!IsValidEntity(entity) || GetEntSendPropOffs(entity, "m_vecOrigin", true) == -1) return false;
-	float location[3];
-	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
-	return IsPointInStartSaferoom(location);
-}
-
-public any _native_SAFEDETECT_IsEntityInEndSaferoom(Handle plugin, int numParams)
-{
-    int entity = GetNativeCell(1);
-	if (!IsValidEntity(entity) || GetEntSendPropOffs(entity, "m_vecOrigin", true) == -1) return false;
-	float location[3];
-	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
-	return IsPointInEndSaferoom(location);
-}
-
-public any _native_SAFEDETECT_IsEntityInSaferoom(Handle plugin, int numParams)
-{
-	int entity = GetNativeCell(1);
-	if (!IsValidEntity(entity) || GetEntSendPropOffs(entity, "m_vecOrigin", true) == -1) { return false; }
-	float location[3];
-	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", location);
-	return IsPointInStartSaferoom(location) || IsPointInEndSaferoom(location);
-}
-
-public any _native_GetRandomSurvivor(Handle plugin, int numParams)
-{
-	int[] survivors = new int[GetSurvivorCount()];
-	int numSurvivors = 0;
-	for (int i = 0; i < GetSurvivorCount(); i++)
-	{
-		int index = iSurvivorIndex[i];
-		if (index == 0 || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
-	    survivors[numSurvivors] = index;
-	    numSurvivors++;
-	}
-	int iRandomSurvivor = survivors[GetRandomInt(0, numSurvivors - 1)];
-	if (iRandomSurvivor) return iRandomSurvivor;
-	return -1;
-}
-
-public any _native_IsCoop(Handle plugin, int numParams)
-{
-	return iGameMode == 0;
-}
-
-public any _native_IsVersus(Handle plugin, int numParams)
-{
-	return iGameMode == 1;
-}
-
-public any _native_IsScavenge(Handle plugin, int numParams)
-{
-	return iGameMode == 2;
-}
-
-public any _native_IsSurvival(Handle plugin, int numParams)
-{
-	return iGameMode == 3;
-}
-
-
-/* NATIVE FUNCTIONS */
-// New Super Awesome Functions!!!
-
-bool IsMapDataAvailable()
-{
-	return MapDataAvailable;
-}
-
-/**
- * Determines if an entity is in a start or end saferoom (based on mapinfo.txt or automatically generated info)
- *
- * @param ent			The entity to be checked
- * @return				Saferoom_Neither if entity is not in any saferoom
- *						Saferoom_Start if it is in the starting saferoom
- *						Saferoom_End if it is in the ending saferoom
- *						Saferoom_Start | Saferoom_End if it is in both saferooms (probably won't happen)
- */
-Saferoom IsEntityInSaferoom(int ent)
-{
-	Saferoom result=Saferoom_Neither;
-	float origins[3];
-	GetEntPropVector(ent, Prop_Send, "m_vecOrigin", origins);
-	
-	if ((GetVectorDistance(origins, Start_Point) <= (Start_Extra_Dist > Start_Dist ? Start_Extra_Dist : Start_Dist)))
-	{
-		result |= Saferoom_Start;
-	}
-	if (GetVectorDistance(origins, End_Point) <= End_Dist)
-	{
-		result |= Saferoom_End;
-	}
-	return result;
-}
-
-int GetMapValueInt(const char[] key, const int defvalue=0) 
-{
-	return KvGetNum(kvMapInfo, key, defvalue); 
-}
-
-float GetMapValueFloat(const char[] key, const float defvalue=0.0) 
-{
-	return KvGetFloat(kvMapInfo, key, defvalue); 
-}
-
-void GetMapValueVector(const char[] key, float vector[3], const float defvalue[3]=NULL_VECTOR) 
-{
-	KvGetVector(kvMapInfo, key, vector, defvalue);
-}
-
-void GetMapValueString(const char[] key, char[] value, int maxlength, const char[] defvalue="")
-{
-	KvGetString(kvMapInfo, key, value, maxlength, defvalue);
-}
-
-void CopyMapSubsection(Handle kv, const char[] section)
-{
-	if(KvJumpToKey(kvMapInfo, section, false))
+	if (KvJumpToKey(kvMapInfo, key, false))
 	{
 		KvCopySubkeys(kvMapInfo, kv);
 		KvGoBack(kvMapInfo);
 	}
 }
 
-float GetMapStartOrigin(float origin[3])
-{
-	origin = Start_Point;
-}
 
-float GetMapEndOrigin(float origin[3])
+public any _native_ClientModelToSC(Handle plugin, int numParams)
 {
-	origin = End_Point;
-}
-
-float GetMapEndDist()
-{
-	return End_Dist;
-}
-
-float GetMapStartDist()
-{
-	return Start_Dist;
-}
-
-float GetMapStartExtraDist()
-{
-	return Start_Extra_Dist;
-}
-
-int GetCurrentRound()
-{
-	return iRoundNumber;
-}
-
-bool CurrentlyInRound()
-{
-	return bInRound;
-}
-
-int GetSurvivorCount()
-{
-	return NUM_OF_SURVIVORS;
-}
-
-int GetSurvivorOfIndex(int index)
-{
-	if (index < 0 || index > 3)
+	int len;
+	GetNativeStringLength(1, len);
+	len += 1;
+	char[] model = new char[len];
+	GetNativeString(1, model, len);
+	
+	SurvivorCharacter sc;
+	if (hSurvivorModelsTrie.GetValue(model, sc))
 	{
-		return 0;
+		return sc;
 	}
-	return iSurvivorIndex[index];
+
+	return SurvivorCharacter_Invalid;
+}
+
+public any _native_WeaponNameToId(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(1, len);
+	len += 1;
+	char[] weaponName = new char[len];
+	GetNativeString(1, weaponName, len);
+    WeaponId id;
+    if (hWeaponNamesTrie.GetValue(weaponName, id))
+    {
+        return id;
+    }
+    return WEPID_NONE;
+}
+
+public any _native_GetMeleeWeaponIdFromName(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(1, len);
+	len += 1;
+	char[] sName = new char[len];
+	GetNativeString(1, sName, len);
+	
+    int id;
+    if (hMeleeWeaponNamesTrie.GetValue(sName, id))
+    {
+        return id;
+    }
+	return WEPID_MELEE_NONE;
+}
+
+public any _native_GetMeleeWeaponNameFromModel(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(1, len);
+	len += 1;
+	char[] sModelName = new char[len];
+	GetNativeString(1, sModelName, len);
+
+	len = GetNativeCell(3);
+	char[] buffer = new char[len];
+	
+	if (hMeleeWeaponModelsTrie.GetString(sModelName, buffer, len))
+	{
+		SetNativeString(2, buffer, len);
+		return true;
+	}
+	return false;
+}
+
+
+public any _native_InSecondHalfOfRound(Handle plugin, int numParams)
+{
+	return (L4D2_IsScavengeMode() || L4D_IsVersusMode()) ? view_as<bool>(GameRules_GetProp("m_bInSecondHalfOfRound")) : bInSecondRound;
+}
+
+public any _native_IsInTransition(Handle plugin, int numParams)
+{
+	return !bIsMapInit;
+}
+
+
+/* NATIVE FUNCTIONS */
+// New Super Awesome Functions!!!
+
+void Update_MapInfo()
+{
+    g_bHasStart = false;        g_bHasStartExtra = false;
+    g_bHasEnd = false;          g_bHasEndExtra = false;
+    g_fStartLocA = NULL_VECTOR; g_fStartLocB = NULL_VECTOR; g_fStartLocC = NULL_VECTOR; g_fStartLocD = NULL_VECTOR;
+    g_fEndLocA = NULL_VECTOR;   g_fEndLocB = NULL_VECTOR;   g_fEndLocC = NULL_VECTOR;   g_fEndLocD = NULL_VECTOR;
+    g_fStartRotate = 0.0;       g_fEndRotate = 0.0;
+	
+	if (KvJumpToKey(kvMapInfo, g_sMapname))
+	{
+		MapDataAvailable = true;
+	}
+	else
+	{
+		MapDataAvailable = false;
+		LogMessage("[MI] MapInfo for %s is missing.", g_sMapname);
+	}
+	
+    if (KvJumpToKey(kvSafeRoomInfo, g_sMapname))
+    {
+        KvGetVector(kvSafeRoomInfo, "start_loc_a", g_fStartLocA);
+        KvGetVector(kvSafeRoomInfo, "start_loc_b", g_fStartLocB);
+        KvGetVector(kvSafeRoomInfo, "start_loc_c", g_fStartLocC);
+        KvGetVector(kvSafeRoomInfo, "start_loc_d", g_fStartLocD);
+        g_fStartRotate = KvGetFloat(kvSafeRoomInfo, "start_rotate", g_fStartRotate);
+        KvGetVector(kvSafeRoomInfo, "end_loc_a", g_fEndLocA);
+        KvGetVector(kvSafeRoomInfo, "end_loc_b", g_fEndLocB);
+        KvGetVector(kvSafeRoomInfo, "end_loc_c", g_fEndLocC);
+        KvGetVector(kvSafeRoomInfo, "end_loc_d", g_fEndLocD);
+        g_fEndRotate = KvGetFloat(kvSafeRoomInfo, "end_rotate", g_fEndRotate);
+        
+        if (g_fStartLocA[0] != 0.0 && g_fStartLocA[1] != 0.0 && g_fStartLocA[2] != 0.0 && g_fStartLocB[0] != 0.0 && g_fStartLocB[1] != 0.0 && g_fStartLocB[2] != 0.0) { g_bHasStart = true; }
+        if (g_fStartLocC[0] != 0.0 && g_fStartLocC[1] != 0.0 && g_fStartLocC[2] != 0.0 && g_fStartLocD[0] != 0.0 && g_fStartLocD[1] != 0.0 && g_fStartLocD[2] != 0.0) { g_bHasStartExtra = true; }
+        if (g_fEndLocA[0] != 0.0 && g_fEndLocA[1] != 0.0 && g_fEndLocA[2] != 0.0 && g_fEndLocB[0] != 0.0 && g_fEndLocB[1] != 0.0 && g_fEndLocB[2] != 0.0) { g_bHasEnd = true; }
+        if (g_fEndLocC[0] != 0.0 && g_fEndLocC[1] != 0.0 && g_fEndLocC[2] != 0.0 && g_fEndLocD[0] != 0.0 && g_fEndLocD[1] != 0.0 && g_fEndLocD[2] != 0.0) { g_bHasEndExtra = true; }
+        
+        if (g_fStartRotate != 0.0)
+		{
+            RotatePoint(g_fStartLocA, g_fStartLocB[0], g_fStartLocB[1], g_fStartRotate);
+            if (g_bHasStartExtra)
+			{
+                RotatePoint(g_fStartLocA, g_fStartLocC[0], g_fStartLocC[1], g_fStartRotate);
+                RotatePoint(g_fStartLocA, g_fStartLocD[0], g_fStartLocD[1], g_fStartRotate);
+            }
+        }
+        if (g_fEndRotate != 0.0)
+		{
+            RotatePoint(g_fEndLocA, g_fEndLocB[0], g_fEndLocB[1], g_fEndRotate);
+            if (g_bHasEndExtra)
+			{
+                RotatePoint(g_fEndLocA, g_fEndLocC[0], g_fEndLocC[1], g_fEndRotate);
+                RotatePoint(g_fEndLocA, g_fEndLocD[0], g_fEndLocD[1], g_fEndRotate);
+            }
+        }
+		SaferoomDataAvailable = true;
+    }
+    else
+    {
+		SaferoomDataAvailable = false;
+		Start_Dist = FindStartPointHeuristic(Start_Point);
+		if(Start_Dist > 0.0)
+		{
+			Start_Extra_Dist = 500.0;
+		}
+		else
+		{
+			Start_Point = NULL_VECTOR;
+			Start_Dist = -1.0;
+			Start_Extra_Dist = -1.0;
+		}
+		
+        LogMessage("[SI] SaferoomInfo for %s is missing.", g_sMapname);
+    }
 }
 
 void RotatePoint(float origin[3], float &pointX, float &pointY, float angle)
@@ -976,7 +1013,6 @@ void ResetStatus()
 	bIsTankActive = false;
 	iTank = -1;
 	iTankPassCount = 0;
-	
 	if (hTankDeathTimer != null)
 	{
 		KillTimer(hTankDeathTimer);
@@ -1002,6 +1038,10 @@ void Survivors_RebuildArray()
 		iSurvivorCount++;
 		
 		if (charz > 3 || charz < 0) continue;
+		
+		iSurvivorIndex[charz] = 0;
+		
+		if (!IsPlayerAlive(i)) continue;
 		
 		iSurvivorIndex[charz] = i;
 	}

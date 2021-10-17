@@ -28,6 +28,8 @@
  */
 forward void OnRoundIsLive();
 
+forward void OnReadyupCountdown();
+
 /**
  * Returns the index of a item in the footer array.
  * Does not have to be exact. The footer only needs to contain the input, does not need to match.

@@ -30,7 +30,7 @@ public Plugin:myinfo =
 }
 
 new				g_iSurvivorLimit							= 4;
-new		Handle:	g_hCvarSurvivorLimit						= INVALID_HANDLE;
+new		Handle:	g_hCvarSurvivorLimit						= null;
 new		bool:	g_bHasRoundEnded							= false;
 new				g_iBoomerClient;		// Last player to be boomer (or current boomer)
 new				g_iBoomerKiller;									// Client who shot the boomer
@@ -38,8 +38,8 @@ new				g_iBoomerShover;									// Client who shoved the boomer
 new				g_iLastHealth[MAXPLAYERS + 1];
 new		bool:	g_bHasBoomLanded						 	= false;
 new		bool:	g_bIsPouncing[MAXPLAYERS + 1];
-new		Handle:	g_hBoomerShoveTimer							= INVALID_HANDLE;
-new     Handle: g_hBoomerKillTimer                          = INVALID_HANDLE;
+new		Handle:	g_hBoomerShoveTimer							= null;
+new     Handle: g_hBoomerKillTimer                          = null;
 new 	Float: BoomerKillTime                               = 0.0;
 new     String:Boomer[32];               // Name of Boomer
 
@@ -91,11 +91,7 @@ public Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 				g_iBoomerKiller = 0;
 			}
 			
-			if (g_hBoomerShoveTimer != INVALID_HANDLE)
-			{
-				KillTimer(g_hBoomerShoveTimer);
-				g_hBoomerShoveTimer = INVALID_HANDLE;
-			}
+			delete g_hBoomerShoveTimer;
 			BoomerKillTime = 0.0;
 			g_hBoomerKillTimer = CreateTimer(0.1, Timer_KillBoomer, _, TIMER_REPEAT);
 		}
@@ -123,12 +119,8 @@ public OnMapStart()
 public Event_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	g_bHasRoundEnded = false;
-	if (g_hBoomerKillTimer != INVALID_HANDLE)
-	{
-		KillTimer(g_hBoomerKillTimer);
-		g_hBoomerKillTimer = INVALID_HANDLE;
-		BoomerKillTime = 0.0;
-	}
+	delete g_hBoomerKillTimer;
+	BoomerKillTime = 0.0;
 	g_iAlarmCarClient = 0;
 }
 
@@ -260,11 +252,7 @@ public Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 		CreateTimer(0.2, Timer_BoomerKilledCheck, victim);
 		g_iBoomerKiller = attacker;
 		
-		if (g_hBoomerKillTimer != INVALID_HANDLE)
-		{
-			KillTimer(g_hBoomerKillTimer);
-			g_hBoomerKillTimer = INVALID_HANDLE;
-		}
+		delete g_hBoomerKillTimer;
 	}
 	else if (zombieclass == ZC_HUNTER && IsPouncing(victim))
 	{ // Skeet!
@@ -408,7 +396,7 @@ public Event_PlayerShoved(Handle:event, const String:name[], bool:dontBroadcast)
 	new zombieclass = GetEntProp(victim, Prop_Send, "m_zombieClass");
 	if (zombieclass == ZC_BOOMER)
 	{
-		if (g_hBoomerShoveTimer != INVALID_HANDLE)
+		if (g_hBoomerShoveTimer != null)
 		{
 			KillTimer(g_hBoomerShoveTimer);
 			if (!g_iBoomerShover || !IsClientInGame(g_iBoomerShover)) g_iBoomerShover = attacker;
@@ -424,7 +412,7 @@ public Event_PlayerShoved(Handle:event, const String:name[], bool:dontBroadcast)
 public Action:Timer_BoomerShove(Handle:timer)
 {
 	// PrintToChatAll("[DEBUG] BoomerShove timer expired, credit for boomer shutdown is available to anyone at this point!");
-	g_hBoomerShoveTimer = INVALID_HANDLE;
+	g_hBoomerShoveTimer = null;
 	g_iBoomerShover = 0;
 }
 

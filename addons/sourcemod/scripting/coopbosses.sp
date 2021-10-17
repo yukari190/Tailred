@@ -10,6 +10,7 @@
 #include <l4d2util>
 #include <colors>
 #include <DirectInfectedSpawn>
+#include <current>
 #undef REQUIRE_PLUGIN
 #include <readyup>
 #define REQUIRE_PLUGIN
@@ -24,19 +25,20 @@ public Plugin myinfo =
 };
 
 ConVar
-	hVsBossBuffer,
 	hVsBossFlowMax,
 	hVsBossFlowMin,
 	hCvarTankCanSpawn,
 	hCvarWitchCanSpawn,
 	hCvarWitchAvoidTank,
-	hTankDamage;
+	hTankDamage,
+	l4d2_scripted_hud_hud2_text;
 	
 StringMap
 	hStaticTankMaps,
 	hStaticWitchMaps;
 
-Handle sdkCallFling;
+Handle
+	sdkCallFling = null;
 
 bool
 	bTankSpawn,
@@ -57,7 +59,8 @@ int
 	bv_iWitch;
 
 char
-	g_sCurrentMap[64];
+	g_sCurrentMap[64],
+	bosstext[64];
 	
 ArrayList
 	hValidTankFlows,
@@ -119,9 +122,9 @@ public void OnPluginStart()
 	SDKCallInit();
 	
 	hTankDamage = FindConVar("vs_tank_damage");
-	hVsBossBuffer = FindConVar("versus_boss_buffer");
 	hVsBossFlowMax = FindConVar("versus_boss_flow_max");
 	hVsBossFlowMin = FindConVar("versus_boss_flow_min");
+	l4d2_scripted_hud_hud2_text = FindConVar("l4d2_scripted_hud_hud2_text");
 	
 	hCvarTankCanSpawn = CreateConVar("sm_tank_can_spawn", "1", "Tank and Witch ifier enables tanks to spawn", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	hCvarWitchCanSpawn = CreateConVar("sm_witch_can_spawn", "1", "Tank and Witch ifier enables witches to spawn", FCVAR_NOTIFY, true, 0.0, true, 1.0);
@@ -139,16 +142,13 @@ public void OnPluginStart()
 	
 	RegConsoleCmd("sm_boss", Cmd_BossPercent, "Boss产生的百分比");
 	RegConsoleCmd("sm_tank", Cmd_BossPercent, "Boss产生的百分比");
-	RegConsoleCmd("sm_cu", Cmd_BossPercent, "Boss产生的百分比");
-	RegConsoleCmd("sm_cur", Cmd_BossPercent, "Boss产生的百分比");
-	RegConsoleCmd("sm_current", Cmd_BossPercent, "Boss产生的百分比");
 	
 	RegConsoleCmd("sm_voteboss", VoteBossCmd); // Allows players to vote for custom boss spawns
 	RegConsoleCmd("sm_bossvote", VoteBossCmd); // Allows players to vote for custom boss spawns
 	
 	FindConVar("director_no_bosses").SetBool(true);
 	
-	HookEvent("finale_start", FinaleStart_Event, EventHookMode_PostNoCopy);	
+	HookEvent("finale_start", FinaleStart_Event, EventHookMode_PostNoCopy);
 }
 
 public void OnPluginEnd()
@@ -190,6 +190,8 @@ public Action Reset_Command(int args) {
 
 public Action Cmd_BossPercent(int client, int args)
 {
+	if (!IsValidAndInGame(client)) return Plugin_Handled;
+	
 	int iTeam = GetClientTeam(client);
 	if (iTeam == 1)
 	{
@@ -201,7 +203,13 @@ public Action Cmd_BossPercent(int client, int args)
 		if (IsClientInGame(i) && GetClientTeam(i) == iTeam)
 		  PrintBossPercents(i);
 	}
+	RequestFrame(PrintCurrent, GetClientUserId(client));
 	return Plugin_Handled;
+}
+
+public void PrintCurrent(int userid) {
+	int client = GetClientOfUserId(userid);
+	if (client) FakeClientCommand(client, "say /current");
 }
 
 public Action VoteBossCmd(int client, int args)
@@ -415,7 +423,7 @@ public void OnRoundIsLive()
 {
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientInGame(i))
+		if (IsClientInGame(i) && !IsFakeClient(i))
 		  PrintBossPercents(i);
 	}
 }
@@ -426,7 +434,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea()
 	{
 		for (int i = 1; i <= MaxClients; i++)
 		{
-			if (IsClientInGame(i))
+			if (IsClientInGame(i) && !IsFakeClient(i))
 			  PrintBossPercents(i);
 		}
 	}
@@ -600,17 +608,7 @@ public Action AddReadyFooter(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action L4D2_OnJoinSurvivor(int client)
-{
-	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-}
-
-public Action L4D2_OnAwaySurvivor(int client)
-{
-	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-}
-
-public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damageType, int &weapon, float damageForce[3], float damagePosition[3]) 
+public Action L4D2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damageType, int &weapon, float damageForce[3], float damagePosition[3]) 
 {
 	if (!IsValidSurvivor(victim) || !IsPlayerAlive(victim) || 
 		!IsValidAndInGame(attacker) || !IsPlayerAlive(attacker) || GetInfectedClass(attacker) != L4D2Infected_Tank
@@ -623,7 +621,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 		{
 			int index = L4D2_GetSurvivorOfIndex(i);
-			if (index == 0 || !IsPlayerAlive(index) || index == victim || !SurvivorNearTank[index]) continue;
+			if (index == 0 || index == victim || !SurvivorNearTank[index]) continue;
 			
 			if (!IsIncapacitated(index)) SetAnimFling(index, attacker, throwForce[index]);
 			SDKHooks_TakeDamage(index, attacker, attacker, hTankDamage.FloatValue, DMG_GENERIC);
@@ -645,7 +643,7 @@ public Action Tank_Distance(Handle timer, any client)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		GetClientAbsOrigin(client, tankPos);
 		GetClientAbsOrigin(index, survivorPos);
 		if (GetVectorDistance(survivorPos, tankPos) < 120)
@@ -671,7 +669,7 @@ public Action Tank_Distance(Handle timer, any client)
 public Action ActiveTankTimer(Handle timer)
 {
 	int iTank = FindAnyTank();
-	int attacker = L4D2_GetRandomSurvivor();
+	int attacker = GetRandomSurvivor();
 	if (iTank == -1 || attacker == -1) return;
 	
 	for (int i = 0; i < 10; i++)
@@ -693,9 +691,6 @@ void PrintBossPercents(int client)
 		if (GetTankToSpawn()) CPrintToChat(client, "{R}Tank{W}:  [ {G}%d%%{W} ]", iTankPercent);
 		else CPrintToChat(client, "{R}Tank{W}:  [ {G}--%%{W} ]");
 	}
-	
-	int boss_proximity = GetHighestSurvivorFlow();
-	CPrintToChat(client, "{W}当前: {O}%d%%", boss_proximity);
 }
 
 bool IsValidInterval(int interval[2]) {
@@ -793,6 +788,13 @@ void SetTankPercent(int percent) {
 		bTankSpawn = true;
 	}
 	iTankPercent = RoundToFloor(GetTankFlowPercent() * 100);
+	
+	if (l4d2_scripted_hud_hud2_text != null)
+	{
+		if (bTankSpawn) Format(bosstext, sizeof(bosstext), "Tank:  [ %d%% ]", iTankPercent);
+		else Format(bosstext, sizeof(bosstext), "Tank:  [ --%% ]");
+		l4d2_scripted_hud_hud2_text.SetString(bosstext);
+	}
 }
 
 void SetWitchPercent(int percent) {
@@ -808,21 +810,6 @@ void SetWitchPercent(int percent) {
 		L4D2Direct_SetVSWitchToSpawnThisRound(0, true);
 		L4D2Direct_SetVSWitchToSpawnThisRound(1, true);
 	}
-}
-
-float GetBossProximity()
-{
-	float flow = -1.0;
-	int client = L4D_GetHighestFlowSurvivor();
-	if (client > 0) {
-		flow = (L4D2Direct_GetFlowDistance(client) + hVsBossBuffer.FloatValue) / L4D2Direct_GetMapMaxFlowDistance();
-	}
-	return ((flow > 0.0) ? flow : 0.0);
-}
-
-int GetHighestSurvivorFlow()
-{
-	return GetMin(RoundToNearest(100.0 * GetBossProximity()), 100);
 }
 
 
@@ -860,13 +847,13 @@ void SDKCallInit()
 {
 	GameData ConfigFile = LoadGameConfigFile("left4dhooks.l4d2");
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(ConfigFile, SDKConf_Signature, "CTerrorPlayer_Fling");
+	PrepSDKCall_SetFromConf(ConfigFile, SDKConf_Signature, "CTerrorPlayer::Fling");
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
 	sdkCallFling = EndPrepSDKCall();
-	if (sdkCallFling == null) LogError("Cant initialize Fling SDKCall");
+	if (sdkCallFling == null) SetFailState("Cant initialize Fling SDKCall");
 }
 
 bool bTankSpawned = false;

@@ -38,7 +38,7 @@ public Action FinaleEnd_Event(Event event, const char[] name, bool dontBroadcast
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index) || !IsIncapacitated(index)) continue;
+		if (index == 0 || !IsIncapacitated(index)) continue;
 		ForcePlayerSuicide(index);
 	}
 }
@@ -48,14 +48,16 @@ public void L4D2_OnRealRoundStart()
 	bIsFinale = false;
 }
 
-public Action L4D2_OnJoinInfected(int client)
+public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
-	SDKHook(client, SDKHook_PreThinkPost, HookCallback);
-}
-
-public Action L4D2_OnAwayInfected(int client)
-{
-	SDKUnhook(client, SDKHook_PreThinkPost, HookCallback);
+	if (team == 3)
+	{
+		SDKHook(client, SDKHook_PreThinkPost, HookCallback);
+	}
+	else if (oldteam == 3)
+	{
+		SDKUnhook(client, SDKHook_PreThinkPost, HookCallback);
+	}
 }
 
 public Action HookCallback(int client)
@@ -75,7 +77,7 @@ bool TooClose(int client)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		GetClientAbsOrigin(index, fSurvLocation);
 		MakeVectorFromPoints(fInfLocation, fSurvLocation, fVector);
 		if (GetVectorLength(fVector) <= SPAWN_RANGE) return true;

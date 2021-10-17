@@ -33,26 +33,6 @@
 #endif
 #define _lgofnoc_Included
 
-/* Forwards */
-
-/**
- * @brief Called when matchmode is fully loaded, before map restart.
- * @remarks Called just before confogl_plugins.cfg executes
- * 
- * @noreturn
- */
-forward void LGO_OnMatchModeLoaded();
-
-/**
- * @brief Called when matchmode is un-loaded, before map restart.
- * @remarks Plugins are unloaded immediately after this call finishes
- * 
- * @noreturn
- */
-forward void LGO_OnMatchModeUnloaded();
-
-/* NATIVES */
-
 /**
  * @brief Build a filepath relative to the current running config.
  * @remarks Should produce a path in cfg/cfgogl/CONFIG/ or addons/sourcemod/configs/confogl

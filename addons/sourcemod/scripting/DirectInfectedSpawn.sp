@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <l4d2lib>
+#include <l4d2util>
 
 #define MODEL_SMOKER "models/infected/smoker.mdl"
 #define MODEL_BOOMER "models/infected/boomer.mdl"
@@ -40,22 +41,6 @@ public Plugin myinfo =
 	url = ""
 };
 
-enum L4D2_Infected
-{
-	L4D2Infected_Common = 0,
-	L4D2Infected_Smoker = 1,
-	L4D2Infected_Boomer,
-	L4D2Infected_Hunter,
-	L4D2Infected_Spitter,
-	L4D2Infected_Jockey,
-	L4D2Infected_Charger,
-	L4D2Infected_Witch,
-	L4D2Infected_Tank,
-	L4D2Infected_Survivor,
-	
-	L4D2Infected_Size //10 size
-};
-
 Handle 
 	hCreateSmoker = null,
 	hCreateBoomer = null,
@@ -67,10 +52,12 @@ Handle
 	hInfectedAttackSurvivorTeam = null;
 
 ConVar 
+	hSpawnSearchHeight,
 	hSpawnProximityMin,
 	hSpawnProximityMax;
 
 int 
+	iSpawnSearchHeight,
 	iSpawnProximityMin,
 	iSpawnProximityMax;
 
@@ -106,11 +93,15 @@ public any _native_TriggerSpawn(Handle plugin, int numParams)
 
 public void OnPluginStart()
 {
+	hSpawnSearchHeight = CreateConVar( "ss_spawn_search_height", "350", "Attempts to find a valid spawn location will move down from this height relative to a survivor");
 	hSpawnProximityMin = CreateConVar( "ss_spawn_proximity_min", "500", "最接近SI的可能是生还者", _, true, 1.0 );
 	hSpawnProximityMax = CreateConVar( "ss_spawn_proximity_max", "650", "一个SI可以产卵到幸存者的最远的地方", _, true, float(hSpawnProximityMin.IntValue) );
 	
+	hSpawnSearchHeight.AddChangeHook(ConVarChange);
 	hSpawnProximityMin.AddChangeHook(ConVarChange);
 	hSpawnProximityMax.AddChangeHook(ConVarChange);
+	
+	ConVarChange(null, "", "");
 	
 	HookEvent("witch_harasser_set", witch_harasser_set, EventHookMode_Post);
 	HookEvent("witch_killed", witch_killed, EventHookMode_Post);
@@ -120,6 +111,7 @@ public void OnPluginStart()
 
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
+	iSpawnSearchHeight = hSpawnSearchHeight.IntValue;
 	iSpawnProximityMin = hSpawnProximityMin.IntValue;
 	iSpawnProximityMax = hSpawnProximityMax.IntValue;
 }
@@ -215,8 +207,6 @@ int CheckForDirectorEnt()
 #define Y_COORD 1
 #define Z_COORD 2
 
-static const float ss_spawn_search_height = 150.0;
-
 float spawnBounds[4]; // denoted by minimum and maximum X and Y coordinates
 
 bool GridSpawn(L4D2_Infected zombieClass, int attempts, float vecPos[3])
@@ -235,7 +225,7 @@ bool GridSpawn(L4D2_Infected zombieClass, int attempts, float vecPos[3])
 		// 'z' for potential spawn point coordinate is taken from just above the height of nearest survivor
 		closestSurvivor = GetClosestSurvivor2D(searchPos[COORD_X], searchPos[COORD_Y]);
 		GetClientAbsOrigin(closestSurvivor, survivorPos);
-		searchPos[COORD_Z] = survivorPos[COORD_Z] + ss_spawn_search_height;
+		searchPos[COORD_Z] = survivorPos[COORD_Z] + float(iSpawnSearchHeight);
 		
 		// Search down the vertical column from the generated [x, y ,z] coordinate for a valid spawn position
 		float direction[3];
@@ -272,7 +262,7 @@ void UpdateSpawnBounds()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		float pos[3];
 		GetClientAbsOrigin(index, pos);
 		// Check min
@@ -293,15 +283,15 @@ void UpdateSpawnBounds()
 int GetClosestSurvivor2D(float x_coord, float y_coord) 
 {
 	float proximity = -1.0;
-	int closestSurvivor = L4D2_GetRandomSurvivor();
-	if ( !IsValidClient(closestSurvivor) ) 
+	int closestSurvivor = GetRandomSurvivor();
+	if ( !IsValidClient2(closestSurvivor) ) 
 	{
 		LogError("GetClosestSurvivor2D(%f, %f) - Unable to find any survivors", x_coord, y_coord);
 	}		
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int j = L4D2_GetSurvivorOfIndex(i);
-		if (j == 0 || !IsPlayerAlive(j)) continue;
+		if (j == 0) continue;
 		float survivorPos[3];
 		GetClientAbsOrigin( j, survivorPos );
 		// Pythagoras
@@ -342,7 +332,7 @@ bool IsValidSpawn(const float spawnPos[3])
 {
 	bool is_valid = false;
 	int flow_dist_survivors;
-	if( IsOnValidMesh(spawnPos) && !IsPlayerStuck(spawnPos, L4D2_GetRandomSurvivor()) )
+	if( IsOnValidMesh(spawnPos) && !IsPlayerStuck(spawnPos, GetRandomSurvivor()) )
 	{
 		flow_dist_survivors = GetFlowDistToSurvivors(spawnPos);
 		if ( HasSurvivorLOS(spawnPos) )
@@ -385,7 +375,7 @@ bool IsOnValidMesh(const float position[3])
 bool IsPlayerStuck( const float pos[3], int client)
 {
 	bool isStuck = true;
-	if( IsValidClient(client) ) {
+	if( IsValidClient2(client) ) {
 		float mins[3];
 		float maxs[3];		
 		GetClientMins(client, mins);
@@ -423,7 +413,7 @@ int GetFlowDistToSurvivors(const float pos[3])
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int j = L4D2_GetSurvivorOfIndex(i);
-		if (j == 0 || !IsPlayerAlive(j)) continue;
+		if (j == 0) continue;
 		float origin[3];
 		int flow_dist;
 		
@@ -445,7 +435,7 @@ bool HasSurvivorLOS( const float pos[3] )
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int j = L4D2_GetSurvivorOfIndex(i);
-		if (j == 0 || !IsPlayerAlive(j)) continue;
+		if (j == 0) continue;
 		float origin[3];
 		GetClientAbsOrigin(j, origin);
 		TR_TraceRay( pos, origin, MASK_ALL, RayType_EndPoint );
@@ -477,8 +467,8 @@ int GetSurvivorProximity( const float rp[3])
 int GetClosestSurvivor( float referencePos[3], int excludeSurvivor = -1 )
 {
 	float survivorPos[3];
-	int closestSurvivor = L4D2_GetRandomSurvivor();	
-	if ( !IsValidClient(closestSurvivor) ) 
+	int closestSurvivor = GetRandomSurvivor();	
+	if ( !IsValidClient2(closestSurvivor) ) 
 	{
 		LogError("GetClosestSurvivor([%f, %f, %f], %d) = invalid client %d", referencePos[0], referencePos[1], referencePos[2], excludeSurvivor, closestSurvivor);
 		return -1;
@@ -488,7 +478,7 @@ int GetClosestSurvivor( float referencePos[3], int excludeSurvivor = -1 )
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int client = L4D2_GetSurvivorOfIndex(i);
-		if (client == 0 || !IsPlayerAlive(client) || client == excludeSurvivor) continue;
+		if (client == 0 || client == excludeSurvivor) continue;
 		GetClientAbsOrigin( client, survivorPos );
 		int displacement = RoundToNearest( GetVectorDistance(referencePos, survivorPos) );			
 		if( displacement < iClosestAbsDisplacement || iClosestAbsDisplacement < 0 ) { 
@@ -622,37 +612,37 @@ int CreateInfected(const char[] zomb, float[3] pos)
 	else if (StrEqual(zomb, "smoker", false))
 	{
 		bot = SDKCall(hCreateSmoker, "Smoker");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_SMOKER);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_SMOKER);
 	}
 	else if (StrEqual(zomb, "boomer", false))
 	{
 		bot = SDKCall(hCreateBoomer, "Boomer");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_BOOMER);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_BOOMER);
 	}
 	else if (StrEqual(zomb, "hunter", false))
 	{
 		bot = SDKCall(hCreateHunter, "Hunter");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_HUNTER);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_HUNTER);
 	}
 	else if (StrEqual(zomb, "spitter", false))
 	{
 		bot = SDKCall(hCreateSpitter, "Spitter");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_SPITTER);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_SPITTER);
 	}
 	else if (StrEqual(zomb, "jockey", false))
 	{
 		bot = SDKCall(hCreateJockey, "Jockey");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_JOCKEY);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_JOCKEY);
 	}
 	else if (StrEqual(zomb, "charger", false))
 	{
 		bot = SDKCall(hCreateCharger, "Charger");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_CHARGER);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_CHARGER);
 	}
 	else if (StrEqual(zomb, "tank", false))
 	{
 		bot = SDKCall(hCreateTank, "Tank");
-		if (IsValidClient(bot)) SetEntityModel(bot, MODEL_TANK);
+		if (IsValidClient2(bot)) SetEntityModel(bot, MODEL_TANK);
 	}
 	else
 	{
@@ -665,7 +655,7 @@ int CreateInfected(const char[] zomb, float[3] pos)
 		return infected;
 	}
 	
-	if (IsValidClient(bot))
+	if (IsValidClient2(bot))
 	{
 		ChangeClientTeam(bot, 3);
 		//SDKCall(hRoundRespawn, bot);
@@ -721,7 +711,7 @@ int KickDeadInfectedBots()
 	int kicked_Bots = 0;
 	for (int loopclient = 1; loopclient <= MaxClients; loopclient++)
 	{
-		if (!IsValidClient(loopclient)) continue;
+		if (!IsValidClient2(loopclient)) continue;
 		if (!IsInfected(loopclient) || !IsFakeClient(loopclient) || IsPlayerAlive(loopclient)) continue;
 		KickClient(loopclient);
 		kicked_Bots += 1;
@@ -834,14 +824,7 @@ void LoadStringFromAdddress(Address addr, char[] buffer, int maxlength)
 	buffer[maxlength - 1] = 0;
 }
 
-bool IsInfected(int client)
-{
-	if (!IsValidClient(client)) return false;
-	if (GetClientTeam(client) == 3) return true;
-	return false;
-}
-
-bool IsValidClient(int client, bool replaycheck = true)
+bool IsValidClient2(int client, bool replaycheck = true)
 {
 	if (client <= 0 || client > MaxClients) return false;
 	if (!IsClientInGame(client)) return false;

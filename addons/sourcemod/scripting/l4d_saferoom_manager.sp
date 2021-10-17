@@ -305,7 +305,7 @@ int FindSurvivors()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int outsider = L4D2_GetSurvivorOfIndex(i);
-		if (outsider == 0 || !IsPlayerAlive(outsider)) continue;
+		if (outsider == 0) continue;
         if (!checkpointreached[outsider] && !IsIncapped[outsider])
           Outsiders++;
     }

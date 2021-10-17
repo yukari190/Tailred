@@ -18,7 +18,7 @@
 #define MENU_DISPLAY_TIME		20
 
 #define PLAYER_LIMIT 1
-#define PATH_MAP "../../cfg/cfgogl/shared/maplists.txt"
+#define PATH_MAP "configs/Server/maplists.txt"
 
 #define GAMEDATA "l4d2_si_ability"
 
@@ -45,8 +45,8 @@ VoteType iVoteType;
 KeyValues g_hInfoKV;
 
 Handle 
-	top_menu,
-	admin_menu;
+	top_menu = null,
+	admin_menu = null;
 
 TopMenuObject 
 	spawn_special_infected_menu,
@@ -55,8 +55,6 @@ TopMenuObject
 	spawn_items_menu,
 	respawn_menu,
 	teleport_menu;
-
-ConVar hHostNamePath;
 
 bool 
 	casterSystemAvailable,
@@ -85,35 +83,12 @@ public void OnLibraryRemoved(const char[] name)
 	FindCasterSystem();
 }
 
-void SetHostName()
-{
-	char Path[PLATFORM_MAX_PATH], HostName[128];
-	hHostNamePath.GetString(Path, sizeof(Path));
-	int iPort = FindConVar("hostport").IntValue;
-	BuildPath(Path_SM, Path, PLATFORM_MAX_PATH, "%s%d_hostname.txt", Path, iPort);
-	//BuildPath(Path_SM, Path, PLATFORM_MAX_PATH, Path);
-	if (FileExists(Path))
-	{
-		Handle FileHandle = OpenFile(Path, "r");
-		ReadFileLine(FileHandle, HostName, sizeof(HostName));
-		delete FileHandle;
-	}
-	else
-	{
-		LogError("Cant find %s", Path);
-		HostName = "Tailred Server";
-	}
-	FindConVar("hostname").SetString(HostName, true, true);
-}
-
 public void OnPluginStart()
 {
 	char sBuffer[PLATFORM_MAX_PATH];
 	g_hInfoKV = new KeyValues("MapLists");
 	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), PATH_MAP);
-	if (!FileToKeyValues(g_hInfoKV, sBuffer)) LogMessage("找不到 <maplists.txt>.");
-	
-	hHostNamePath = CreateConVar("hostname_path", "../../cfg/cfgogl/shared/", "");
+	if (!FileToKeyValues(g_hInfoKV, sBuffer)) LogMessage("找不到 <%s>.", PATH_MAP);
 	
 	RegConsoleCmd("sm_zs", Command_Suicide, "玩家自杀");
 	RegConsoleCmd("sm_vmp", SlotsRequest);
@@ -131,8 +106,6 @@ public void OnPluginStart()
 	HookEvent("revive_success", EventReviveSuccess);
 	HookEvent("player_bot_replace", PlayerBotReplace);
 	HookEvent("finale_win", FinaleWin_Event, EventHookMode_PostNoCopy);
-	
-	SetHostName();
 }
 
 public void OnMapStart()
@@ -178,7 +151,7 @@ public Action Announce_Timer(Handle timer, any client)
 {
 	if (IsValidAndInGame(client) && !IsFakeClient(client))
 	{
-		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血) | !curhud(开关进度提示)");
+		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血)");
 	}
 }
 
@@ -195,13 +168,13 @@ public void OnClientPostAdminCheck(int client)
 
 public void L4D2_OnRealRoundEnd()
 {
-	if (L4D2_IsVersus() && L4D_IsMissionFinalMap() && L4D2_InSecondHalfOfRound())
+	if (L4D_IsVersusMode() && L4D_IsMissionFinalMap() && InSecondHalfOfRound())
 	{
 		CheckMapForChange();
 	}
 }
 
-public Action L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
+public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
 	if (!IsValidAndInGame(client) || IsFakeClient(client)) return;
 	if (team == 1)
@@ -258,7 +231,7 @@ int CheckMapForChange()
 			if (StrContains(mapname, sInfo, false) != -1)
 			{
 				KvGetString(g_hInfoKV, "nextmap", TargetMap_Code, sizeof(TargetMap_Code));
-				CreateTimer(L4D2_IsVersus() ? 6.0 : 3.0, ChangeLevel);
+				CreateTimer(L4D_IsVersusMode() ? 6.0 : 3.0, ChangeLevel);
 				break;
 			}
 		}
@@ -304,7 +277,7 @@ public Action TeamSay_Callback(int client, char[] command, int args)
 
 public Action Command_Suicide(int client, int args)
 {
-	if (!client || L4D2_IsVersus()) return Plugin_Handled;
+	if (!client || L4D_IsVersusMode()) return Plugin_Handled;
 	ServerCommand("sm_slay \"%N\"", client);
 	PrintToChatAll("\x01玩家 \x03%N\x01 自爆菊花而死_(:зゝ∠❀)_", client);
 	PrintHintTextToAll("玩家 %N 自爆菊花而死_(:зゝ∠❀)_", client);
@@ -347,7 +320,7 @@ public Action ChangeMaps(int client, int args)
 	
 	if (g_hInfoKV == null)
 	{
-		LogError("[NativeVotes] 初始化投票失败, 找不到 <%s>.", "configs/maplists.txt");
+		LogError("[NativeVotes] 初始化投票失败, 找不到 <%s>.", PATH_MAP);
 		return Plugin_Handled;
 	}
 	
@@ -438,7 +411,7 @@ void RespawnPlayer(int player_id)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || index == player_id || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
+		if (index == 0 || index == player_id) continue;
 		GetClientAbsOrigin(index, g_pos);
 		g_pos[2]+=40.0;
 		TeleportEntity(player_id, g_pos, NULL_VECTOR, NULL_VECTOR);
@@ -931,14 +904,14 @@ public Action Menu_CreateRespawnMenu(int client, int args)
 	
 	char userid[12];
 	char name[MAX_NAME_LENGTH];
-	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || IsPlayerAlive(index)) continue;
-		
-		IntToString(GetClientUserId(index), userid, sizeof(userid));
-		GetClientName(index, name, sizeof(name));
-		AddMenuItem(hMenu, userid, name);
+		if (IsSurvivor(i) && !IsPlayerAlive(i))
+		{
+			IntToString(GetClientUserId(i), userid, sizeof(userid));
+			GetClientName(i, name, sizeof(name));
+			AddMenuItem(hMenu, userid, name);
+		}
 	}
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
@@ -1011,7 +984,7 @@ void RestoreHealth()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		
 		CheatCommand(index, "give", "health");
 		SetEntPropFloat(index, Prop_Send, "m_healthBuffer", 0.0);		

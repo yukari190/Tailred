@@ -67,7 +67,10 @@ public void OnPluginStart()
 	Cvar_M2			= CreateConVar("cssladders_allow_m2",			"0",	"Allow shoving whilst on a ladder? 1 to allow M2, 0 to block.");
 	
 	Cvar_Enabled.AddChangeHook(Enabled_Change);
-	Enabled_Change(Cvar_Enabled, "", "");
+	if (Cvar_Enabled.BoolValue)
+		EnablePlugin();
+	else
+		DisablePlugin();
 	
 	Cvar_M2.AddChangeHook(ConVarChange);
 	
@@ -76,7 +79,7 @@ public void OnPluginStart()
 
 public void Enabled_Change(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if (convar.BoolValue)
+	if (Cvar_Enabled.BoolValue)
 		EnablePlugin();
 	else
 		DisablePlugin();

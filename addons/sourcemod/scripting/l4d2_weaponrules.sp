@@ -47,7 +47,20 @@ public void OnPluginStart()
 	RegServerCmd("l4d2_addweaponrule", AddWeaponRuleCb);
 	RegServerCmd("l4d2_resetweaponrules", ResetWeaponRulesCb);
 	
-	HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
+	//HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if (!IsInTransition() && g_GlobalWeaponRules[IdentifyWeapon(entity)] != -1)
+	{
+		SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
+	}
+}
+
+public void fOnEntitySpawned(int entity)
+{
+	CheckEntity(entity);
 }
 
 public void L4D2_OnRealRoundStart()
@@ -60,26 +73,31 @@ public Action RoundStartDelay(Handle hTimer)
 	WeaponSearchLoop();
 }
 
-public Action SpawnerGiveItem_Event(Event event, const char[] name, bool dontBroadcast)
-{
-	WeaponSearchLoop();
-}
-
 void WeaponSearchLoop()
 {
 	int iEntCount = GetEntityCount();
 	for (int i = MaxClients+1; i <= iEntCount; i++)
 	{
-		WeaponId source = IdentifyWeapon(i);
-		if (g_GlobalWeaponRules[source] != -1)
-		{
-			if (g_GlobalWeaponRules[source] == view_as<int>(WEPID_NONE))
-			  RemoveEntityLog(i);
-			else
-			  ConvertWeaponSpawn(i, view_as<WeaponId>(g_GlobalWeaponRules[source]));
-		}
+		CheckEntity(i);
 	}
 }
+
+void CheckEntity(int entity)
+{
+	WeaponId source = IdentifyWeapon(entity);
+	if (g_GlobalWeaponRules[source] != -1)
+	{
+		if (g_GlobalWeaponRules[source] == view_as<int>(WEPID_NONE))
+		  RemoveEntityLog(entity);
+		else
+		  ConvertWeaponSpawn(entity, view_as<WeaponId>(g_GlobalWeaponRules[source]));
+	}
+}
+
+/*public Action SpawnerGiveItem_Event(Event event, const char[] name, bool dontBroadcast)
+{
+	WeaponSearchLoop();
+}*/
 
 public Action AddWeaponRuleCb(int args)
 {

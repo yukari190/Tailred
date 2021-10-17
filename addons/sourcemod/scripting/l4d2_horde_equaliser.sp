@@ -11,6 +11,9 @@
 
 #define HORDE_SOUND	"/npc/mega_mob/mega_mob_incoming.wav"
 
+#define HORDE_MIN_SIZE_AUDIAL_FEEDBACK 120
+#define MAX_CHECKPOINTS 4
+
 bool bHordesDisabled;
 bool announcedInChat;
 int commonLimit;
@@ -27,41 +30,25 @@ public void OnMapStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (entity <= 0 || !IsValidEntity(entity) || !IsValidEdict(entity)) return;
-	SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
-}
-
-public void fOnEntitySpawned(int entity)
-{
-	char classname[64];
-	if (!GetEdictClassname(entity, classname, sizeof(classname))) return;
-	
-	if (StrEqual(classname, "infected", false))
-	{
-		if (announcedInChat && IsInfiniteHordeActive())
-		{
-			if (commonLimit < 0) return;
-			
-			if (commonTotal >= commonLimit)
-			{
-				//L4D2Direct_SetPendingMobCount(0);
-				return;
+	// TO-DO: Find a value that tells wanderers from active event commons?
+	if (strcmp(classname, "infected") == 0 && IsInfiniteHordeActive()) {
+		// Our job here is done
+		if (commonTotal >= commonLimit) {
+			return;
+		}
+		
+		commonTotal++;
+		if (commonTotal >= ((lastCheckpoint + 1) * RoundFloat(float(commonLimit / MAX_CHECKPOINTS)))) {
+			if (commonLimit >= HORDE_MIN_SIZE_AUDIAL_FEEDBACK) {
+				EmitSoundToAll(HORDE_SOUND);
 			}
 			
-			commonTotal++;
-			
-			if (commonLimit < 120) return;
-			
-			if ((commonTotal >= ((lastCheckpoint + 1) * RoundFloat(float(commonLimit / 4)))))
-			{
-				int remaining = commonLimit - commonTotal;
-				if (remaining)
-				{
-					CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
-					EmitSoundToAll(HORDE_SOUND);
-				}
-				lastCheckpoint++;
+			int remaining = commonLimit - commonTotal;
+			if (remaining != 0) {
+				CPrintToChatAll("<{G}Horde{W}> 事件剩余 {R}%i {W}.. ", remaining);
 			}
+			
+			lastCheckpoint++;
 		}
 	}
 }

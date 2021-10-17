@@ -18,19 +18,9 @@ public Plugin myinfo =
 	url = ""
 };
 
-public Action L4D2_OnJoinInfected(int client)
+public Action L4D2_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damageType, int &weapon, float damageForce[3], float damagePosition[3])
 {
-	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-}
-
-public Action L4D2_OnAwayInfected(int client)
-{
-	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-}
-
-public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damageType, int &weapon, float damageForce[3], float damagePosition[3])
-{
-	if (!IsValidAndInGame(victim))
+	if (!IsValidInfected(victim))
 	  return Plugin_Continue;
 	
 	if (IsValidInfected(attacker) && GetInfectedClass(attacker) != L4D2Infected_Tank)

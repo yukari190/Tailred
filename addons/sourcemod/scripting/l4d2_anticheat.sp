@@ -26,7 +26,7 @@ enum struct CLSEntry
 }
 
 ArrayList ClientSettingsArray;
-Handle ClientSettingsCheckTimer;
+Handle ClientSettingsCheckTimer = null;
 
 float LerpTime[MAXPLAYERS+1];
 
@@ -49,11 +49,7 @@ public void OnPluginStart()
 
 public void OnPluginEnd()
 {
-	if (ClientSettingsCheckTimer != INVALID_HANDLE)
-	{
-		KillTimer(ClientSettingsCheckTimer);
-		ClientSettingsCheckTimer = INVALID_HANDLE;
-	}
+	delete ClientSettingsCheckTimer;
 }
 
 public void OnClientSettingsChanged(int client)
@@ -61,14 +57,17 @@ public void OnClientSettingsChanged(int client)
 	if (IsValidAndInGame(client) && !IsFakeClient(client)) AdjustRates(client);
 }
 
-public Action L4D2_OnJoinInfected(int client)
+public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
-	SDKHook(client, SDKHook_SetTransmit, Hook_SetTransmit);
-}
-
-public Action L4D2_OnAwayInfected(int client)
-{
-	SDKUnhook(client, SDKHook_SetTransmit, Hook_SetTransmit);
+	if (team == 3)
+	{
+		SDKHook(client, SDKHook_SetTransmit, Hook_SetTransmit);
+	}
+	else if (oldteam == 3)
+	{
+		SDKUnhook(client, SDKHook_SetTransmit, Hook_SetTransmit);
+	}
+	CreateTimer(1.0, TimerAdjustRates, client);
 }
 
 public Action Hook_SetTransmit(int client, int entity)
@@ -76,11 +75,6 @@ public Action Hook_SetTransmit(int client, int entity)
 	if (IsValidAndInGame(client) && IsValidSurvivor(entity) && IsInfectedGhost(client))
 	  return Plugin_Handled;
 	return Plugin_Continue;
-}
-
-public Action L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
-{
-	CreateTimer(1.0, TimerAdjustRates, client);
 }
 
 public Action TimerAdjustRates(Handle timer, any client)
@@ -168,11 +162,7 @@ public Action _TrackClientCvar_Cmd(int args)
 
 public Action _ResetTracking_Cmd(int args)
 {
-	if (ClientSettingsCheckTimer != INVALID_HANDLE)
-	{
-		KillTimer(ClientSettingsCheckTimer);
-		ClientSettingsCheckTimer = INVALID_HANDLE;
-	}
+	delete ClientSettingsCheckTimer;
 	ClearAllSettings();
 	PrintToServer("Client CVar Tracking Information Reset!");
 	return Plugin_Handled;
@@ -180,7 +170,7 @@ public Action _ResetTracking_Cmd(int args)
 
 public Action _StartClientChecking_Cmd(int args)
 {
-	if (ClientSettingsCheckTimer == INVALID_HANDLE) ClientSettingsCheckTimer = CreateTimer(5.0, _CheckClientSettings_Timer, _, TIMER_REPEAT);
+	if (ClientSettingsCheckTimer == null) ClientSettingsCheckTimer = CreateTimer(5.0, _CheckClientSettings_Timer, _, TIMER_REPEAT);
 	else PrintToServer("无法启动插件跟踪或已开始跟踪");
 }
 
@@ -219,7 +209,7 @@ float GetLerpTime(int client)
 
 void _AddClientCvar(const char[] cvar, bool hasMin, float min, bool hasMax, float max, CLSAction action)
 {
-	if (ClientSettingsCheckTimer != INVALID_HANDLE)
+	if (ClientSettingsCheckTimer != null)
 	{
 		PrintToServer("在比赛进行中无法追踪新的Cvar");
 		return;

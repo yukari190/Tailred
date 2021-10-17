@@ -207,7 +207,7 @@ public Action OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
 public Action Timer_PostSpawnAssault(Handle timer, any client)
 {
-	L4D2_CheatCommand(client, "nb_assault");
+	CheatCommand(client, "nb_assault");
 	return Plugin_Stop;
 }
 
@@ -331,6 +331,18 @@ public Action OnPlayerImmobilised(Event event, const char[] name, bool dontBroad
 
 public Action OnTankRunCmd(int client, int &buttons)
 {
+	int sequence = GetEntProp(client, Prop_Send, "m_nSequence");
+	if (sequence == 54 || sequence == 55 || sequence == 57)
+	{
+		SetEntProp(client, Prop_Send, "m_nSequence", 0);
+		return Plugin_Changed;
+	}
+	if ((buttons & IN_ATTACK2) || sequence == 56)
+	{
+		buttons |= IN_ATTACK;
+		return Plugin_Changed;
+	}
+	
 	int target = GetClientAimTarget(client, true);
 	if (IsValidSurvivor(target) && isVisibleTo(client, target))
 	{
@@ -347,7 +359,7 @@ public Action OnTankRunCmd(int client, int &buttons)
 	if (GetGameTime() - g_delay[client][0] > TANK_MELEE_SCAN_DELAY)
 	{
 		g_delay[client][0] = GetGameTime();
-		if (L4D2_NearestActiveSurvivorDistance(client) < fTankAttackRange * 0.95)
+		if (NearestActiveSurvivorDistance(client) < fTankAttackRange * 0.95)
 		{
 			buttons |= IN_ATTACK;
 			return Plugin_Changed;
@@ -827,7 +839,7 @@ int GetSurvivorProximity(const float rp[3], int specificSurvivor = -1)
 int GetClosestSurvivor(float referencePos[3], int excludeSurvivor = -1)
 {
 	float survivorPos[3];
-	int closestSurvivor = L4D2_GetRandomSurvivor();	
+	int closestSurvivor = GetRandomSurvivor();	
 	if (!IsValidAndInGame(closestSurvivor)) 
 	{
 		LogError("GetClosestSurvivor([%f, %f, %f], %d) = invalid client %d", referencePos[0], referencePos[1], referencePos[2], excludeSurvivor, closestSurvivor);
@@ -838,7 +850,7 @@ int GetClosestSurvivor(float referencePos[3], int excludeSurvivor = -1)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int client = L4D2_GetSurvivorOfIndex(i);
-		if (client == 0 || !IsClientInGame(client) || !IsPlayerAlive(client) || client == excludeSurvivor) continue;
+		if (client == 0 || client == excludeSurvivor) continue;
 		GetClientAbsOrigin( client, survivorPos );
 		int displacement = RoundToNearest(GetVectorDistance(referencePos, survivorPos));			
 		if (displacement < iClosestAbsDisplacement || iClosestAbsDisplacement < 0)
@@ -852,7 +864,7 @@ int GetClosestSurvivor(float referencePos[3], int excludeSurvivor = -1)
 
 
 
-void L4D2_CheatCommand(int client, char[] commandName, char[] argument1 = "", char[] argument2 = "")
+void CheatCommand(int client, char[] commandName, char[] argument1 = "", char[] argument2 = "")
 {
     if (GetCommandFlags(commandName) != INVALID_FCVAR_FLAGS)
 	{
@@ -1049,7 +1061,7 @@ void ScriptCommand(const char[] arguments, any ...)
 {
 	char vscript[PLATFORM_MAX_PATH];
 	VFormat(vscript, sizeof(vscript), arguments, 2);
-	L4D2_CheatCommand(0, "script", vscript);
+	CheatCommand(0, "script", vscript);
 }
 
 bool IsMobile(int client)
@@ -1086,7 +1098,7 @@ int GetTargetSurvivor()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int survivor = L4D2_GetSurvivorOfIndex(i);
-		if (survivor == 0 || !IsPlayerAlive(survivor)) continue;
+		if (survivor == 0) continue;
 	    survivors[numSurvivors] = survivor;
 	    numSurvivors++;
 		
@@ -1110,7 +1122,7 @@ int GetTargetSurvivor()
 	return target;
 }
 
-any L4D2_NearestActiveSurvivorDistance(int client)
+any NearestActiveSurvivorDistance(int client)
 {
 	float self[3];
 	float min_dist = 100000.0;
@@ -1118,7 +1130,7 @@ any L4D2_NearestActiveSurvivorDistance(int client)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		if (!IsIncapacitated(client))
 		{
 			float target[3];
@@ -1186,8 +1198,8 @@ bool AnySurvivorAlive()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsClientInGame(index)) continue;
-		if (IsPlayerAlive(index) && !IsIncapacitated(index))
+		if (index == 0) continue;
+		if (!IsIncapacitated(index))
 		{
 			return true;
 		}

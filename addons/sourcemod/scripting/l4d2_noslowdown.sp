@@ -101,5 +101,5 @@ public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 
 bool IsLimping(int client)
 {
-	return GetClientHealth(client) + GetSurvivorTemporaryHealth(client) < iSurvivorLimpHealth;
+	return RoundToFloor(GetClientHealth(client) + L4D_GetTempHealth(client)) < iSurvivorLimpHealth;
 }

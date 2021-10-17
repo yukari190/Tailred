@@ -42,8 +42,8 @@ public const char L4D2_AttackerNetProps[][] =
 	"m_pummelAttacker",	// Charger pummel
 };
 
-Handle survivor_limit;
-Handle z_max_player_zombies;
+Handle survivor_limit = null;
+Handle z_max_player_zombies = null;
 
 new L4D2Team:pendingSwaps[MAXPLAYERS+1];
 bool blockVotes[MAXPLAYERS+1];
@@ -53,7 +53,7 @@ Handle SpecTimer[MAXPLAYERS+1];
 int TimerLive;
 int m_queuedPummelAttacker = -1;
 
-Handle l4d_pm_supress_spectate;
+Handle l4d_pm_supress_spectate = null;
 
 public OnPluginStart()
 {

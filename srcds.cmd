@@ -1,1 +1,0 @@
-@start ../srcds.exe -console -game "left4dead2" -tickrate 60 -ip 0.0.0.0 -port 27020 -noipx -nomaster +map c1m1_hotel

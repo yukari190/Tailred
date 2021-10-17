@@ -21,7 +21,7 @@ static const WeaponId safeSpawns[SPAWNCOUNT] =
 {
 	WEPID_SHOTGUN_CHROME,
 	WEPID_SMG_SILENCED,
-	WEPID_AMMO
+	WEPID_AMMO_PACK
 };
 
 public void L4D2_OnRealRoundStart()
@@ -41,7 +41,15 @@ public Action Timer_DelayedOnRoundStart(Handle timer)
 			if (index == 0) continue;
 			GetClientAbsOrigin(index, SpawnPosition);
 			SpawnAngle[1] = 135.0;SpawnAngle[2] = 90.0;
-			SpawnWeapon(safeSpawns[count], SpawnPosition, SpawnAngle);
+			WeaponId wepid = safeSpawns[count];
+			if (wepid == WEPID_AMMO_PACK)
+			{
+				SpawnAmmo(SpawnPosition);
+			}
+			else
+			{
+				CreateWeaponSpawn(wepid, SpawnPosition, SpawnAngle);
+			}
 			count++;
 		}
 		return;
@@ -63,27 +71,12 @@ int GetSeriousClientCount()
 	return clients;
 }
 
-bool SpawnWeapon(WeaponId wepid, float origins[3], float angles[3])
+bool SpawnAmmo(float origins[3])
 {
-	if(!IsValidWeaponId(wepid)) return false;
-	//if(!HasValidWeaponModel(wepid)) return false;
-
-	if (wepid == WEPID_AMMO)
-	{
-		int entity = CreateEntityByName("weapon_ammo_spawn");
-		SetEntityModel(entity, "models/props/terror/ammo_stack.mdl");
-		DispatchSpawn(entity);
-		ActivateEntity(entity);
-		TeleportEntity(entity, origins, NULL_VECTOR, NULL_VECTOR);
-		return true;
-	}
-	int entity = CreateEntityByName("weapon_spawn");
-	if(!IsValidEntity(entity)) return false;
-	SetEntProp(entity, Prop_Send, "m_weaponID", wepid);
-
-	DispatchKeyValue(entity, "count", "5");
-
-	TeleportEntity(entity, origins, angles, NULL_VECTOR);
+	int entity = CreateEntityByName("weapon_ammo_spawn");
+	if (!IsValidEntity(entity)) return false;
+	
+	TeleportEntity(entity, origins, NULL_VECTOR, NULL_VECTOR);
 	DispatchSpawn(entity);
 	SetEntityMoveType(entity, MOVETYPE_NONE);
 	return true;

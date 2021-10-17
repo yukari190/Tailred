@@ -30,6 +30,7 @@ public Plugin myinfo =
 
 ConVar 
 	hSpawnSize,
+	hSSEnable,
 	hSILimit,
 	hSpawnLimits[NUM_TYPES_INFECTED],
 	hSpawnWeights[NUM_TYPES_INFECTED],
@@ -68,6 +69,7 @@ bool bScaleWeights;
 ***********************************************************************************************************************************************************************************/
 public void OnPluginStart()
 {
+	(hSSEnable = CreateConVar("ss_enable", "1", "")).AddChangeHook(ConVarChange_Enable);
 	// Server SI max (marked FCVAR_CHEAT; admin only)
 	// Spawn limits - this value is flattened to the above server SI Max cvar
 	hSILimit = CreateConVar("ss_si_limit", "4", "The max amount of special infected at once", _, true, 1.0);
@@ -124,6 +126,18 @@ public void OnPluginStart()
 	HookEvent("player_spawn", OnPlayerSpawn);
 }
 
+public void ConVarChange_Enable(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	if (hSSEnable.BoolValue)
+	{
+		StartSpawnTimer();
+	}
+	else
+	{
+		EndSpawnTimer();
+	}
+}
+
 public void DirectorNoSpecials_Change(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	convar.SetBool(true);
@@ -175,7 +189,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 }
 public Action L4D_OnFirstSurvivorLeftSafeArea()
 {
-	if (!L4D2_IsSurvival()) 
+	if (!L4D_IsSurvivalMode())
 	{ // would otherwise cause spawns in survival before button is pressed
 		StartSpawnTimer();
 	}
@@ -241,7 +255,7 @@ public Action Timer_StarvationLOS(Handle timer, any userid)
 			return Plugin_Stop;
 			
 			/*float spawnPos[3];
-			if (!L4D_GetRandomPZSpawnPosition(L4D2_GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
+			if (!L4D_GetRandomPZSpawnPosition(GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
 			{
 				if (!GridSpawn(SIClass, 100, spawnPos))
 				{
@@ -272,6 +286,7 @@ void StartSpawnTimer()
 {
 	//prevent multiple timer instances
 	EndSpawnTimer();
+	if (!hSSEnable.BoolValue) return;
 
 	fInterval = GetGameTime() + 1.0;
 	hSpawnTimer = CreateTimer(1.0, SpawnInfectedAuto, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
@@ -309,7 +324,7 @@ public Action SpawnInfectedAuto(Handle timer)
 		fInterval += float(gracePeriod);
 		CPrintToChatAll("{G}[{W}SS{G}]{W} 因为{B}%d{W}个幸存者无法行动, 授予{B}%d{W}秒{G}宽限期.", iIncappedCount, gracePeriod);
 	}
-	//CPrintToChatAll("%0.0f", (fInterval - GetGameTime() <= 0.0 ? 0.0 : fInterval - GetGameTime()));
+	//CPrintToChatAll("%.0f", (fInterval - GetGameTime() <= 0.0 ? 0.0 : fInterval - GetGameTime()));
 	
 	return Plugin_Continue;
 }
@@ -322,11 +337,7 @@ public Action SpawnInfectedAuto(Handle timer)
 
 void EndSpawnTimer()
 {
-	if (hSpawnTimer != null)
-	{
-		KillTimer(hSpawnTimer);
-		hSpawnTimer = null;
-	}
+	delete hSpawnTimer;
 }
 
 /***********************************************************************************************************************************************************************************
@@ -413,7 +424,7 @@ void GenerateAndExecuteSpawnQueue()
 			// Execute the spawn queue
 			L4D2_Infected SIClass = view_as<L4D2_Infected>(SpawnQueue[i] + 1);
 			float spawnPos[3];
-			if (!L4D_GetRandomPZSpawnPosition(L4D2_GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
+			if (!L4D_GetRandomPZSpawnPosition(GetRandomSurvivor(), view_as<int>(SIClass), 20, spawnPos))
 			{
 				if (!GridSpawn(SIClass, 100, spawnPos))
 				{
@@ -541,8 +552,8 @@ bool AnySurvivorAlive()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsClientInGame(index)) continue;
-		if (IsPlayerAlive(index) && !IsIncapacitated(index))
+		if (index == 0) continue;
+		if (!IsIncapacitated(index))
 		{
 			return true;
 		}
@@ -571,7 +582,7 @@ int GetIncappedSurvivorsCount()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsValidAndInGame(index) || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 		if (IsIncapacitated(index) && !IsSurvivorAttacked(index))
 		{
 			numIncappedSurvivors++;			

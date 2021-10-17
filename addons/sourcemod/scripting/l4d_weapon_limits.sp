@@ -27,7 +27,7 @@ enum struct LimitArrayEntry
 	int LAE_WeaponArray[view_as<int>(WeaponId)/32+1];
 }
 
-Handle hSDKGiveDefaultAmmo;
+Handle hSDKGiveDefaultAmmo = null;
 ArrayList hLimitArray;
 bool bIsLocked;
 bool bIsIncappedWithMelee[MAXPLAYERS + 1];
@@ -54,14 +54,16 @@ public void OnMapStart()
 	PrecacheSound(WEAPON_LIMITS_SOUND);
 }
 
-public Action L4D2_OnJoinSurvivor(int client)
+public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
-	SDKHook(client, SDKHook_WeaponCanUse, WeaponCanUse);
-}
-
-public Action L4D2_OnAwaySurvivor(int client)
-{
-	SDKUnhook(client, SDKHook_WeaponCanUse, WeaponCanUse);
+	if (team == 2)
+	{
+		SDKHook(client, SDKHook_WeaponCanUse, WeaponCanUse);
+	}
+	else if (oldteam == 2)
+	{
+		SDKUnhook(client, SDKHook_WeaponCanUse, WeaponCanUse);
+	}
 }
 
 public void L4D2_OnRealRoundStart()
@@ -220,7 +222,7 @@ int GetWeaponCount(const int[] mask)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) continue;
+		if (index == 0) continue;
 	
 		for (int j = 0; j < 5; ++j)
 		{

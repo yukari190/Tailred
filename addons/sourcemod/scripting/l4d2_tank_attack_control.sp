@@ -11,9 +11,9 @@
 //51 - 2handed overhand (+reload)
 
 new g_iQueuedThrow[MAXPLAYERS + 1];
-new Handle:g_hBlockPunchRock = INVALID_HANDLE;
-new Handle:g_hBlockJumpRock = INVALID_HANDLE;
-new Handle:hOverhandOnly;
+new Handle:g_hBlockPunchRock = null;
+new Handle:g_hBlockJumpRock = null;
+new Handle:hOverhandOnly = null;
 
 new Float:throwQueuedAt[MAXPLAYERS + 1];
 
@@ -128,6 +128,11 @@ public Action:L4D_OnCThrowActivate(ability)
 
 public Action:L4D2_OnSelectTankAttack(client, &sequence)
 {
+	if (IsFakeClient(client) && sequence == 50)
+	{
+		sequence = GetRandomInt(0, 1) ? 49 : 51;
+		return Plugin_Handled;
+	}
 	if (sequence > 48 && g_iQueuedThrow[client])
 	{
 		//rock throw

@@ -6,9 +6,13 @@
 #include <builtinvotes>
 #define REQUIRE_EXTENSIONS
 
+#define CUSTOM_CFG_DIR "cfgogl"
+
 #define MATCH_EXECCFG_ON "confogl.cfg"  //Execute this config file upon match mode starts and every map after that.
-#define MATCH_EXECCFG_PLUGINS "generalfixes.cfg;sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
+#define MATCH_EXECCFG_PLUGINS "generalfixes.cfg;server_plugins.cfg;sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
 #define MATCH_EXECCFG_OFF "confogl_off.cfg"  //Execute this config file upon match mode ends.
+
+#define MATCH_VOTE "configs/matchmodes/matchmodes.txt"
 
 #define SV_TAG_SIZE 64
 
@@ -28,18 +32,11 @@ enum struct CVSEntry
 	char CVSE_newval[SV_TAG_SIZE];
 }
 
-GlobalForward 
-	hFwdMatchLoad,
-	hFwdMatchUnload;
-
 ArrayList CvarSettingsArray;
 
 ConVar hAllBotGame;
 
-static const char customCfgDir[] = "cfgogl";
-
 char 
-	configsPath[PLATFORM_MAX_PATH],
 	cfgPath[PLATFORM_MAX_PATH],
 	customCfgPath[PLATFORM_MAX_PATH],
 	matchName[32],
@@ -49,10 +46,11 @@ int DirSeparator;
 
 bool 
 	bTrackingStarted,
-	IsMatchModeInProgress,
-	bLgoStart;
+	bIsMatchModeLoaded;
 
-KeyValues g_hModesKV;
+KeyValues g_hModesKV = null;
+
+bool IsHumansOnServer() { for (int i = 1; i <= MaxClients; i++) { if (IsClientConnected(i) && !IsFakeClient(i)) { return true; } } return false; }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -61,29 +59,42 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
-	hFwdMatchLoad = new GlobalForward("LGO_OnMatchModeLoaded", ET_Event);
-	hFwdMatchUnload = new GlobalForward("LGO_OnMatchModeUnloaded", ET_Event);
 	CreateNative("LGO_BuildConfigPath", _native_BuildConfigPath);
 	RegPluginLibrary("lgofnoc");
 	return APLRes_Success;
 }
 
+public any _native_BuildConfigPath(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(3, len);
+	char[] filename = new char[len+1];
+	GetNativeString(3, filename, len+1);
+	len = GetNativeCell(2);
+	char[] buf = new char[len];
+	if (customCfgPath[0])
+	{
+		Format(buf, len, "%s%s", customCfgPath, filename);
+		if (!FileExists(buf))
+		{
+			LogError("[Lgofnoc] Custom config not available: %s", buf);
+		}
+	}
+	SetNativeString(1, buf, len);
+}
+
 public void OnPluginStart()
 {
-	BuildPath(Path_SM, configsPath, sizeof(configsPath), "configs/confogl/");
 	BuildPath(Path_SM, cfgPath, sizeof(cfgPath), "../../cfg/");
 	DirSeparator = cfgPath[strlen(cfgPath)-1];
 	
 	char sBuffer[128];
 	g_hModesKV = new KeyValues("MatchModes");
-	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "../../cfg/cfgogl/shared/matchmodes.txt");
+	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), MATCH_VOTE);
 	if (!FileToKeyValues(g_hModesKV, sBuffer))
 	{
-		BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "configs/matchmodes.txt");
-		if (!FileToKeyValues(g_hModesKV, sBuffer))
-		{
-			LogError("[LGO] 找不到 matchmodes.txt!");
-		}
+		delete g_hModesKV;
+		LogError("[LGO] 找不到 matchmodes.txt!");
 	}
 	
 	hAllBotGame = FindConVar("sb_all_bot_game");
@@ -114,34 +125,6 @@ public void OnPluginEnd()
 	ServerCommand("changelevel %s", map);
 }
 
-public int _native_BuildConfigPath(Handle plugin, int numParams)
-{
-	int len;
-	GetNativeStringLength(3, len);
-	char[] filename = new char[len+1];
-	GetNativeString(3, filename, len+1);
-		
-	len = GetNativeCell(2);
-	char[] buf = new char[len];
-	BuildConfigPath(buf, len, filename);
-	
-	SetNativeString(1, buf, len);
-}
-
-void BuildConfigPath(char[] buffer, int maxlength, const char[] sFileName)
-{
-	if (customCfgPath[0])
-	{
-		Format(buffer, maxlength, "%s%s", customCfgPath, sFileName);
-		if (FileExists(buffer))
-		{
-			return;
-		}
-	}
-	
-	Format(buffer, maxlength, "%s%s", configsPath, sFileName);
-}
-
 public void OnMapStart()
 {
 	GetCurrentMap(map, sizeof(map));
@@ -154,13 +137,13 @@ public void OnConfigsExecuted()
 
 public void OnClientDisconnect(int client)
 {
-    if (IsFakeClient(client)) return;
+	if (IsFakeClient(client)) return;
 	CreateTimer(60.0, MatchResetTimer);
 }
 
 public Action MatchResetTimer(Handle timer)
 {
-    if (!IsMatchModeInProgress) return;
+	if (!bIsMatchModeLoaded) return;
 	if (!IsHumansOnServer())
 	{
 		PrintToServer("[UL] 没有人想在这台服务器上玩. :(");
@@ -197,14 +180,14 @@ public int ConfigsMenuHandler(Handle menu, MenuAction action, int param1, int pa
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
 		strcopy(matchName, sizeof(matchName), sInfo);
 		Format(sBuffer, sizeof(sBuffer), "将配置更改为 '%s'?", sBuffer);
-		BuiltinVotes_StartVoteAllTeam(param1, sBuffer);
+		StartVote(param1, sBuffer);
 	}
 	if (action == MenuAction_End) CloseHandle(menu);
 }
 
 public Action CVS_SetCvars_Cmd(int args)
 {
-	if (IsPluginEnabled())
+	if (bIsMatchModeLoaded)
 	{
 		if (bTrackingStarted)
 		{
@@ -267,7 +250,7 @@ public Action CVS_AddCvar_Cmd(int args)
 
 public Action CVS_ResetCvars_Cmd(int args)
 {
-	if (IsPluginEnabled())
+	if (bIsMatchModeLoaded)
 	{
 		PrintToServer("Can't reset tracking in the middle of a match");
 		return Plugin_Handled;
@@ -297,13 +280,6 @@ public Action LgoLoadPluginCmd(int args)
 		return Plugin_Handled;
 	}
 	
-	BuildPath(Path_SM, path, sizeof(path), "plugins/fixes/%s", plugin);
-	if (FileExists(path))
-	{
-		ServerCommand("sm plugins load fixes/%s", plugin);
-		return Plugin_Handled;
-	}
-	
 	BuildPath(Path_SM, path, sizeof(path), "plugins/optional/LGO/%s", plugin);
 	if (FileExists(path))
 	{
@@ -317,15 +293,14 @@ public Action LgoLoadPluginCmd(int args)
 
 public Action LgoStartCmd(int args)
 {
-	if (IsMatchModeInProgress) {return Plugin_Handled;}
-	bLgoStart = true;
-	MatchMode_Load();
+	if (bIsMatchModeLoaded) {return Plugin_Handled;}
+	MatchMode_Load(true);
 	return Plugin_Handled;
 }
 
 public Action SoftMatchCmd(int client, int args)
 {
-	if (IsMatchModeInProgress) {return Plugin_Handled;}
+	if (bIsMatchModeLoaded) {return Plugin_Handled;}
 	
 	if (args < 1)
 	{
@@ -346,7 +321,7 @@ public Action SoftMatchCmd(int client, int args)
 
 public Action ForceMatchCmd(int client, int args)
 {
-	if (!IsMatchModeInProgress)
+	if (!bIsMatchModeLoaded)
 	{
 		SoftMatchCmd(client, args);
 		return Plugin_Handled;
@@ -378,9 +353,9 @@ public Action TimerMMload(Handle timer)
 
 void SetCustomCfg(const char[] cfgname)
 {
-	if (!strlen(cfgname) || StrEqual(cfgname, "shared", false)) return;
+	if (!strlen(cfgname)) return;
 	
-	Format(customCfgPath, sizeof(customCfgPath), "%s%s%c%s", cfgPath, customCfgDir, DirSeparator, cfgname);
+	Format(customCfgPath, sizeof(customCfgPath), "%s%s%c%s", cfgPath, CUSTOM_CFG_DIR, DirSeparator, cfgname);
 	if (!DirExists(customCfgPath))
 	{
 		LogError("[Configs] Custom config directory %s does not exist!", customCfgPath);
@@ -453,10 +428,12 @@ public int CVS_ConVarChange(Handle convar, const char[] oldValue, const char[] n
 	}
 }
 
-int MatchMode_Load()
+int MatchMode_Load(bool LgoStart = false)
 {
+	if (bIsMatchModeLoaded) return;
+	
 	SetConVarInt(hAllBotGame, 1);
-	if (!bLgoStart)
+	if (!LgoStart)
 	{
 		ServerCommand("sm plugins load_unlock");
 		char sPieces[32][256];
@@ -467,37 +444,26 @@ int MatchMode_Load()
 		}
 		return;
 	}
-	
 	ServerCommand("sm plugins load_lock");
-	IsPluginEnabled(true,true);
+	
+	bIsMatchModeLoaded = true;
 
 	ExecuteConfigCfg(MATCH_EXECCFG_ON);
-	
-	if (IsMatchModeInProgress) return;
-	
-	IsMatchModeInProgress = true;
 	
 	PrintToChatAll("\x01[\x05Lgofnoc\x01] Match mode loaded!");
 	
 	RestartMapCountdown(5.0);
 	PrintToChatAll("\x01[\x05Lgofnoc\x01] Map will restart in 5 seconds!");
-	Call_StartForward(hFwdMatchLoad);
-	Call_Finish();
 }
 
-int MatchMode_Unload(bool reloadmyself = false, bool restartMap = true)
+int MatchMode_Unload(bool unloadmyself = false, bool restartMap = true)
 {
-	IsMatchModeInProgress = false;
-	IsPluginEnabled(true,false);
-	bLgoStart = false;
-	
-	Call_StartForward(hFwdMatchUnload);
-	Call_Finish();
+	bIsMatchModeLoaded = false;
 	
 	ExecuteConfigCfg(MATCH_EXECCFG_OFF);
 	
 	ServerCommand("sm plugins load_unlock");
-	UnloadAllPlugins(reloadmyself);
+	UnloadAllPlugins(unloadmyself);
 	
 	if (restartMap) RestartMapCountdown(5.0);
 	
@@ -506,7 +472,7 @@ int MatchMode_Unload(bool reloadmyself = false, bool restartMap = true)
 
 // Unload all plugins except one
 // 参考了 Sir 的 Predictable Plugin Unloader 插件
-stock int UnloadAllPlugins(bool reloadmyself = false)
+stock int UnloadAllPlugins(bool unloadmyself = false)
 {
 	// Reserved Plugins
 	ArrayList aReservedPlugins = new ArrayList(PLATFORM_MAX_PATH);
@@ -536,7 +502,7 @@ stock int UnloadAllPlugins(bool reloadmyself = false)
 	{
 		char sReserved[PLATFORM_MAX_PATH];
 		GetArrayString(aReservedPlugins, iSize - 1, sReserved, sizeof(sReserved)); // -1 because of how arrays work. :)
-		if (!reloadmyself)
+		if (!unloadmyself)
 		{
 			if (!StrEqual(myselfbuf, sReserved, false)) ServerCommand("sm plugins unload %s", sReserved);
 		}
@@ -548,7 +514,7 @@ stock int UnloadAllPlugins(bool reloadmyself = false)
 	delete aReservedPlugins;
 }
 
-int RestartMapCountdown(float time)
+void RestartMapCountdown(float time)
 {
 	CreateTimer(time, RestartMapCallback);
 }
@@ -558,51 +524,17 @@ public Action RestartMapCallback(Handle timer)
 	ForceChangeLevel(map, "Restarting Map for Lgofnoc");
 }
 
-bool bIsPluginEnabled;
 
-bool IsPluginEnabled(bool bSetStatus = false, bool bStatus = false)
+bool StartVote(int client, char[] sArgument)
 {
-	if (bSetStatus) bIsPluginEnabled = bStatus;
-	return bIsPluginEnabled;
-}
-
-bool IsHumansOnServer()
-{
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientConnected(i) && !IsFakeClient(i)) return true;
-	}
-	return false;
-}
-
-bool IsClientAdmin(int client)
-{
-	AdminId id = GetUserAdmin(client);
-	if (id == INVALID_ADMIN_ID) return false;
-	if (
-		GetAdminFlag(id, Admin_Reservation) || 
-		GetAdminFlag(id, Admin_Root) || 
-		GetAdminFlag(id, Admin_Kick) || 
-		GetAdminFlag(id, Admin_Generic)
-	) return true;
-	return false;
-}
-
-bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
-{
-	if (IsClientAdmin(client))
-	{
-		ServerCommand("sm_forcematch %s", matchName);
-		return true;
-	}
 	if (!IsNewBuiltinVoteAllowed())
 	{
-		PrintToChat(client, "无法开始投票.");
+		PrintToChat(client, "[Lgofnoc] 无法开始投票.");
 		return false;
 	}
 	if (GetClientTeam(client) <= 1)
 	{
-		PrintToChat(client, "{B}[{W}SM{B}] {W}观众不允许投票.");
+		PrintToChat(client, "[Lgofnoc] 观众不允许投票.");
 		return false;
 	}
 	if (!IsBuiltinVoteInProgress())
@@ -616,7 +548,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 		}
 		if (iNumPlayers < 1)
 		{
-			PrintToChat(client, "{B}[{W}SM{B}] {W}没有足够的玩家无法开始投票.");
+			PrintToChat(client, "[Lgofnoc] 没有足够的玩家无法开始投票.");
 			return false;
 		}
 		Handle hVote = CreateBuiltinVote(VoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
@@ -627,7 +559,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 		FakeClientCommand(client, "Vote Yes");
 		return true;
 	}
-	PrintToChat(client, "{B}[{W}SM{B}] {W}现在无法开始投票.");
+	PrintToChat(client, "[Lgofnoc] 现在无法开始投票.");
 	return false;
 }
 

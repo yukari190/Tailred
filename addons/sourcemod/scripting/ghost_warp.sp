@@ -153,7 +153,7 @@ bool IsAnySurvivorsAlive()
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index != 0 && IsPlayerAlive(index)) return true;
+		if (index != 0) return true;
 	}
 	return false;
 }
@@ -163,7 +163,7 @@ int GetClientOfCharID(int characterID)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || !IsPlayerAlive(index)) return 0;
+		if (index == 0) return 0;
 		if (GetEntProp(index, Prop_Send, "m_survivorCharacter") == characterID)
 		{
 			return index;
