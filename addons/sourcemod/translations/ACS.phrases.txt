@@ -1,0 +1,148 @@
+"Phrases"
+{
+// The following uses bracket style color tags (see colors.inc)
+	"CampaignName_C1"
+	{
+		"en"		"Dead Center"
+	}
+	
+	"CampaignName_C2"
+	{
+		"en"		"Dark Carnival"
+	}
+	
+	"CampaignName_C3"
+	{
+		"en"		"Swamp Fever"
+	}
+	
+	"CampaignName_C4"
+	{
+		"en"		"Hard Rain"
+	}
+	
+	"CampaignName_C5"
+	{
+		"en"		"The Parish"
+	}
+	
+	"CampaignName_C6"
+	{
+		"en"		"The Passing"
+	}
+	
+	"CampaignName_C7"
+	{
+		"en"		"The Sacrifice"
+	}
+	
+	"CampaignName_C8"
+	{
+		"en"		"No Mercy"
+	}
+	
+	"CampaignName_C9"
+	{
+		"en"		"Crash Course"
+	}
+	
+	"CampaignName_C10"
+	{
+		"en"		"Death Toll"
+	}
+	
+	"CampaignName_C11"
+	{
+		"en"		"Dead Air"
+	}
+	
+	"CampaignName_C12"
+	{
+		"en"		"Blood Harvest"
+	}
+	
+	"CampaignName_C13"
+	{
+		"en"		"Cold Stream"
+	}
+	
+	"CampaignName_C14"
+	{
+		"en"		"The Last Stand"
+	}
+	
+	"Scavenge_Apartment"
+	{
+		"en"		"Apartments"
+	}
+	
+	"Scavenge_Rooftop"
+	{
+		"en"		"Rooftop"
+	}
+	
+	"Scavenge_Atrium"
+	{
+		"en"		"Mall Atrium"
+	}
+	
+	"Scavenge_Docks"
+	{
+		"en"		"Brick Factory"
+	}
+	
+	"Scavenge_Barge"
+	{
+		"en"		"Barge"
+	}
+	
+	"Scavenge_Riverbank"
+	{
+		"en"		"Riverbank"
+	}
+	
+	"Scavenge_Bedlam"
+	{
+		"en"		"Underground"
+	}
+	
+	"Scavenge_Port"
+	{
+		"en"		"Port"
+	}
+	
+	"Scavenge_Highway"
+	{
+		"en"		"Motel"
+	}
+	
+	"Scavenge_Plankcountry"
+	{
+		"en"		"Plank Country"
+	}
+	
+	"Scavenge_Milltown"
+	{
+		"en"		"Milltown"
+	}
+	
+	"Scavenge_Sugarmill"
+	{
+		"en"		"Sugar Mill"
+	}
+	
+	"Scavenge_Park"
+	{
+		"en"		"Park"
+	}
+	
+	"ChangeCampaign"
+	{
+		"en"		"{LG}[ACS] {G}Switching campaign to {O}"
+	}
+	
+	"ChangeScavenge"
+	{
+		"en"		"{LG}[ACS] {G}Switching map to {O}"
+	}
+}

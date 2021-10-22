@@ -5991,7 +5991,7 @@ void BuildConsoleBufferFriendlyFireTaken (bool bRound = true, bool bTeam = true,
 			bDivider = true;
 			line = -1;
 			g_iConsoleBufChunks++;
-			g_sConsoleBuf[g_iConsoleBufChunks] = "";
+			if (g_iConsoleBufChunks < MAXCHUNKS) g_sConsoleBuf[g_iConsoleBufChunks] = "";
 		} else if (line > 0) {
 			Format(g_sConsoleBuf[g_iConsoleBufChunks], CONBUFSIZELARGE, "%s\n", g_sConsoleBuf[g_iConsoleBufChunks]);
 		}

@@ -767,7 +767,7 @@ void FillSurvivorInfo(Panel &hSpecHud)
 	for (int i = 0; i < iSurvivorLimit; ++i)
 	{
 		int client = iSurvivorArray[i];
-		if (!client) continue;
+		if (!IsValidAndInGame(client)) continue;
 		
 		GetClientFixedName(client, name, sizeof(name));
 		if (!IsPlayerAlive(client))
@@ -964,7 +964,7 @@ void FillInfectedInfo(Panel &hSpecHud)
 	for (int i = 0; i < iMaxPlayerZombies; ++i)
 	{
 		int client = iInfectedArray[i];
-		if (!client) continue;
+		if (!IsValidAndInGame(client)) continue;
 		
 		GetClientFixedName(client, name, sizeof(name));
 		if (!IsPlayerAlive(client)) 

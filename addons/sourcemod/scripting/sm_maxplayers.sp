@@ -10,7 +10,7 @@ public void OnPluginStart()
 	hMaxPlayers = FindConVar("sv_maxplayers");
 	hVisibleMaxPlayers = FindConVar("sv_visiblemaxplayers");
 	
-	RegServerCmd("mp_maxplayers", CMD_MaxPlayers);
+	RegServerCmd("sm_maxplayers", CMD_MaxPlayers);
 }
 
 public Action CMD_MaxPlayers(int args)
@@ -19,9 +19,9 @@ public Action CMD_MaxPlayers(int args)
 	char buffer[64];
 	GetCmdArg(1, buffer, sizeof(buffer));
 	int iSlot = StringToInt(buffer);
-	if (iSlot < 0 || iSlot > 24)
+	if (iSlot < 0 || iSlot > 28)
 	{
-		PrintToServer("[Slots]有效范围 0 - 24");
+		PrintToServer("[Slots]有效范围 0 - 28");
 		return Plugin_Handled;
 	}
 	SetConVarInt(hMaxPlayers, iSlot);

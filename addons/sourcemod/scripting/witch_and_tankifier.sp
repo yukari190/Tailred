@@ -22,7 +22,8 @@ public Plugin myinfo = {
 ConVar
 	g_hVsBossBuffer,
 	g_hVsBossFlowMax,
-	g_hVsBossFlowMin;
+	g_hVsBossFlowMin,
+	l4d2_scripted_hud_hud2_text;
 	
 StringMap
 	hStaticTankMaps,
@@ -61,6 +62,7 @@ public void OnPluginStart() {
 	g_hVsBossBuffer = FindConVar("versus_boss_buffer");
 	g_hVsBossFlowMax = FindConVar("versus_boss_flow_max");
 	g_hVsBossFlowMin = FindConVar("versus_boss_flow_min");
+	l4d2_scripted_hud_hud2_text = FindConVar("l4d2_scripted_hud_hud2_text");
 
 	hStaticTankMaps = new StringMap();
 	hStaticWitchMaps = new StringMap();
@@ -467,6 +469,14 @@ void SetTankPercent(int percent) {
 		L4D2Direct_SetVSTankFlowPercent(1, p_newPercent);
 		L4D2Direct_SetVSTankToSpawnThisRound(0, true);
 		L4D2Direct_SetVSTankToSpawnThisRound(1, true);
+	}
+
+	if (l4d2_scripted_hud_hud2_text != null)
+	{
+		char bosstext[32];
+		if (percent != 0) Format(bosstext, sizeof(bosstext), "Tank:  [ %d%% ]", percent);
+		else Format(bosstext, sizeof(bosstext), "Tank:  [ --%% ]");
+		l4d2_scripted_hud_hud2_text.SetString(bosstext);
 	}
 }
 

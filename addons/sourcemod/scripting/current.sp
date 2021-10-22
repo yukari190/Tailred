@@ -23,7 +23,7 @@ float
 int
 	survivorCompletion;
 char
-	curtext[64];
+	curtext[32];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -67,7 +67,9 @@ public Action HudDrawTimer(Handle hTimer)
 	{
 		Format(curtext, sizeof(curtext), "进度: [ %d%% ]", GetHighestSurvivorFlow());
 		l4d2_scripted_hud_hud1_text.SetString(curtext);
+		return Plugin_Continue;
 	}
+	return Plugin_Stop;
 }
 
 public Action CurrentCmd(int client, int args)

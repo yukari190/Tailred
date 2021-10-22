@@ -222,7 +222,7 @@ int GetWeaponCount(const int[] mask)
 	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
 	{
 		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
+		if (index == 0 || !IsValidAndInGame(index)) continue;
 	
 		for (int j = 0; j < 5; ++j)
 		{

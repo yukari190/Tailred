@@ -1335,7 +1335,7 @@ void GetHUD2_Text(char[] output, int size)
 {
     FormatEx(output, size, "\0");
 
-    for (int client = 1; client <= MaxClients; client++)
+    /*for (int client = 1; client <= MaxClients; client++)
     {
         if (!IsClientInGame(client))
             continue;
@@ -1382,7 +1382,7 @@ void GetHUD2_Text(char[] output, int size)
             else
                 Format(output, size, "%s\n%N [%s]: %s", output, client, zombieClass, health);
         }
-    }
+    }*/
 }
 
 /****************************************************************************************************/

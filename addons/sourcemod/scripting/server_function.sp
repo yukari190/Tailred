@@ -37,17 +37,17 @@ enum VoteType
 	VoteType_SetMaxPlayers,
 	VoteType_RestoreHealth,
 	VoteType_ChangeMap,
-	VoteType_KickSpec
+	VoteType_KickSpec,
+	VoteType_AllowBots
 };
 
-VoteType iVoteType;
-
-KeyValues g_hInfoKV;
-
+VoteType
+	iVoteType;
+KeyValues
+	g_hInfoKV;
 Handle 
 	top_menu = null,
 	admin_menu = null;
-
 TopMenuObject 
 	spawn_special_infected_menu,
 	spawn_weapons_menu,
@@ -55,15 +55,14 @@ TopMenuObject
 	spawn_items_menu,
 	respawn_menu,
 	teleport_menu;
-
+ConVar
+	hAllowInfectedBots;
 bool 
 	casterSystemAvailable,
 	alltp;
-
 int 
 	iSlot,
 	g_originClient = -1;
-
 char 
 	TargetMap_Code[128],
 	mapname[64];
@@ -90,11 +89,14 @@ public void OnPluginStart()
 	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), PATH_MAP);
 	if (!FileToKeyValues(g_hInfoKV, sBuffer)) LogMessage("找不到 <%s>.", PATH_MAP);
 	
+	hAllowInfectedBots = FindConVar("director_allow_infected_bots");
+	
 	RegConsoleCmd("sm_zs", Command_Suicide, "玩家自杀");
 	RegConsoleCmd("sm_vmp", SlotsRequest);
 	RegConsoleCmd("sm_vhp", Command_RestoreHealth);
 	RegConsoleCmd("sm_vcm", ChangeMaps);
 	RegConsoleCmd("sm_kickspecs", KickSpecs_Cmd, "Let's vote to kick those Spectators!");
+	RegConsoleCmd("sm_vbot", AllowInfectedBots_Cmd);
 	
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != null))
 	  OnAdminMenuReady(top_menu);
@@ -105,41 +107,11 @@ public void OnPluginStart()
 	HookEvent("player_disconnect", Event_PlayerDisconnectPre, EventHookMode_Pre);
 	HookEvent("revive_success", EventReviveSuccess);
 	HookEvent("player_bot_replace", PlayerBotReplace);
-	HookEvent("finale_win", FinaleWin_Event, EventHookMode_PostNoCopy);
 }
 
 public void OnMapStart()
 {
 	GetCurrentMap(mapname, sizeof(mapname));
-}
-
-public void OnClientDisconnect(int client)
-{
-    if (IsFakeClient(client)) return;
-	CreateTimer(10.0, PlayerDisconnectTimer);
-}
-
-public Action PlayerDisconnectTimer(Handle timer)
-{
-	if (!IsHumansOnServer())
-	{
-		char sInfo[64];
-		KvRewind(g_hInfoKV);
-		if (KvJumpToKey(g_hInfoKV, sInfo) && KvGotoFirstSubKey(g_hInfoKV))
-		{
-			do
-			{
-				KvGetSectionName(g_hInfoKV, sInfo, sizeof(sInfo));
-				if (StrContains(mapname, sInfo[3], false) != -1)
-				{
-					strcopy(TargetMap_Code, sizeof(TargetMap_Code), sInfo);
-					CreateTimer(0.1, ChangeLevel);
-					break;
-				}
-			}
-			while (KvGotoNextKey(g_hInfoKV));
-		}
-	}
 }
 
 public void OnClientPutInServer(int client)
@@ -151,7 +123,7 @@ public Action Announce_Timer(Handle timer, any client)
 {
 	if (IsValidAndInGame(client) && !IsFakeClient(client))
 	{
-		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血)");
+		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血) | !vbot(对抗启用机器人特感)");
 	}
 }
 
@@ -166,21 +138,21 @@ public void OnClientPostAdminCheck(int client)
 	}
 }
 
-public void L4D2_OnRealRoundEnd()
-{
-	if (L4D_IsVersusMode() && L4D_IsMissionFinalMap() && InSecondHalfOfRound())
-	{
-		CheckMapForChange();
-	}
-}
-
 public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
 	if (!IsValidAndInGame(client) || IsFakeClient(client)) return;
-	if (team == 1)
-	  SetEntProp(client, Prop_Send, "m_bNightVisionOn", 1);
-	else
-	  SetEntProp(client, Prop_Send, "m_bNightVisionOn", 0);
+	CreateTimer(1.0, TeamChange_Timer, client);
+}
+
+public Action TeamChange_Timer(Handle timer, any client)
+{
+	if (IsValidAndInGame(client) && !IsFakeClient(client))
+	{
+		if (GetClientTeam(client) == 1)
+			SetEntProp(client, Prop_Send, "m_bNightVisionOn", 1);
+		else
+			SetEntProp(client, Prop_Send, "m_bNightVisionOn", 0);
+	}
 }
 
 
@@ -210,32 +182,6 @@ public Action PlayerBotReplace(Event event, const char[] name, bool dontBroadcas
 	if (IsValidInfected(bot) && GetInfectedClass(bot) == L4D2Infected_Tank)
 	{
 		PrintToChatAll("[!] Tank控制权丢失, 启用代打模式!");
-	}
-}
-
-public Action FinaleWin_Event(Event event, const char[] name, bool dontBroadcast)
-{
-	CheckMapForChange();
-}
-
-int CheckMapForChange()
-{
-	char sInfo[64];
-	KvRewind(g_hInfoKV);
-	if (KvJumpToKey(g_hInfoKV, sInfo) && KvGotoFirstSubKey(g_hInfoKV))
-	{
-		do
-		{
-			KvGetSectionName(g_hInfoKV, sInfo, sizeof(sInfo));
-			sInfo[3]='\0';
-			if (StrContains(mapname, sInfo, false) != -1)
-			{
-				KvGetString(g_hInfoKV, "nextmap", TargetMap_Code, sizeof(TargetMap_Code));
-				CreateTimer(L4D_IsVersusMode() ? 6.0 : 3.0, ChangeLevel);
-				break;
-			}
-		}
-		while (KvGotoNextKey(g_hInfoKV));
 	}
 }
 
@@ -368,6 +314,18 @@ public Action KickSpecs_Cmd(int client, int args)
 		char sBuffer[64];
 		iVoteType = VoteType_KickSpec;
 		Format(sBuffer, sizeof(sBuffer), "踢非管理员和非强制性观众?");
+		BuiltinVotes_StartVoteAllTeam(client, sBuffer);
+	}
+	return Plugin_Handled;
+}
+
+public Action AllowInfectedBots_Cmd(int client, int args)
+{
+	if (IsValidAndInGame(client))
+	{
+		char sBuffer[64];
+		iVoteType = VoteType_AllowBots;
+		Format(sBuffer, sizeof(sBuffer), "启用特感机器人?");
 		BuiltinVotes_StartVoteAllTeam(client, sBuffer);
 	}
 	return Plugin_Handled;
@@ -993,15 +951,6 @@ void RestoreHealth()
 	}
 }
 
-bool IsHumansOnServer()
-{
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientConnected(i) && !IsFakeClient(i)) return true;
-	}
-	return false;
-}
-
 void SetMaxPlayers(int amount)
 {
 	FindConVar("sv_maxplayers").SetInt(amount);
@@ -1051,6 +1000,7 @@ public void BuiltinVotes_VoteResult()
 				}
 			}
 		}
+		case VoteType_AllowBots: hAllowInfectedBots.SetInt(1);
 	}
 	iVoteType = VoteType_None;
 }
@@ -1070,7 +1020,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 	}
 	if (!(casterSystemAvailable && IsClientCaster(client)) && GetClientTeam(client) <= 1)
 	{
-		PrintToChat(client, "{B}[{W}SM{B}] {W}观众不允许投票.");
+		CPrintToChat(client, "{B}[{W}SM{B}] {W}观众不允许投票.");
 		return false;
 	}
 	if (!IsBuiltinVoteInProgress())
@@ -1084,7 +1034,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 		}
 		if (iNumPlayers < PLAYER_LIMIT)
 		{
-			PrintToChat(client, "{B}[{W}SM{B}] {W}没有足够的玩家无法开始投票.");
+			CPrintToChat(client, "{B}[{W}SM{B}] {W}没有足够的玩家无法开始投票.");
 			return false;
 		}
 		Handle hVote = CreateBuiltinVote(VoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
@@ -1095,7 +1045,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 		FakeClientCommand(client, "Vote Yes");
 		return true;
 	}
-	PrintToChat(client, "{B}[{W}SM{B}] {W}现在无法开始投票.");
+	CPrintToChat(client, "{B}[{W}SM{B}] {W}现在无法开始投票.");
 	return false;
 }
 

@@ -245,7 +245,7 @@ public Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 	if (zombieclass == ZC_BOOMER)
 	{
 		// Only happens on mid map plugin load when a boomer is up
-		if (!g_iBoomerClient) g_iBoomerClient = victim;
+		if (!IsValidAndInGame(g_iBoomerClient)) g_iBoomerClient = victim;
 			if (!IsFakeClient(g_iBoomerClient)) GetClientName(g_iBoomerClient, Boomer, sizeof(Boomer));
 		else Boomer = "AI";
 		

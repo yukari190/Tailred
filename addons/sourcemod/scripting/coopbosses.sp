@@ -46,8 +46,8 @@ bool
 	readyFooterAdded,
 	SurvivorNearTank[MAXPLAYERS + 1],
 	bv_bTank,
-	bv_bWitch,
-	bIsFinale;
+	bv_bWitch;
+	//bIsFinale;
 
 float 
 	fTankFlow,
@@ -59,8 +59,7 @@ int
 	bv_iWitch;
 
 char
-	g_sCurrentMap[64],
-	bosstext[64];
+	g_sCurrentMap[64];
 	
 ArrayList
 	hValidTankFlows,
@@ -148,7 +147,7 @@ public void OnPluginStart()
 	
 	FindConVar("director_no_bosses").SetBool(true);
 	
-	HookEvent("finale_start", FinaleStart_Event, EventHookMode_PostNoCopy);
+	//HookEvent("finale_start", FinaleStart_Event, EventHookMode_PostNoCopy);
 }
 
 public void OnPluginEnd()
@@ -164,10 +163,10 @@ public void OnMapStart()
 	GetCurrentMapLower(g_sCurrentMap, sizeof g_sCurrentMap);
 }
 
-public Action FinaleStart_Event(Event event, const char[] name, bool dontBroadcast)
+/*public Action FinaleStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
 	bIsFinale = true;
-}
+}*/
 
 public Action StaticTank_Command(int args) {
 	char mapname[64];
@@ -405,7 +404,7 @@ public void BossVoteResultHandler(Handle vote, int num_votes, int num_clients, c
 
 public Action L4D_OnSpawnTank(const float vecPos[3], const float vecAng[3])
 {
-	return (IsExceptStatic() || bIsFinale || AllowTankSpawn()) && hCvarTankCanSpawn.BoolValue ? Plugin_Continue : Plugin_Handled;
+	return /*(IsExceptStatic() || bIsFinale || AllowTankSpawn()) && */hCvarTankCanSpawn.BoolValue ? Plugin_Continue : Plugin_Handled;
 }
 
 public Action L4D_OnSpawnWitch(const float vecPos[3], const float vecAng[3])
@@ -449,7 +448,7 @@ public void L4D2_OnRealRoundStart()
 		throwForce[i][1] = 0.0;
 		throwForce[i][2] = 0.0;
 	}
-	bIsFinale = false;
+	//bIsFinale = false;
 	readyFooterAdded = false;
 	AllowTankSpawn(true, false);
 	CreateTimer(0.5, TankSpawnPercentCheck, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
@@ -791,6 +790,7 @@ void SetTankPercent(int percent) {
 	
 	if (l4d2_scripted_hud_hud2_text != null)
 	{
+		char bosstext[32];
 		if (bTankSpawn) Format(bosstext, sizeof(bosstext), "Tank:  [ %d%% ]", iTankPercent);
 		else Format(bosstext, sizeof(bosstext), "Tank:  [ --%% ]");
 		l4d2_scripted_hud_hud2_text.SetString(bosstext);
@@ -949,7 +949,7 @@ bool IsWitchPercentValid(int flow){
 	return false;
 }
 
-bool IsExceptStatic()
+/*bool IsExceptStatic()
 {
 	if (
 	StrEqual(g_sCurrentMap, "c7m1_docks") || 
@@ -962,4 +962,4 @@ bool IsExceptStatic()
 	}
 	return false;
 	
-}
+}*/

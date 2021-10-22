@@ -147,7 +147,7 @@ void FoundYou()
 
 public Action Door_Open(Event event, const char[] name, bool dontBroadcast)
 {
-	if (ent_safedoor > 0)
+	if (ent_safedoor > 0 && IsValidEntity(ent_safedoor))
 	{
 		if (event.GetBool("checkpoint"))
 		{
