@@ -93,7 +93,7 @@ public Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 			
 			delete g_hBoomerShoveTimer;
 			BoomerKillTime = 0.0;
-			g_hBoomerKillTimer = CreateTimer(0.1, Timer_KillBoomer, _, TIMER_REPEAT);
+			g_hBoomerKillTimer = CreateTimer(0.1, Timer_KillBoomer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 		}
 		
 		g_iLastHealth[client] = GetClientHealth(client);
@@ -119,7 +119,10 @@ public OnMapStart()
 public Event_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	g_bHasRoundEnded = false;
-	delete g_hBoomerKillTimer;
+	if (g_hBoomerKillTimer != null)
+	{
+		KillTimer(g_hBoomerKillTimer);
+	}
 	BoomerKillTime = 0.0;
 	g_iAlarmCarClient = 0;
 }
@@ -146,7 +149,7 @@ public Event_AbilityUse(Handle:event, const String:name[], bool:dontBroadcast)
 	if (zombieclass == ZC_HUNTER)
 	{
 		g_bIsPouncing[client] = true;
-		CreateTimer(0.5, Timer_GroundedCheck, client, TIMER_REPEAT);
+		CreateTimer(0.5, Timer_GroundedCheck, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 

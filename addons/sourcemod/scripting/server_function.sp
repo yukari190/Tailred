@@ -9,7 +9,6 @@
 #include <left4dhooks>
 #include <colors>
 #include <l4d2lib>
-#include <DirectInfectedSpawn>
 #include <l4d2util>
 #undef REQUIRE_PLUGIN
 #include <caster_system>
@@ -19,8 +18,6 @@
 
 #define PLAYER_LIMIT 1
 #define PATH_MAP "configs/Server/maplists.txt"
-
-#define GAMEDATA "l4d2_si_ability"
 
 public Plugin myinfo =
 {
@@ -37,7 +34,6 @@ enum VoteType
 	VoteType_SetMaxPlayers,
 	VoteType_RestoreHealth,
 	VoteType_ChangeMap,
-	VoteType_KickSpec,
 	VoteType_AllowBots
 };
 
@@ -64,8 +60,7 @@ int
 	iSlot,
 	g_originClient = -1;
 char 
-	TargetMap_Code[128],
-	mapname[64];
+	TargetMap_Code[128];
 
 void FindCasterSystem()
 {
@@ -95,7 +90,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_vmp", SlotsRequest);
 	RegConsoleCmd("sm_vhp", Command_RestoreHealth);
 	RegConsoleCmd("sm_vcm", ChangeMaps);
-	RegConsoleCmd("sm_kickspecs", KickSpecs_Cmd, "Let's vote to kick those Spectators!");
 	RegConsoleCmd("sm_vbot", AllowInfectedBots_Cmd);
 	
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != null))
@@ -104,14 +98,8 @@ public void OnPluginStart()
 	AddCommandListener(TeamSay_Callback, "say_team");
 	
 	HookEvent("player_changename", Event_NameChange, EventHookMode_Pre);
-	HookEvent("player_disconnect", Event_PlayerDisconnectPre, EventHookMode_Pre);
 	HookEvent("revive_success", EventReviveSuccess);
 	HookEvent("player_bot_replace", PlayerBotReplace);
-}
-
-public void OnMapStart()
-{
-	GetCurrentMap(mapname, sizeof(mapname));
 }
 
 public void OnClientPutInServer(int client)
@@ -124,17 +112,6 @@ public Action Announce_Timer(Handle timer, any client)
 	if (IsValidAndInGame(client) && !IsFakeClient(client))
 	{
 		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血) | !vbot(对抗启用机器人特感)");
-	}
-}
-
-public void OnClientPostAdminCheck(int client)
-{
-	if (IsValidAndInGame(client) && !IsFakeClient(client) && GetClientCount(true) < MaxClients)
-	{
-		char rawmsg[301];
-		PrintFormattedMessageToAll(rawmsg, client);
-		Format(rawmsg, sizeof(rawmsg), "%c%s @ 加入游戏.", 1, rawmsg);
-		CPrintToChatAll("%s", rawmsg);
 	}
 }
 
@@ -182,20 +159,6 @@ public Action PlayerBotReplace(Event event, const char[] name, bool dontBroadcas
 	if (IsValidInfected(bot) && GetInfectedClass(bot) == L4D2Infected_Tank)
 	{
 		PrintToChatAll("[!] Tank控制权丢失, 启用代打模式!");
-	}
-}
-
-public Action Event_PlayerDisconnectPre(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsValidAndInGame(client) && !IsFakeClient(client))
-	{
-		char rawmsg[301], reason[65];
-		event.GetString("reason", reason, sizeof(reason));
-		ReplaceString(reason, sizeof(reason), "\n", " ");
-		PrintFormattedMessageToAll(rawmsg, client);
-		Format(rawmsg, sizeof(rawmsg), "%c%s @ 断开连接. {O}原因: {W}%s", 1, rawmsg, reason);
-		CPrintToChatAll("%s", rawmsg);
 	}
 }
 
@@ -307,18 +270,6 @@ public int Start_Menu(Handle menu, MenuAction action, int client, int itemNum)
 	if (action == MenuAction_End) CloseHandle(menu);
 }
 
-public Action KickSpecs_Cmd(int client, int args)
-{
-	if (IsValidAndInGame(client))
-	{
-		char sBuffer[64];
-		iVoteType = VoteType_KickSpec;
-		Format(sBuffer, sizeof(sBuffer), "踢非管理员和非强制性观众?");
-		BuiltinVotes_StartVoteAllTeam(client, sBuffer);
-	}
-	return Plugin_Handled;
-}
-
 public Action AllowInfectedBots_Cmd(int client, int args)
 {
 	if (IsValidAndInGame(client))
@@ -331,31 +282,6 @@ public Action AllowInfectedBots_Cmd(int client, int args)
 	return Plugin_Handled;
 }
 
-
-void PrintFormattedMessageToAll(char rawmsg[301], int client)
-{
-	char steamid[256], ip[16], country[46];
-	bool bIsLanIp;
-	
-	GetClientAuthId(client, AuthId_Steam3, steamid, sizeof(steamid));
-	GetClientIP(client, ip, sizeof(ip)); 
-	bIsLanIp = IsLanIP(ip);
-	if (!GeoipCountry(ip, country, sizeof(country)))
-	{
-		if (bIsLanIp) Format(country, sizeof(country), "%s", "局域网", LANG_SERVER);
-		else Format(country, sizeof(country), "%s", "未知的国家", LANG_SERVER);
-	}
-	if (StrEqual(country, "")) Format(country, sizeof(country), "%s", "未知的国家", LANG_SERVER);
-	if (StrContains(country, "United", false) != -1 || StrContains(country, "Republic", false) != -1 || 
-	StrContains(country, "Federation", false) != -1 || StrContains(country, "Island", false) != -1 || 
-	StrContains(country, "Netherlands", false) != -1 || StrContains(country, "Isle", false) != -1 || 
-	StrContains(country, "Bahamas", false) != -1 || StrContains(country, "Maldives", false) != -1 || 
-	StrContains(country, "Philippines", false) != -1 || 
-	StrContains(country, "Vatican", false) != -1) Format(country, sizeof(country), "The %s", country);
-	
-	Format(rawmsg, sizeof(rawmsg), "%s {O}%N {G}%s{W} ({O}%s{W}), ", IsClientAdmin(client) ? "管理员" : "玩家", 
-	client, steamid, country);
-}
 
 void RespawnPlayer(int player_id)
 {
@@ -399,7 +325,8 @@ void Do_SpawnInfected(int client, L4D2_Infected class)
 	if (!Misc_TraceClientViewToLocation(client, location)) {
 		GetClientAbsOrigin(client, location);
 	}
-	TriggerSpawn(class, location);
+	//TriggerSpawn(class, location);
+	L4D2_SpawnSpecial(view_as<int>(class), location, NULL_VECTOR);
 	NotifyPlayers(client, feedback);
 	LogAction(client, -1, "[NOTICE]: (%L) has spawned a %s", client, arguments);
 }
@@ -899,25 +826,6 @@ public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, i
 	}
 }
 
-bool IsLanIP(char[] src)
-{
-	char ip4[4][4];
-	int ipnum;
-	if (ExplodeString(src, ".", ip4, 4, 4) == 4)
-	{
-		ipnum = StringToInt(ip4[0])*65536 + StringToInt(ip4[1])*256 + StringToInt(ip4[2]);
-		if (
-			(ipnum >= 655360 && ipnum < 655360+65535) || 
-			(ipnum >= 11276288 && ipnum < 11276288+4095) || 
-			(ipnum >= 12625920 && ipnum < 12625920+255)
-		)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 bool IsClientAdmin(int client)
 {
 	AdminId id = GetUserAdmin(client);
@@ -990,16 +898,6 @@ public void BuiltinVotes_VoteResult()
 		case VoteType_SetMaxPlayers: SetMaxPlayers(iSlot);
 		case VoteType_RestoreHealth: RestoreHealth();
 		case VoteType_ChangeMap: CreateTimer(2.5, ChangeLevel);
-		case VoteType_KickSpec:
-		{
-			for (int c=1; c<=MaxClients; c++)
-			{
-				if (IsClientInGame(c) && (GetClientTeam(c) == 1) && !(casterSystemAvailable && IsClientCaster(c)) && !IsClientAdmin(c))
-				{
-					KickClient(c, "No Spectators, please!");
-				}
-			}
-		}
 		case VoteType_AllowBots: hAllowInfectedBots.SetInt(1);
 	}
 	iVoteType = VoteType_None;

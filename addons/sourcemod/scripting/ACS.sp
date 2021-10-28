@@ -14,7 +14,7 @@
 #define NUMBER_OF_SCAVENGE_MAPS		13		/* CHANGE TO MATCH THE TOTAL NUMBER OF SCAVENGE MAPS */
 
 #define WAIT_TIME_BEFORE_SWITCH_COOP			7.0
-#define WAIT_TIME_BEFORE_SWITCH_VERSUS			10.0
+#define WAIT_TIME_BEFORE_SWITCH_VERSUS			9.0
 #define WAIT_TIME_BEFORE_SWITCH_SCAVENGE		11.0
 
 public Plugin myinfo = 
@@ -48,7 +48,7 @@ public void OnPluginStart()
 	LoadTranslation();
 	SetupMapStrings();
 	
-	CreateConVar("acs_version", PLUGIN_VERSION, "Version of Automatic Campaign Switcher (ACS) on this server", FCVAR_NONE|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("acs_version", PLUGIN_VERSION, "Version of Automatic Campaign Switcher (ACS) on this server", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	g_hCVar_MaxFinaleFailures = CreateConVar("acs_max_coop_finale_failures", "0", "在切换到下一个战役之前, 幸存者在 Coop 中失败的次数  [0 = INFINITE FAILURES]", FCVAR_NONE, true, 0.0, false);
 	
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_PostNoCopy);

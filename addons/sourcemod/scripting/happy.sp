@@ -45,8 +45,8 @@ bool
 
 public void OnPluginStart()
 {
-	l4d_climb_glow = CreateConVar("l4d_climb_glow", "1", "0 disable 1:enable ", FCVAR_NONE);
-	l4d_climb_speed = CreateConVar("l4d_climb_speed", "40", "210 is the walk speed", FCVAR_NONE);
+	l4d_climb_glow = CreateConVar("l4d_climb_glow", "1", "0 disable 1:enable ");
+	l4d_climb_speed = CreateConVar("l4d_climb_speed", "40", "210 is the walk speed");
 	
 	HookEvent("player_bot_replace", player_bot_replace);	 
 	HookEvent("player_jump", player_jump);

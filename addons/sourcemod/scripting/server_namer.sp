@@ -107,7 +107,7 @@ public OnPluginStart()
 	cvarServerNameFormatCase1 = CreateConVar("sn_hostname_format1", "[{hostname} #{servernum}] {gamemode}", "Hostname format. Case: Confogl or Vanilla without difficulty levels, such as Versus.");
 	cvarServerNameFormatCase2 = CreateConVar("sn_hostname_format2", "[{hostname} #{servernum}] {gamemode} - {difficulty}", "Hostname format. Case: Vanilla with difficulty levels, such as Campaign.");
 	cvarServerNameFormatCase3 = CreateConVar("sn_hostname_format3", "[{hostname} #{servernum}]", "Hostname format. Case: empty server.");
-	CreateConVar("l4d2_server_namer_version", PL_VERSION, "Server namer version", FCVAR_NONE | FCVAR_NOTIFY);
+	CreateConVar("l4d2_server_namer_version", PL_VERSION, "Server namer version", FCVAR_NOTIFY);
 	cvarMpGameMode = FindConVar("mp_gamemode");
 	cvarHostname = FindConVar("hostname");
 	cvarZDifficulty = FindConVar("z_difficulty");

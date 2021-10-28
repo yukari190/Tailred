@@ -73,10 +73,10 @@ public APLRes:AskPluginLoad2(Handle:plugin, bool:late, String:error[], errMax)
 
 public OnPluginStart()
 {
-	hCvarBonusPerSurvivorMultiplier = CreateConVar("sm2_bonus_per_survivor_multiplier", "0.5", "Total Survivor Bonus = this * Number of Survivors * Map Distance");
-	hCvarPermanentHealthProportion = CreateConVar("sm2_permament_health_proportion", "0.75", "Permanent Health Bonus = this * Map Bonus; rest goes for Temporary Health Bonus");
-	hCvarPillsHpFactor = CreateConVar("sm2_pills_hp_factor", "6.0", "Unused pills HP worth = map bonus HP value / this");
-	hCvarPillsMaxBonus = CreateConVar("sm2_pills_max_bonus", "30", "Unused pills cannot be worth more than this");
+	hCvarBonusPerSurvivorMultiplier = CreateConVar("sm2_bonus_per_survivor_multiplier", "0.5", "总逃生奖励 = 这个 * 逃生人数 * 地图距离");
+	hCvarPermanentHealthProportion = CreateConVar("sm2_permament_health_proportion", "0.75", "永久健康奖励 = 这个 * 地图奖励; 休息用于临时健康奖金");
+	hCvarPillsHpFactor = CreateConVar("sm2_pills_hp_factor", "6.0", "未使用的药丸HP值 = 地图加成HP值 / 这个");
+	hCvarPillsMaxBonus = CreateConVar("sm2_pills_max_bonus", "30", "未使用的药丸不能比这更高");
 	// hCvarTiebreakerBonus = CreateConVar("sm2_tiebreaker_bonus", "25", "Tiebreaker for those cases when both teams make saferoom with no bonus");
 	
 	hCvarValveSurvivalBonus = FindConVar("vs_survival_bonus");

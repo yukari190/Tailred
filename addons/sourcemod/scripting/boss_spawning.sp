@@ -6,6 +6,8 @@
 #include <left4dhooks>
 #include <l4d2lib>
 
+#define CVAR_FLAGS FCVAR_SPONLY|FCVAR_NOTIFY
+
 #define MAX_TANKS		5
 #define MAX_WITCHES	5
 
@@ -18,8 +20,6 @@ public Plugin myinfo =
 	url = "http://confogl.googlecode.com/"
 };
 
-ConVar hMaxTankSpawn;
-
 bool 
 	bEnabled = true,
 	bDeleteWitches = false,
@@ -27,21 +27,20 @@ bool
 
 int 
 	iTankCount[2],
-	iWitchCount[2],
-	TankCount;
+	iWitchCount[2];
 
 float 
 	fTankSpawn[MAX_TANKS][3],
 	fWitchSpawn[MAX_WITCHES][2][3];
 
-char sMap[64];
+char
+	sMap[64];
 
 public void OnPluginStart()
 {
 	ConVar hEnabled;
-	(hEnabled = CreateConVar("lock_boss_spawns", "1", "Enables forcing same coordinates for tank and witch spawns")).AddChangeHook(ConVarChange);
+	(hEnabled = CreateConVar("lock_boss_spawns", "1", "Enables forcing same coordinates for tank and witch spawns", CVAR_FLAGS, true, 0.0, true, 1.0)).AddChangeHook(ConVarChange);
 	bEnabled = hEnabled.BoolValue;
-	hMaxTankSpawn = CreateConVar("max_tank_spawn", "2", "");
 	
 	HookEvent("witch_spawn", WitchSpawn);
 	HookEvent("finale_start", FinaleStart, EventHookMode_PostNoCopy);
@@ -50,16 +49,6 @@ public void OnPluginStart()
 public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	bEnabled = convar.BoolValue;
-}
-
-public Action L4D_OnSpawnTank(const float vector[3], const float qangle[3])
-{
-	if (TankCount >= hMaxTankSpawn.IntValue)
-	{
-		return Plugin_Handled;
-	}
-	TankCount += 1;
-	return Plugin_Continue;
 }
 
 public void OnMapStart()
@@ -71,11 +60,6 @@ public void OnMapStart()
 	iWitchCount[1] = 0;
 	
 	GetCurrentMap(sMap, sizeof(sMap));
-}
-
-public void L4D2_OnRealRoundStart()
-{
-	TankCount = 0;
 }
 
 public void L4D2_OnRealRoundEnd()

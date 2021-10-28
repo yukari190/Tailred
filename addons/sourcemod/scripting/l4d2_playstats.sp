@@ -1310,22 +1310,22 @@ public Action Cmd_StatsDisplayGeneral(int client, int args)
 		if (StrEqual(sArg, "help", false) || StrEqual(sArg, "?", false)) {
 			// show help
 			if (IS_VALID_INGAME(client)) {
-				PrintToChat(client, "\x01Use: /stats [<type>] [\x05round\x01/\x05game\x01/\x05team\x01/\x05all\x01/\x05other\x01]");
-				PrintToChat(client, "\x01 or: /stats [<type>] [\x05r\x01/\x05g\x01/\x05t\x01/\x05a\x01/\x05o\x01]");
-				PrintToChat(client, "\x01 where <type> is '\x04mvp\x01', '\x04skill\x01', '\x04ff\x01', '\x04acc\x01' or '\x04inf\x01'. (for more, see console)");
+				PrintToChat(client, "\x01使用: /stats [<type>] [\x05回合\x01/\x05游戏\x01/\x05团队\x01/\x05全部\x01/\x05其他\x01]");
+				PrintToChat(client, "\x01或者: /stats [<type>] [\x05r\x01/\x05g\x01/\x05t\x01/\x05a\x01/\x05o\x01]");
+				PrintToChat(client, "\x01 其中 <type> 是 '\x04mvp\x01', '\x04skill\x01', '\x04ff\x01', '\x04acc\x01' or '\x04inf\x01'. (有关更多信息, 请参阅控制台)");
 			}
 
 			char bufBasic[CONBUFSIZELARGE];
 			Format(bufBasic, CONBUFSIZELARGE, "|------------------------------------------------------------------------------|\n");
-			Format(bufBasic, CONBUFSIZELARGE, "%s| /stats command help      in chat:    '/stats <type> [argument [argument]]'   |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|                          in console: 'sm_stats <type> [arguments...]'        |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s| /stats 命令帮助          在聊天框:   '/stats <type> [argument [argument]]'   |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|                          在控制台:   'sm_stats <type> [arguments...]'        |\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|------------------------------------------------------------------------------|\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s| stat type:   'general':  general statistics about the game, as in campaign   |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|              'mvp'    :  SI damage, common kills    (extra argument: 'tank') |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s| stat type:   'general':  关于游戏的一般统计数据, 如战役                      |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|              'mvp'    :  特感伤害, 小怪击杀     (额外的参数: 'tank')         |\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|              'skill'  :  skeets, levels, crowns, tongue cuts, etc            |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|              'ff'     :  friendly fire damage (per type of weapon)           |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|              'acc'    :  accuracy details           (extra argument: 'more') |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|              'inf'    :  special infected stats (dp's, damage done etc)      |", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|              'ff'     :  友军伤害    (每种武器)                              |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|              'acc'    :  精度细节    (额外的参数: 'more')                    |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|              'inf'    :  特感统计    (dp, 造成的伤害等)                      |", bufBasic);
 			
 			if (IS_VALID_INGAME(client)) {
 				PrintToConsole(client, bufBasic);
@@ -1334,13 +1334,13 @@ public Action Cmd_StatsDisplayGeneral(int client, int args)
 			}
 
 			Format(bufBasic, CONBUFSIZELARGE, "|------------------------------------------------------------------------------|\n");
-			Format(bufBasic, CONBUFSIZELARGE, "%s| arguments:                                                                   |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s| 参数:                                                                        |\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|------------------------------------------------------------------------------|\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|   'round' ('r') / 'game' ('g') : for this round; or for entire game so far   |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|   'team' ('t') / 'all' ('a')   : current survivor team only; or all players  |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|   'other' ('o') / 'my'         : team that is now infected; or your team NMW |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|   'tank'          [ MVP only ] : show stats for tank fight                   |\n", bufBasic);
-			Format(bufBasic, CONBUFSIZELARGE, "%s|   'more'    [ ACC & MVP only ] : show more stats ( MVP time / SI/tank hits ) |", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|   'round' ('r') / 'game' ('g') : 本轮; 或到目前为止的整个游戏                |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|   'team' ('t') / 'all' ('a')   : 仅限当前幸存者团队; 或所有玩家              |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|   'other' ('o') / 'my'         : 现在被感染的队伍; 或您的团队名称            |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|   'tank'          [ MVP only ] : 显示坦克战斗的统计数据                      |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s|   'more'    [ ACC & MVP only ] : 显示更多统计数据 ( MVP 时间 / SI/tank 命中 )|", bufBasic);
 			
 			if (IS_VALID_INGAME(client)) {
 				PrintToConsole(client, bufBasic);
@@ -1349,7 +1349,7 @@ public Action Cmd_StatsDisplayGeneral(int client, int args)
 			}
 
 			Format(bufBasic, CONBUFSIZELARGE, "|------------------------------------------------------------------------------|\n");
-			Format(bufBasic, CONBUFSIZELARGE, "%s| examples:                                                                    |\n", bufBasic);
+			Format(bufBasic, CONBUFSIZELARGE, "%s| 例子:                                                                        |\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|------------------------------------------------------------------------------|\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|   '/stats skill round all' => shows skeets etc for all players, this round   |\n", bufBasic);
 			Format(bufBasic, CONBUFSIZELARGE, "%s|   '/stats ff team game'    => shows active team's friendly fire, this round  |\n", bufBasic);
@@ -1415,7 +1415,7 @@ public Action Cmd_StatsDisplayGeneral(int client, int args)
 				bMy = true;
 			} else {
 				if (IS_VALID_INGAME(client)) {
-					PrintToChat(client, "Stats command: unknown argument: '%s'. Type '/stats help' for possible arguments.", sArg);
+					PrintToChat(client, "统计命令: 未知参数: '%s'. 输入 '/stats help' 获得可能的参数.", sArg);
 				}
 			}
 		}
@@ -1481,7 +1481,7 @@ public Action Cmd_StatsDisplayGeneral(int client, int args)
 public Action Cmd_StatsReset(int client, int args)
 {
 	ResetStats(false, -1);
-	PrintToChatAll("Player statistics reset.");
+	PrintToChatAll("队伍统计数据重置.");
 	return Plugin_Handled;
 }
 
@@ -1492,7 +1492,7 @@ public Action Cmd_StatsReset(int client, int args)
 public Action Cmd_Cookie_SetPrintFlags(int client, int args)
 {
 	if (!IS_VALID_INGAME(client)) {
-		PrintToServer("This command can only be used by clients. Use the sm_stats_autoprint_* cvars to set server preferences.");
+		PrintToServer("此命令只能由客户端使用. 使用 sm_stats_autoprint_* cvars 设置服务器首选项.");
 		return Plugin_Handled;
 	}
 
@@ -1502,9 +1502,9 @@ public Action Cmd_Cookie_SetPrintFlags(int client, int args)
 		int iFlags = StringToInt(sArg);
 
 		if (StrEqual(sArg, "?", false) || StrEqual(sArg, "help", false)) {
-			PrintToChat(client, "\x01Use: \x04/stats_auto <flags>\x01. Flags is an integer that is the sum of all printouts to be displayed at round-end.");
-			PrintToChat(client, "\x01Set flags to 0 to use server autoprint default; set to -1 to not display anything at all.");
-			PrintToChat(client, "\x01See: \x05https://github.com/Tabbernaut/L4D2-Plugins/blob/master/stats/README.md\x01 for a list of flags.");
+			PrintToChat(client, "\x01使用: \x04/stats_auto <flags>\x01. Flags 是一个整数, 它是在回合结束时显示的所有打印输出的总和.");
+			PrintToChat(client, "\x01将 flags 设置为 0 以使用服务器自动打印默认值; 设置为 -1 以不显示任何内容.");
+			PrintToChat(client, "\x01查看: \x05https://github.com/Tabbernaut/L4D2-Plugins/blob/master/stats/README.md\x01 获取 flags 列表.");
 			return Plugin_Handled;
 		} else if (StrEqual(sArg, "test", false) || StrEqual(sArg, "preview", false)) {
 			if (g_iCookieValue[client] < 1) {
@@ -4631,13 +4631,13 @@ void DisplayStatsFriendlyFire(int client, bool bRound = true, bool bTeam = true,
 
 	// friendly fire -- taken
 	Format(bufBasicHeader, CONBUFSIZE,
-				"\n| Friendly Fire -- Received / Victims -- %10s -- %11s                                     |\n",
+				"\n| 友伤 -- 已收到 / 受害者 -- %10s -- %11s                                     |\n",
 				(bRound) ? "This Round" : "ALL Rounds",
 				(bTeam) ? ((team == LTEAM_A) ? "Team A     " : "Team B     ") : "ALL Players"
 	);
 	
 	Format(bufBasicHeader, CONBUFSIZE, "%s|--------------------------------||---------------------------------------------------------||---------|\n", bufBasicHeader);
-	Format(bufBasicHeader, CONBUFSIZE, "%s| Name                 | Total   || Shotgun | Bullets | Melee  | Fire   | Incapped | Other  || Fall    |\n", bufBasicHeader);
+	Format(bufBasicHeader, CONBUFSIZE, "%s| Name                 | 总数    || 霰弹枪  | 子弹    | 近战   | 火     | 倒地     | 其他   || 跌落    |\n", bufBasicHeader);
 	Format(bufBasicHeader, CONBUFSIZE, "%s|----------------------|---------||---------|---------|--------|--------|----------|--------||---------|", bufBasicHeader);
 
 	if (!strlen(g_sConsoleBuf[g_iConsoleBufChunks])) { 
@@ -7157,7 +7157,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 
 	// build stats content
 	if (bFirstWrite) {
-		FormatEx(strTmpLine, sizeof(strTmpLine), "[Gameround:%i]\n", g_iRound);
+		FormatEx(strTmpLine, sizeof(strTmpLine), "[游戏回合:%i]\n", g_iRound);
 		StrCat(sStats, sizeof(sStats), strTmpLine);
 
 		FormatTime(sTmpTime, sizeof(sTmpTime), "%Y-%m-%d;%H:%M");
@@ -7173,7 +7173,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 	}
 
 	// round data
-	FormatEx(strTmpLine, sizeof(strTmpLine), "[RoundHalf:%i]\n", bSecondHalf);
+	FormatEx(strTmpLine, sizeof(strTmpLine), "[回合:%i]\n", bSecondHalf);
 	StrCat(sStats, sizeof(sStats), strTmpLine);
 
 	// round lines, ";"-delimited: <roundhalf>;<team (A/B)>;<rndStat0>;<etc>;\n
@@ -7228,7 +7228,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 	StrCat(sStats, sizeof(sStats), strTmpLine);
 
 	// player data
-	FormatEx(strTmpLine, sizeof(strTmpLine), "[Players:%s]:\n", (iTeam == LTEAM_A) ? "A" : "B");
+	FormatEx(strTmpLine, sizeof(strTmpLine), "[玩家:%s]:\n", (iTeam == LTEAM_A) ? "A" : "B");
 	StrCat(sStats, sizeof(sStats), strTmpLine);
 
 	int iPlayerCount;
@@ -7253,7 +7253,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 	StrCat(sStats, sizeof(sStats), "\n");
 
 	// infected player data
-	FormatEx(strTmpLine, sizeof(strTmpLine), "[InfectedPlayers:%s]:\n", (iTeam == LTEAM_A) ? "A" : "B");
+	FormatEx(strTmpLine, sizeof(strTmpLine), "[特感玩家:%s]:\n", (iTeam == LTEAM_A) ? "A" : "B");
 	StrCat(sStats, sizeof(sStats), strTmpLine);
 
 	iPlayerCount = 0;
@@ -7288,7 +7288,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 	// only print this once (after both rounds played)
 	if (!bFirstWrite) {
 		// scores (both rounds)
-		FormatEx(strTmpLine, sizeof(strTmpLine), "[Scoring:]\n");
+		FormatEx(strTmpLine, sizeof(strTmpLine), "[计分:]\n");
 		StrCat(sStats, sizeof(sStats), strTmpLine);
 
 		// the scores don't match A/B logical teams, but first/second team to play survivor
@@ -7303,7 +7303,7 @@ void WriteStatsToFile(int iTeam, bool bSecondHalf)
 		StrCat(sStats, sizeof(sStats), strTmpLine);
 
 		// player names
-		FormatEx(strTmpLine, sizeof(strTmpLine), "[PlayerNames:]:\n");
+		FormatEx(strTmpLine, sizeof(strTmpLine), "[玩家名字:]:\n");
 		StrCat(sStats, sizeof(sStats), strTmpLine);
 
 		iPlayerCount = 0;

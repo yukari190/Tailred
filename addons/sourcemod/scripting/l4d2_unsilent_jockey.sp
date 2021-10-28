@@ -251,5 +251,5 @@ void ChangeJockeyTimerStatus(int client, bool bEnable)
             hJockeySoundTimer[client] = null;
         }
     }
-    else hJockeySoundTimer[client] = CreateTimer(fJockeyVoiceInterval, delayedJockeySound, client, TIMER_REPEAT);
+    else hJockeySoundTimer[client] = CreateTimer(fJockeyVoiceInterval, delayedJockeySound, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }

@@ -63,6 +63,7 @@ public void GameConVarChanged(ConVar convar, const char[] oldValue, const char[]
 
 public Action HudDrawTimer(Handle hTimer)
 {
+	if (IsInTransition() || GetSeriousClientCount(true) == 0) return Plugin_Continue;
 	if (l4d2_scripted_hud_hud1_text != null)
 	{
 		Format(curtext, sizeof(curtext), "进度: [ %d%% ]", GetHighestSurvivorFlow());

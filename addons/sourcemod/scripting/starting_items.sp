@@ -49,7 +49,7 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnPluginStart()
 {
-	hCvarItemType = CreateConVar("starting_item_flags", "4", "Item flags to give on leaving the saferoom (1: Kit, 2: Defib, 4: Pills, 8: Adren, 16: Pipebomb, 32: Molotov, 64: Bile)", FCVAR_NONE);
+	hCvarItemType = CreateConVar("starting_item_flags", "4", "Item flags to give on leaving the saferoom (1: Kit, 2: Defib, 4: Pills, 8: Adren, 16: Pipebomb, 32: Molotov, 64: Bile)", FCVAR_SPONLY|FCVAR_NOTIFY);
 }
 
 public void OnRoundIsLive()

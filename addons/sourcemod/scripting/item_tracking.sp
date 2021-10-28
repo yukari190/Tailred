@@ -7,6 +7,8 @@
 #include <left4dhooks>
 #include <l4d2lib>
 
+#define CVAR_FLAGS FCVAR_SPONLY|FCVAR_NOTIFY
+
 public Plugin myinfo = 
 {
 	name = "Item Tracking",
@@ -77,45 +79,37 @@ bool
 
 public void OnPluginStart()
 {
+	// Create item spawns array;
+	for (int i = 0; i < view_as<int>(ItemList); i++)
+	{
+		hItemSpawns[i] = new ArrayList(sizeof(ItemTracking)); 
+	}
+	
 	char sNameBuf[64], sCvarDescBuf[256];
 	
-	hCvarEnabled = CreateConVar("sm_enable_itemtracking", "0", "Enable the itemtracking module");
-	hCvarConsistentSpawns = CreateConVar("sm_itemtracking_savespawns", "0", "Keep item spawns the same on both rounds");
-	hCvarMapSpecificSpawns = CreateConVar("sm_itemtracking_mapspecific", "0", "Change how mapinfo.txt overrides work. 0 = ignore mapinfo.txt, 1 = allow limit reduction, 2 = allow limit increases,");
-	
-	hReplaceFinaleKits = CreateConVar("sm_replace_finalekits", "1", "Replaces finale medkits with pills");
-	hRemoveKits = CreateConVar("sm_remove_statickits", "1", "Remove all static medkits (medkits such as the gun shop, these are compiled into the map)");
+	hCvarEnabled = CreateConVar("sm_enable_itemtracking", "0", "Enable the itemtracking module", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hCvarConsistentSpawns = CreateConVar("sm_itemtracking_savespawns", "0", "Keep item spawns the same on both rounds", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hCvarMapSpecificSpawns = CreateConVar("sm_itemtracking_mapspecific", "0", "Change how mapinfo.txt overrides work. 0 = ignore mapinfo.txt, 1 = allow limit reduction, 2 = allow limit increases,", CVAR_FLAGS, true, 0.0, true, 2.0);
 	
 	// Create itemlimit cvars
 	for(int i = 0; i < view_as<int>(ItemList); i++)
 	{
 		Format(sNameBuf, sizeof(sNameBuf), "sm_%s_limit", sItemNames[i][IN_shortname]);
 		Format(sCvarDescBuf, sizeof(sCvarDescBuf), "Limits the number of %s on each map. -1: no limit; >=0: limit to cvar value", sItemNames[i][IN_longname]);
-		hCvarLimits[i] = CreateConVar(sNameBuf, "-1", sCvarDescBuf);
+		hCvarLimits[i] = CreateConVar(sNameBuf, "-1", sCvarDescBuf, CVAR_FLAGS);
 	}
 	
-	// Create item spawns array;
-	for (int i = 0; i < view_as<int>(ItemList); i++)
-	{
-		hItemSpawns[i] = new ArrayList(sizeof(ItemTracking)); 
-	}
+	hReplaceFinaleKits = CreateConVar("sm_replace_finalekits", "1", "Replaces finale medkits with pills", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveKits = CreateConVar("sm_remove_statickits", "1", "Remove all static medkits (medkits such as the gun shop, these are compiled into the map)", CVAR_FLAGS, true, 0.0, true, 1.0);
+	
+	RegAdminCmd("sm_item_track", Command_ItemTrack, ADMFLAG_ROOT, "");
 }
 
-public void OnEntityCreated(int entity, const char[] classname)
+public Action Command_ItemTrack(int client, int args)
 {
-	ItemList itemindex = GetItemIndexFromEntity(entity, true);
-	if (!IsInTransition() && itemindex >= view_as<ItemList>(0) && !L4D2_IsEntityInSaferoom(entity) && !bExtraWeapon[entity])
-	{
-		if (iItemLimits[itemindex] == 0 || (itemindex == IL_FirstAid && hRemoveKits.BoolValue && (!hReplaceFinaleKits.BoolValue || !L4D_IsMissionFinalMap())))
-		{
-			SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
-		}
-	}
-}
-
-public void fOnEntitySpawned(int entity)
-{
-	RemoveEntityLog(entity);
+	if (!client) return Plugin_Handled;
+	WeaponSearchLoop();
+	return Plugin_Handled;
 }
 
 public void OnMapStart()
@@ -142,7 +136,8 @@ public void OnMapStart()
 
 public void L4D2_OnRealRoundStart()
 {
-	for (int i = MaxClients+1; i <= GetEntityCount(); i++)
+	int iEntCount = GetEntityCount();
+	for (int i = MaxClients+1; i <= iEntCount; i++)
 	{
 		bExtraWeapon[i] = false;
 	}
@@ -192,9 +187,9 @@ void WeaponSearchLoop()
 	}
 }
 
-void CheckEntity(int entity, bool nospawn = false)
+void CheckEntity(int entity)
 {
-	ItemList itemindex = GetItemIndexFromEntity(entity, nospawn);
+	ItemList itemindex = GetItemIndexFromEntity(entity);
 	if (itemindex >= view_as<ItemList>(0) && !L4D2_IsEntityInSaferoom(entity) && !bExtraWeapon[entity])
 	{
 		if (itemindex == IL_FirstAid)
@@ -395,9 +390,9 @@ WeaponId GetWeaponIDFromItemList(ItemList id)
 	return WEPID_NONE;
 }
 
-ItemList GetItemIndexFromEntity(int entity, bool nospawn = false)
+ItemList GetItemIndexFromEntity(int entity)
 {
-	WeaponId id = IdentifyWeapon(entity, nospawn);
+	WeaponId id = IdentifyWeapon(entity);
 	switch(id)
 	{
 		case WEPID_VOMITJAR:

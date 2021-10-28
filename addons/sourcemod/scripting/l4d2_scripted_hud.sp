@@ -51,6 +51,7 @@ public Plugin myinfo =
 #include <sdktools>
 #include <sdkhooks>
 #include <basecomm>
+#include <l4d2lib>
 
 // ====================================================================================================
 // Pragmas
@@ -441,7 +442,7 @@ public void OnPluginStart()
     CreateConVar("l4d2_scripted_hud_version", PLUGIN_VERSION, PLUGIN_DESCRIPTION, CVAR_FLAGS_PLUGIN_VERSION);
     g_hCvar_Enabled          = CreateConVar("l4d2_scripted_hud_enable", "1", "Enable/Disable the plugin.\n0 = Disable, 1 = Enable.", CVAR_FLAGS, true, 0.0, true, 1.0);
     g_hCvar_UpdateInterval   = CreateConVar("l4d2_scripted_hud_update_interval", "0.1", "Interval in seconds to update the HUD.", CVAR_FLAGS, true, 0.1);
-    g_hCvar_HUD1_Text        = CreateConVar("l4d2_scripted_hud_hud1_text", "HUD 1 TEXT", "The text you want to display in the HUD.\nNote: When cvar is empty \"\", plugin will use the predefined HUD text set in the code, check GetHUD*_Text functions.", CVAR_FLAGS);
+    g_hCvar_HUD1_Text        = CreateConVar("l4d2_scripted_hud_hud1_text", "", "The text you want to display in the HUD.\nNote: When cvar is empty \"\", plugin will use the predefined HUD text set in the code, check GetHUD*_Text functions.", CVAR_FLAGS);
     g_hCvar_HUD1_TextAlign   = CreateConVar("l4d2_scripted_hud_hud1_text_align", "1", "Aligns the text horizontally.\n1 = LEFT, 2 = CENTER, 3 = RIGHT.", CVAR_FLAGS, true, 1.0, true, 3.0);
     g_hCvar_HUD1_BlinkTank   = CreateConVar("l4d2_scripted_hud_hud1_blink_tank", "1", "Makes the text blink from white to red while a tank is alive.\n0 = OFF, 1 = ON.", CVAR_FLAGS, true, 0.0, true, 1.0);
     g_hCvar_HUD1_Blink       = CreateConVar("l4d2_scripted_hud_hud1_blink", "0", "Makes the text blink from white to red.\n0 = OFF, 1 = ON.", CVAR_FLAGS, true, 0.0, true, 1.0);
@@ -1017,6 +1018,7 @@ public void Event_TankSpawn(Event event, const char[] name, bool dontBroadcast)
 
 public Action TimerAliveTankCheck(Handle timer)
 {
+    if (IsInTransition() || GetSeriousClientCount(true) == 0) return Plugin_Continue;
     if (g_bAliveTank)
         g_bAliveTank = HasAnyTankAlive();
 
@@ -1726,3 +1728,22 @@ int CountCharInString(const char[] str, char c)
     int tempHealth = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * g_fCvar_pain_pills_decay_rate));
     return tempHealth < 0 ? 0 : tempHealth;
 }*/
+
+stock int GetSeriousClientCount(bool inGame = false)
+{
+	int clients = 0;
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (inGame)
+		{
+			if (IsClientInGame(i) && !IsFakeClient(i)) clients++;
+		}
+		else
+		{
+			if (IsClientConnected(i) && !IsFakeClient(i)) clients++;
+		}
+	}
+	
+	return clients;
+}

@@ -605,13 +605,13 @@ stock PrintLoserz(bool:bSolo, client)
                 {
                     if (mvp_SI_losers[i] == client)
                     {
-                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}SI: {olive}#%d - {blue}({default}%d {green}dmg {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}kills {blue}[{default}%.0f%%{blue}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
+                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}特感: {olive}#%d - {blue}({default}%d {green}伤害 {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}击杀 {blue}[{default}%.0f%%{blue}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
                         CPrintToChat(mvp_SI_losers[i], "%s", tmpBuffer);
                     }
                 }
                 else 
                 {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}SI: {olive}#%d - {blue}({default}%d {green}dmg {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}kills {blue}[{default}%.0f%%{blue}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}特感: {olive}#%d - {blue}({default}%d {green}伤害 {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}击杀 {blue}[{default}%.0f%%{blue}])", (i + 2), iDidDamageAll[mvp_SI_losers[i]], (float(iDidDamageAll[mvp_SI_losers[i]]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI_losers[i]], (float(iGotKills[mvp_SI_losers[i]]) / float(iTotalKills)) * 100);
                     CPrintToChat(mvp_SI_losers[i], "%s", tmpBuffer);
                 }
             }
@@ -635,13 +635,13 @@ stock PrintLoserz(bool:bSolo, client)
                 {
                     if (mvp_CI_losers[i] == client)
                     {
-                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}CI{default}: {olive}#%d {blue}({default}%d {green}common {blue}[{default}%.0f%%{blue}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
+                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}小怪{default}: {olive}#%d {blue}({default}%d {green}小怪 {blue}[{default}%.0f%%{blue}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
                         CPrintToChat(mvp_CI_losers[i], "%s", tmpBuffer);
                     }
                 }
                 else
                 {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}CI{default}: {olive}#%d {blue}({default}%d {green}common {blue}[{default}%.0f%%{blue}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}小怪{default}: {olive}#%d {blue}({default}%d {green}小怪 {blue}[{default}%.0f%%{blue}])", (i + 2), iGotCommon[mvp_CI_losers[i]], (float(iGotCommon[mvp_CI_losers[i]]) / float(iTotalCommon)) * 100);
                     CPrintToChat(mvp_CI_losers[i], "%s", tmpBuffer);
                 }
             }
@@ -665,13 +665,13 @@ stock PrintLoserz(bool:bSolo, client)
                 {
                     if (mvp_FF_losers[i] == client)
                     {
-                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}FF{default}: {olive}#%d {blue}({default}%d {green}friendly fire {blue}[{default}%.0f%%{blue}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
+                        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}友伤{default}: {olive}#%d {blue}({default}%d {green}友伤 {blue}[{default}%.0f%%{blue}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
                         CPrintToChat(mvp_FF_losers[i], "%s", tmpBuffer);
                     }
                 }
                 else
                 {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}Your Rank {green}FF{default}: {olive}#%d {blue}({default}%d {green}friendly fire {blue}[{default}%.0f%%{blue}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}你的排名 {green}友伤{default}: {olive}#%d {blue}({default}%d {green}友伤 {blue}[{default}%.0f%%{blue}])", (i + 2), iDidFF[mvp_FF_losers[i]], (float(iDidFF[mvp_FF_losers[i]]) / float(iTotalFF)) * 100);
                     CPrintToChat(mvp_FF_losers[i], "%s", tmpBuffer);
                 }
             }
@@ -1115,7 +1115,7 @@ String: GetMVPString()
     
     if (mvp_SI == 0 && mvp_Common == 0 && !(iBrevityFlags & BREV_SI && iBrevityFlags & BREV_CI))
     {
-        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}]{default} {blue}({default}not enough action yet{blue}){default}\n");
+        Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}]{default} {blue}({default}行动还不够{blue}){default}\n");
         StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
     }
     else
@@ -1125,17 +1125,17 @@ String: GetMVPString()
             if (mvp_SI > 0)
             {
                 if (iBrevityFlags & BREV_PERCENT) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] SI:\x03 %s \x01(\x05%d \x01dmg,\x05 %d \x01kills)\n", mvp_SI_name, iDidDamageAll[mvp_SI], iGotKills[mvp_SI]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] 特感:\x03 %s \x01(\x05%d \x01伤害,\x05 %d \x01击杀)\n", mvp_SI_name, iDidDamageAll[mvp_SI], iGotKills[mvp_SI]);
                 } else if (iBrevityFlags & BREV_ABSOLUTE) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] SI:\x03 %s \x01(dmg \x04%2.0f%%\x01, kills \x04%.0f%%\x01)\n", mvp_SI_name, (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] 特感:\x03 %s \x01(伤害 \x04%2.0f%%\x01, 击杀 \x04%.0f%%\x01)\n", mvp_SI_name, (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
                 } else {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] SI: {olive}%s {blue}({default}%d {green}dmg {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}kills {blue}[{default}%.0f%%{blue}])\n", mvp_SI_name, iDidDamageAll[mvp_SI], (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI], (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] 特感: {olive}%s {blue}({default}%d {green}伤害 {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}击杀 {blue}[{default}%.0f%%{blue}])\n", mvp_SI_name, iDidDamageAll[mvp_SI], (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI], (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
                 }
                 StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
             else
             {
-                StrCat(printBuffer, sizeof(printBuffer), "{blue}[{default}MVP{blue}] SI: {blue}({default}nobody{blue}){default}\n");
+                StrCat(printBuffer, sizeof(printBuffer), "{blue}[{default}MVP{blue}] 特感: {blue}({default}没有人{blue}){default}\n");
             }
         }
         
@@ -1144,11 +1144,11 @@ String: GetMVPString()
             if (mvp_Common > 0)
             {
                 if (iBrevityFlags & BREV_PERCENT) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] CI:\x03 %s \x01(\x05%d \x01common)\n", mvp_Common_name, iGotCommon[mvp_Common]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] 小怪:\x03 %s \x01(\x05%d \x01小怪)\n", mvp_Common_name, iGotCommon[mvp_Common]);
                 } else if (iBrevityFlags & BREV_ABSOLUTE) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] CI:\x03 %s \x01(\x04%.0f%%\x01)\n", mvp_Common_name, (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[MVP] 小怪:\x03 %s \x01(\x04%.0f%%\x01)\n", mvp_Common_name, (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
                 } else {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] CI: {olive}%s {blue}({default}%d {green}common {blue}[{default}%.0f%%{blue}])\n", mvp_Common_name, iGotCommon[mvp_Common], (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] 小怪: {olive}%s {blue}({default}%d {green}小怪 {blue}[{default}%.0f%%{blue}])\n", mvp_Common_name, iGotCommon[mvp_Common], (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
                 }
                 StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
@@ -1160,17 +1160,17 @@ String: GetMVPString()
     {
         if (mvp_FF == 0)
         {
-            Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] FF{default}: {green}no friendly fire at all!{default}\n");
+            Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] 友伤{default}: {green}没有人黑枪!{default}\n");
             StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
         }
         else
         {
             if (iBrevityFlags & BREV_PERCENT) {
-                Format(tmpBuffer, sizeof(tmpBuffer), "[LVP] FF:\x03 %s \x01(\x05%d \x01dmg)\n", mvp_FF_name, iDidFF[mvp_FF]);
+                Format(tmpBuffer, sizeof(tmpBuffer), "[LVP] 友伤:\x03 %s \x01(\x05%d \x01伤害)\n", mvp_FF_name, iDidFF[mvp_FF]);
             } else if (iBrevityFlags & BREV_ABSOLUTE) {
-                Format(tmpBuffer, sizeof(tmpBuffer), "[LVP] FF:\x03 %s \x01(\x04%.0f%%\x01)\n", mvp_FF_name, (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
+                Format(tmpBuffer, sizeof(tmpBuffer), "[LVP] 友伤:\x03 %s \x01(\x04%.0f%%\x01)\n", mvp_FF_name, (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
             } else {
-                Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] FF{default}: {olive}%s {blue}({default}%d {green}friendly fire {blue}[{default}%.0f%%{blue}]){default}\n", mvp_FF_name, iDidFF[mvp_FF], (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
+                Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] 友伤{default}: {olive}%s {blue}({default}%d {green}友伤 {blue}[{default}%.0f%%{blue}]){default}\n", mvp_FF_name, iDidFF[mvp_FF], (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
             }
             StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
         }

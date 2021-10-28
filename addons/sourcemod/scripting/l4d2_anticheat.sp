@@ -4,6 +4,8 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <l4d2lib>
+#include <l4d2util>
 
 #define CLS_CVAR_MAXLEN	64
 
@@ -52,10 +54,10 @@ public void OnPluginEnd()
 	delete ClientSettingsCheckTimer;
 }
 
-public void OnClientSettingsChanged(int client)
+/*public void OnClientSettingsChanged(int client)
 {
 	if (IsValidAndInGame(client) && !IsFakeClient(client)) AdjustRates(client);
-}
+}*/
 
 public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 {
@@ -67,7 +69,7 @@ public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
 	{
 		SDKUnhook(client, SDKHook_SetTransmit, Hook_SetTransmit);
 	}
-	CreateTimer(1.0, TimerAdjustRates, client);
+	//CreateTimer(1.0, TimerAdjustRates, client);
 }
 
 public Action Hook_SetTransmit(int client, int entity)
@@ -77,10 +79,10 @@ public Action Hook_SetTransmit(int client, int entity)
 	return Plugin_Continue;
 }
 
-public Action TimerAdjustRates(Handle timer, any client)
+/*public Action TimerAdjustRates(Handle timer, any client)
 {
 	if (IsValidAndInGame(client) && !IsFakeClient(client)) AdjustRates(client);
-}
+}*/
 
 //Event
 public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
@@ -176,13 +178,14 @@ public Action _StartClientChecking_Cmd(int args)
 
 public Action _CheckClientSettings_Timer(Handle timer)
 {
+	if (IsInTransition() || GetSeriousClientCount(true) == 0) return Plugin_Continue;
 	EnforceAllCliSettings();
 	return Plugin_Continue;
 }
 
 
 //Stock
-void AdjustRates(int client)
+/*void AdjustRates(int client)
 {
 	float newLerpTime = GetLerpTime(client);
 	if (LerpTime[client] == -1.0)
@@ -205,7 +208,7 @@ float GetLerpTime(int client)
 	if (!GetClientInfo(client, "cl_interp", buffer, sizeof(buffer))) buffer = "";
 	float flLerpAmount = StringToFloat(buffer);	
 	return flLerpAmount;
-}
+}*/
 
 void _AddClientCvar(const char[] cvar, bool hasMin, float min, bool hasMax, float max, CLSAction action)
 {

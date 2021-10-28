@@ -23,6 +23,8 @@
 #include <sdktools>
 #include <sdkhooks>
 
+#define CVAR_FLAGS FCVAR_SPONLY|FCVAR_NOTIFY
+
 bool g_bChoking[MAXPLAYERS+1], g_bBlockReset[MAXPLAYERS+1];
 Handle g_hTimers[MAXPLAYERS+1];
 
@@ -63,10 +65,10 @@ public void OnPluginStart()
 	ConVar tongue_choke_damage_interval = FindConVar("tongue_choke_damage_interval");
 	tongue_choke_damage_interval.GetString(value, sizeof(value));
 	
-	tongue_drag_damage_amount2 = CreateConVar("tongue_drag_damage_amount2", "3", "How much damage the tongue drag does.");
-	tongue_drag_damage_interval = CreateConVar("tongue_drag_damage_interval", value, "How often the drag does damage.");
-	tongue_drag_first_damage_interval = CreateConVar("tongue_drag_first_damage_interval", "-1.0", "After how many seconds do we apply our first tick of damage? | 0.0 to Disable.");
-	tongue_drag_first_damage = CreateConVar("tongue_drag_first_damage", "3.0", "How much damage do we apply on the first tongue hit? | Only applies when first_damage_interval is used");
+	tongue_drag_damage_amount2 = CreateConVar("tongue_drag_damage_amount2", "3", "How much damage the tongue drag does.", CVAR_FLAGS);
+	tongue_drag_damage_interval = CreateConVar("tongue_drag_damage_interval", value, "How often the drag does damage.", CVAR_FLAGS);
+	tongue_drag_first_damage_interval = CreateConVar("tongue_drag_first_damage_interval", "-1.0", "After how many seconds do we apply our first tick of damage? | 0.0 to Disable.", CVAR_FLAGS);
+	tongue_drag_first_damage = CreateConVar("tongue_drag_first_damage", "3.0", "How much damage do we apply on the first tongue hit? | Only applies when first_damage_interval is used", CVAR_FLAGS);
 	
 	tongue_drag_damage_amount2.AddChangeHook(ConVarChange);
 	tongue_drag_damage_interval.AddChangeHook(ConVarChange);
@@ -145,7 +147,7 @@ public void Event_GrabStart(Event event, const char[] name, bool dontBroadcast)
 		if (fFirstTimer < 0.0)
 		{
 			delete g_hTimers[client];
-			g_hTimers[client] = CreateTimer(fTimer, TimerDamage, userid, TIMER_REPEAT);
+			g_hTimers[client] = CreateTimer(fTimer, TimerDamage, userid, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 			return;
 		}
 		
@@ -180,7 +182,7 @@ public Action FirstDamage(Handle hTimer, any userid)
 		}
 		
 		delete g_hTimers[client];
-		g_hTimers[client] = CreateTimer(fTimer, TimerDamage, userid, TIMER_REPEAT);
+		g_hTimers[client] = CreateTimer(fTimer, TimerDamage, userid, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 

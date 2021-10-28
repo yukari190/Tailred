@@ -232,7 +232,7 @@ int
 	iTank,
 	iTankPassCount;
 bool
-	bIsMapInit,
+	bIsMapActive,
 	bInSecondRound,
 	bRoundEnd,
 	bInRound,
@@ -385,14 +385,14 @@ public void OnMapStart()
 	
 	bRoundEnd = false;
 	bInSecondRound = false;
-	bIsMapInit = true;
+	bIsMapActive = true;
 }
 
 public void OnMapEnd()
 {
 	RoundEnd_Event(null, "", false);
 	
-	bIsMapInit = false;
+	bIsMapActive = false;
 	KvRewind(kvMapInfo);
 	KvRewind(kvSafeRoomInfo);
 	bRoundEnd = false;
@@ -439,19 +439,20 @@ public void RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 
 public Action RoundStart_Delay(Handle timer)
 {
-	if (bIsMapInit)
+	if (bIsMapActive)
 	{
-		ResetStatus();
-		
 		if (!bInRound)
 		{
 			bInRound = true;
 			iRoundNumber++;
+			
+			ResetStatus();
+			PrintToServer("%s", g_sMapname);
+			
 			Call_StartForward(hFwdRoundStart);
 			Call_PushCell(iRoundNumber);
 			Call_Finish();
 		}
-		PrintToServer("%s", g_sMapname);
 		return Plugin_Stop;
 	}
 	return Plugin_Continue;
@@ -851,7 +852,7 @@ public any _native_InSecondHalfOfRound(Handle plugin, int numParams)
 
 public any _native_IsInTransition(Handle plugin, int numParams)
 {
-	return !bIsMapInit;
+	return !bIsMapActive;
 }
 
 

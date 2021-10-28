@@ -7,6 +7,8 @@
 #include <l4d2lib>
 #include <l4d2util>
 
+#define CVAR_FLAGS FCVAR_SPONLY|FCVAR_NOTIFY
+
 public Plugin myinfo =
 {
 	name = "Items Remove",
@@ -34,38 +36,25 @@ ConVar
 
 public void OnPluginStart()
 {
-    hNoCans = CreateConVar("sm_remove_cans", "1", "Remove Gascans?", FCVAR_NONE);
-    hNoPropane = CreateConVar("sm_remove_propane", "1", "Remove Propane Tanks?", FCVAR_NONE);
-    hNoOxygen = CreateConVar("sm_remove_oxygen", "1", "Remove Oxygen Tanks?", FCVAR_NONE);
-    hNoFireworks = CreateConVar("sm_remove_fireworks", "1", "Remove Fireworks?", FCVAR_NONE);
-    hNoMinigun = CreateConVar("sm_remove_minigun", "1", "Remove Minigun?", FCVAR_NONE);
-    hNoFuelBarrel = CreateConVar("sm_remove_fuelbarrel", "1", "Remove Fuel Barrel?", FCVAR_NONE);
-	hNoLocker = CreateConVar("sm_remove_locker", "1", "Remove Locker?", FCVAR_NONE);
-	hRemoveLaserSight = CreateConVar("sm_remove_lasersight", "1", "Remove all laser sight upgrades");
-	hRemoveChainsaw = CreateConVar("sm_remove_chainsaw", "1", "Remove all chainsaws");
-	hRemoveGrenade = CreateConVar("sm_remove_grenade", "0", "Remove all grenade launchers");
-	hRemoveM60 = CreateConVar("sm_remove_m60", "0", "Remove all M60 rifles");
-	hRemoveDefib = CreateConVar("sm_remove_defib", "1", "Remove all defibrillators");
-	hRemoveUpgExplosive = CreateConVar("sm_remove_upg_explosive", "1", "Remove all explosive upgrade packs");
-	hRemoveUpgIncendiary = CreateConVar("sm_remove_upg_incendiary", "1", "Remove all incendiary upgrade packs");
-}
-
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (!IsInTransition() && IsCheckItems(entity))
-	{
-		SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
-	}
-}
-
-public void fOnEntitySpawned(int entity)
-{
-	RemoveEntityLog(entity);
+    hNoCans = CreateConVar("sm_remove_cans", "1", "Remove Gascans?", CVAR_FLAGS, true, 0.0, true, 1.0);
+    hNoPropane = CreateConVar("sm_remove_propane", "1", "Remove Propane Tanks?", CVAR_FLAGS, true, 0.0, true, 1.0);
+    hNoOxygen = CreateConVar("sm_remove_oxygen", "1", "Remove Oxygen Tanks?", CVAR_FLAGS, true, 0.0, true, 1.0);
+    hNoFireworks = CreateConVar("sm_remove_fireworks", "1", "Remove Fireworks?", CVAR_FLAGS, true, 0.0, true, 1.0);
+    hNoMinigun = CreateConVar("sm_remove_minigun", "1", "Remove Minigun?", CVAR_FLAGS, true, 0.0, true, 1.0);
+    hNoFuelBarrel = CreateConVar("sm_remove_fuelbarrel", "1", "Remove Fuel Barrel?", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hNoLocker = CreateConVar("sm_remove_locker", "1", "Remove Locker?", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveLaserSight = CreateConVar("sm_remove_lasersight", "1", "Remove all laser sight upgrades", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveChainsaw = CreateConVar("sm_remove_chainsaw", "1", "Remove all chainsaws", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveGrenade = CreateConVar("sm_remove_grenade", "0", "Remove all grenade launchers", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveM60 = CreateConVar("sm_remove_m60", "0", "Remove all M60 rifles", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveDefib = CreateConVar("sm_remove_defib", "1", "Remove all defibrillators", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveUpgExplosive = CreateConVar("sm_remove_upg_explosive", "1", "Remove all explosive upgrade packs", CVAR_FLAGS, true, 0.0, true, 1.0);
+	hRemoveUpgIncendiary = CreateConVar("sm_remove_upg_incendiary", "1", "Remove all incendiary upgrade packs", CVAR_FLAGS, true, 0.0, true, 1.0);
 }
 
 public void L4D2_OnRealRoundStart()
 {
-	CreateTimer(0.3, RoundStartDelay, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(1.0, RoundStartDelay);
 }
 
 public Action RoundStartDelay(Handle hTimer)

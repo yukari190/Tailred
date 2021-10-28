@@ -825,3 +825,23 @@ stock void GetEdictModelName(int entity, char[] name, int size)
 {
 	GetEntPropString(entity, Prop_Data, "m_ModelName", name, size);
 }
+
+
+stock int GetSeriousClientCount(bool inGame = false)
+{
+	int clients = 0;
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (inGame)
+		{
+			if (IsClientInGame(i) && !IsFakeClient(i)) clients++;
+		}
+		else
+		{
+			if (IsClientConnected(i) && !IsFakeClient(i)) clients++;
+		}
+	}
+	
+	return clients;
+}

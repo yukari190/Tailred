@@ -19,6 +19,7 @@
 
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
 
 #define REQUIRE_EXTENSIONS
 #include <sourcescramble>
@@ -55,53 +56,11 @@ public Plugin myinfo =
 };
 
 ConVar 
-	Cvar_Enabled,
 	Cvar_M2;
-
-bool bM2;
+bool
+	bM2;
 
 public void OnPluginStart()
-{
-	CreateConVar("l4d2_cs_ladders", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	Cvar_Enabled	= CreateConVar("cssladders_enabled",			"1",	"Enable the Survivors to shoot from ladders? 1 to enable, 0 to disable.");
-	Cvar_M2			= CreateConVar("cssladders_allow_m2",			"0",	"Allow shoving whilst on a ladder? 1 to allow M2, 0 to block.");
-	
-	Cvar_Enabled.AddChangeHook(Enabled_Change);
-	if (Cvar_Enabled.BoolValue)
-		EnablePlugin();
-	else
-		DisablePlugin();
-	
-	Cvar_M2.AddChangeHook(ConVarChange);
-	
-	ConVarChange(null, "", "");
-}
-
-public void Enabled_Change(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	if (Cvar_Enabled.BoolValue)
-		EnablePlugin();
-	else
-		DisablePlugin();
-}
-
-public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	bM2 = Cvar_M2.BoolValue;
-}
-
-public Action OnPlayerRunCmd(int client, int &buttons)
-{
-	if (!IsValidEdict(client) || GetClientTeam(client) != 2 || !IsPlayerOnLadder(client))
-		return Plugin_Continue;
-	
-	if (!bM2)
-		SetEntPropFloat(client, Prop_Send, "m_flNextShoveTime", GetGameTime() + 0.3);
-	
-	return Plugin_Continue;
-}
-
-void EnablePlugin()
 {
 	Handle hGameData = LoadGameConfigFile(GAMEDATA);
 	if(hGameData == null) 
@@ -150,60 +109,76 @@ void EnablePlugin()
 		PrintToServer("%s Enabled \"%s\" patch", PLUGIN_NAME_KEY, TERROR_ON_LADDER_DISMOUNT_KEY);
 	}
 	delete hGameData;
+	
+	CreateConVar("l4d2_cs_ladders", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	Cvar_M2			= CreateConVar("cssladders_allow_m2",			"0",	"Allow shoving whilst on a ladder? 1 to allow M2, 0 to block.", FCVAR_SPONLY|FCVAR_NOTIFY);
+	Cvar_M2.AddChangeHook(ConVarChange);
+	
+	ConVarChange(null, "", "");
+	
+	HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 }
 
-void DisablePlugin()
+public void ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	Handle hGameData = LoadGameConfigFile(GAMEDATA);
-	if(hGameData == null) 
-		SetFailState("Failed to load \"%s.txt\" gamedata.", GAMEDATA);
+	bM2 = Cvar_M2.BoolValue;
+}
+
+public Action OnPlayerRunCmd(int client, int &buttons)
+{
+	if (!IsSurvivor(client) || !IsPlayerOnLadder(client))
+		return Plugin_Continue;
 	
-	
-	MemoryPatch patcher;
-	patcher = MemoryPatch.CreateFromConf(hGameData, TERROR_CAN_DEPLOY_FOR_KEY);
-	if(!patcher.Validate())
+	if (!bM2)
 	{
-		SetFailState("%s Failed to validate patch \"%s\"", PLUGIN_NAME_KEY, TERROR_CAN_DEPLOY_FOR_KEY);
-	}
-	else if(patcher.Disable())
-	{
-		PrintToServer("%s Disable \"%s\" patch", PLUGIN_NAME_KEY, TERROR_CAN_DEPLOY_FOR_KEY);
-	}
-	
-	patcher = MemoryPatch.CreateFromConf(hGameData, TERROR_PRE_THINK_KEY);
-	if(!patcher.Validate())
-	{
-		SetFailState("%s Failed to validate patch \"%s\"", PLUGIN_NAME_KEY, TERROR_PRE_THINK_KEY);
-	}
-	else if(patcher.Disable())
-	{
-		PrintToServer("%s Disable \"%s\" patch", PLUGIN_NAME_KEY, TERROR_PRE_THINK_KEY);
+		SetEntPropFloat(client, Prop_Send, "m_flNextShoveTime", GetGameTime() + 0.3);
+		
+		/*int activeweapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		if (IsValidEdict(activeweapon))
+		{
+			SetEntPropFloat(activeweapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 0.3);
+		}*/
 	}
 	
-	// not as important as first 2 patches, can still function enough to be good enough.
-	patcher = MemoryPatch.CreateFromConf(hGameData, TERROR_ON_LADDER_MOUNT_KEY);
-	if(!patcher.Validate())
-	{
-		LogError("%s Failed to validate patch \"%s\"", PLUGIN_NAME_KEY, TERROR_ON_LADDER_MOUNT_KEY);
-	}
-	else if(patcher.Disable())
-	{
-		PrintToServer("%s Disable \"%s\" patch", PLUGIN_NAME_KEY, TERROR_ON_LADDER_MOUNT_KEY);
-	}
+	return Plugin_Continue;
+}
+
+public Action PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	int oldteam = event.GetInt("oldteam");
+	int team = event.GetInt("team");
+	if (!IsValidAndInGame(client)) return;
 	
-	patcher = MemoryPatch.CreateFromConf(hGameData, TERROR_ON_LADDER_DISMOUNT_KEY);
-	if(!patcher.Validate())
+	if (team == 2)
 	{
-		LogError("%s Failed to validate patch \"%s\"", PLUGIN_NAME_KEY, TERROR_ON_LADDER_DISMOUNT_KEY);
+		SDKHook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
 	}
-	else if(patcher.Disable())
+	else if (oldteam == 2)
 	{
-		PrintToServer("%s Disable \"%s\" patch", PLUGIN_NAME_KEY, TERROR_ON_LADDER_DISMOUNT_KEY);
+		SDKUnhook(client, SDKHook_WeaponSwitch, OnWeaponSwitch);
 	}
-	delete hGameData;
+}
+
+public Action OnWeaponSwitch(int client, int weapon)
+{
+	if (!IsSurvivor(client) || !IsPlayerOnLadder(client))
+		return Plugin_Continue;
+
+	return Plugin_Handled;
 }
 
 bool IsPlayerOnLadder(int client)
 {
 	return GetEntityMoveType(client) == MOVETYPE_LADDER;
+}
+
+bool IsValidAndInGame(int client)
+{
+	return client > 0 && client <= MaxClients && IsClientInGame(client);
+}
+
+bool IsSurvivor(int client)
+{
+	return IsValidAndInGame(client) && GetClientTeam(client) == 2;
 }

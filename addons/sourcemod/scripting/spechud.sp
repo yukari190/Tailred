@@ -575,7 +575,7 @@ public Action ToggleTankHudCmd(int client, int args)
 // ======================================================================
 public Action HudDrawTimer(Handle hTimer)
 {
-	if (IsInReady() || IsInPause())
+	if (IsInTransition() || GetSeriousClientCount(true) == 0 || IsInReady() || IsInPause())
 		return Plugin_Continue;
 
 	if (bPendingArrayRefresh)

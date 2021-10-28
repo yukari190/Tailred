@@ -7,6 +7,8 @@
 #include <l4d2lib>
 #include <l4d2util>
 
+#define CVAR_FLAGS FCVAR_SPONLY|FCVAR_NOTIFY
+
 #define SAFEROOM_END        1
 #define SAFEROOM_START      2
 
@@ -38,31 +40,16 @@ StringMap
 
 public void OnPluginStart()
 {
-	g_hCvarEnabled = CreateConVar("sm_safeitemkill_enable", "1", "Whether end saferoom items should be removed.", FCVAR_NONE, true, 0.0, true, 1.0);
-	g_hCvarSaferoom = CreateConVar("sm_safeitemkill_saferooms", "1", "Saferooms to empty. Flags: 1 = end saferoom, 2 = start saferoom (3 = kill items from both).", FCVAR_NONE, true, 0.0, false);
-	g_hCvarItems = CreateConVar("sm_safeitemkill_items", "7", "Types to rmove. Flags: 1 = health items, 2 = guns, 4 = melees, 8 = all other usable items", FCVAR_NONE, true, 0.0, false);
+	g_hCvarEnabled = CreateConVar("sm_safeitemkill_enable", "1", "Whether end saferoom items should be removed.", CVAR_FLAGS, true, 0.0, true, 1.0);
+	g_hCvarSaferoom = CreateConVar("sm_safeitemkill_saferooms", "1", "Saferooms to empty. Flags: 1 = end saferoom, 2 = start saferoom (3 = kill items from both).", CVAR_FLAGS, true, 0.0, false);
+	g_hCvarItems = CreateConVar("sm_safeitemkill_items", "7", "Types to rmove. Flags: 1 = health items, 2 = guns, 4 = melees, 8 = all other usable items", CVAR_FLAGS, true, 0.0, false);
 	
 	PrepareTrie();
 }
 
-/*public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (!g_hCvarEnabled.BoolValue) return;
-	eTrieItemKillable checkItem;
-	if (g_hTrieItems.GetValue(classname, checkItem))
-	{
-		SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
-	}
-}
-
-public void fOnEntitySpawned(int entity)
-{
-	CheckEntity(entity);
-}*/
-
 public void L4D2_OnRealRoundStart()
 {
-	CreateTimer(0.3, RoundStartDelay, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.3, RoundStartDelay);
 }
 
 public Action RoundStartDelay(Handle hTimer)

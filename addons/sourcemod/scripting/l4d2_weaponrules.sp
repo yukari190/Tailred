@@ -46,26 +46,14 @@ public void OnPluginStart()
 	
 	RegServerCmd("l4d2_addweaponrule", AddWeaponRuleCb);
 	RegServerCmd("l4d2_resetweaponrules", ResetWeaponRulesCb);
+	RegAdminCmd("sm_item_track", Command_ItemTrack, ADMFLAG_ROOT, "");
 	
 	//HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
 }
 
-public void OnEntityCreated(int entity, const char[] classname)
-{
-	if (!IsInTransition() && g_GlobalWeaponRules[IdentifyWeapon(entity)] != -1)
-	{
-		SDKHook(entity, SDKHook_SpawnPost, fOnEntitySpawned);
-	}
-}
-
-public void fOnEntitySpawned(int entity)
-{
-	CheckEntity(entity);
-}
-
 public void L4D2_OnRealRoundStart()
 {
-	CreateTimer(0.3, RoundStartDelay, _, TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(0.3, RoundStartDelay);
 }
 
 public Action RoundStartDelay(Handle hTimer)
@@ -122,6 +110,13 @@ public Action ResetWeaponRulesCb(int args)
 		g_GlobalWeaponRules[i] = -1;
 	}
     return Plugin_Handled;
+}
+
+public Action Command_ItemTrack(int client, int args)
+{
+	if (!client) return Plugin_Handled;
+	WeaponSearchLoop();
+	return Plugin_Handled;
 }
 
 WeaponId WeaponNameToId2(const char[] name)

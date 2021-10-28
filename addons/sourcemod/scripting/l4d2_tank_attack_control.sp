@@ -1,7 +1,11 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <left4dhooks>
 #include <colors>
 #include <l4d2lib>
+#include <l4d2util>
 
 //throw sequences:
 //48 - (not used unless tank_rock_overhead_percent is changed)
@@ -10,14 +14,16 @@
 //50 - underhand (+use),
 //51 - 2handed overhand (+reload)
 
-new g_iQueuedThrow[MAXPLAYERS + 1];
-new Handle:g_hBlockPunchRock = null;
-new Handle:g_hBlockJumpRock = null;
-new Handle:hOverhandOnly = null;
+ConVar
+	g_hBlockPunchRock = null,
+	g_hBlockJumpRock = null,
+	hOverhandOnly = null;
+int
+	g_iQueuedThrow[MAXPLAYERS + 1];
+float
+	throwQueuedAt[MAXPLAYERS + 1];
 
-new Float:throwQueuedAt[MAXPLAYERS + 1];
-
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "Tank Attack Control", 
 	author = "vintik, CanadaRox, Jacob, Visor",
@@ -26,26 +32,17 @@ public Plugin:myinfo =
 	url = "https://github.com/Attano/L4D2-Competitive-Framework"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	decl String:sGame[256];
-	GetGameFolderName(sGame, sizeof(sGame));
-	if (!StrEqual(sGame, "left4dead2", false))
-	{
-		SetFailState("Plugin supports Left 4 dead 2 only!");
-	}
-	
 	//future-proof remake of the confogl feature (could be used with lgofnoc)
 	g_hBlockPunchRock = CreateConVar("l4d2_block_punch_rock", "1", "Block tanks from punching and throwing a rock at the same time");
 	g_hBlockJumpRock = CreateConVar("l4d2_block_jump_rock", "0", "Block tanks from jumping and throwing a rock at the same time");
 	hOverhandOnly = CreateConVar("tank_overhand_only", "0", "Force tank to only throw overhand rocks.");
-
-	HookEvent("round_start", EventHook:RoundStartEvent, EventHookMode_PostNoCopy);
 }
 
-public RoundStartEvent()
+public void L4D2_OnRealRoundStart()
 {
-	for (new i = 1; i <= MaxClients; i++)
+	for (int i = 1; i <= MAXPLAYERS; i++)
 	{
 		throwQueuedAt[i] = 0.0;
 	}
@@ -55,13 +52,13 @@ public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
 {
 	if (IsFakeClient(newTank)) return;
 
-	new bool:hidemessage = false;
-	decl String:buffer[3];
+	bool hidemessage = false;
+	char buffer[3];
 	if (GetClientInfo(newTank, "rs_hidemessage", buffer, sizeof(buffer)))
 	{
-		hidemessage = bool:StringToInt(buffer);
+		hidemessage = view_as<bool>(StringToInt(buffer));
 	}
-	if (!hidemessage && (GetConVarBool(hOverhandOnly) == false))
+	if (!hidemessage && (hOverhandOnly.BoolValue == false))
 	{
         CPrintToChat(newTank, "{blue}[{default}Tank 岩石选择器{blue}]");
         CPrintToChat(newTank, "{olive}R键 {default}= {blue}双手举过头顶");
@@ -70,11 +67,10 @@ public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
 	}
 }
 
-public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon)
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-	if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != 3
-		|| GetEntProp(client, Prop_Send, "m_zombieClass") != 8)
-			return Plugin_Continue;
+	if (!IsValidClient(client) || !IsTank(client) || IsFakeClient(client))
+		return Plugin_Continue;
 	
 	//if tank
 	if ((buttons & IN_JUMP) && ShouldCancelJump(client))
@@ -82,7 +78,7 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 		buttons &= ~IN_JUMP;
 	}
 	
-	if (GetConVarBool(hOverhandOnly) == false)
+	if (hOverhandOnly.BoolValue == false)
 	{
 		if (buttons & IN_RELOAD)
 		{
@@ -107,18 +103,18 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	return Plugin_Continue;
 }
 
-public Action:L4D_OnCThrowActivate(ability)
+public Action L4D_OnCThrowActivate(int ability)
 {
 	if (!IsValidEntity(ability))
 	{
 		LogMessage("Invalid 'ability_throw' index: %d. Continuing throwing.", ability);
 		return Plugin_Continue;
 	}
-	new client = GetEntPropEnt(ability, Prop_Data, "m_hOwnerEntity");
+	int client = GetEntPropEnt(ability, Prop_Data, "m_hOwnerEntity");
 	
 	if (GetClientButtons(client) & IN_ATTACK)
 	{
-		if (GetConVarBool(g_hBlockPunchRock))
+		if (g_hBlockPunchRock.BoolValue)
 			return Plugin_Handled;
 	}
 	
@@ -126,7 +122,7 @@ public Action:L4D_OnCThrowActivate(ability)
 	return Plugin_Continue;
 }
 
-public Action:L4D2_OnSelectTankAttack(client, &sequence)
+public Action L4D2_OnSelectTankAttack(int client, int &sequence)
 {
 	if (IsFakeClient(client) && sequence == 50)
 	{
@@ -142,9 +138,9 @@ public Action:L4D2_OnSelectTankAttack(client, &sequence)
 	return Plugin_Continue;
 }
 
-bool:ShouldCancelJump(client)
+bool ShouldCancelJump(int client)
 {
-	if (!GetConVarBool(g_hBlockJumpRock))
+	if (!g_hBlockJumpRock.BoolValue)
 	{
 		return false;
 	}

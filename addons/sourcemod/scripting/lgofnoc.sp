@@ -9,7 +9,7 @@
 #define CUSTOM_CFG_DIR "cfgogl"
 
 #define MATCH_EXECCFG_ON "confogl.cfg"  //Execute this config file upon match mode starts and every map after that.
-#define MATCH_EXECCFG_PLUGINS "generalfixes.cfg;server_plugins.cfg;sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
+#define MATCH_EXECCFG_PLUGINS "server_plugins.cfg;sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
 #define MATCH_EXECCFG_OFF "confogl_off.cfg"  //Execute this config file upon match mode ends.
 
 #define MATCH_VOTE "configs/matchmodes/matchmodes.txt"
@@ -32,23 +32,27 @@ enum struct CVSEntry
 	char CVSE_newval[SV_TAG_SIZE];
 }
 
-ArrayList CvarSettingsArray;
+ArrayList
+	CvarSettingsArray;
 
-ConVar hAllBotGame;
+ConVar
+	hAllBotGame;
 
-char 
+char
+	myselfbuf[PLATFORM_MAX_PATH],
 	cfgPath[PLATFORM_MAX_PATH],
 	customCfgPath[PLATFORM_MAX_PATH],
-	matchName[32],
-	map[64];
+	matchName[32];
 
-int DirSeparator;
+int
+	DirSeparator;
 
 bool 
 	bTrackingStarted,
 	bIsMatchModeLoaded;
 
-KeyValues g_hModesKV = null;
+KeyValues
+	g_hModesKV = null;
 
 bool IsHumansOnServer() { for (int i = 1; i <= MaxClients; i++) { if (IsClientConnected(i) && !IsFakeClient(i)) { return true; } } return false; }
 
@@ -112,22 +116,22 @@ public void OnPluginStart()
 	RegServerCmd("confogl_resetcvars", CVS_ResetCvars_Cmd, "Resets enforced ConVars.  Cannot be used during a match!");
 	
 	RegConsoleCmd("sm_match", MatchRequest);
+	
+	// Gotta reserve ourself of course.
+	// - Supports moving the plugin to another folder. (INVALID_HANDLE simply gets the calling plugin)
+	GetPluginFilename(INVALID_HANDLE, myselfbuf, sizeof(myselfbuf));
 }
 
 public void OnPluginEnd()
 {
 	ClearAllCvarSettings();
 	delete CvarSettingsArray;
-	
-	SetConVarInt(hAllBotGame, 0);
-	ServerCommand("sm plugins load_unlock");
-	ServerCommand("sm plugins refresh");
-	ServerCommand("changelevel %s", map);
 }
 
 public void OnMapStart()
 {
-	GetCurrentMap(map, sizeof(map));
+	if(!bIsMatchModeLoaded) return;
+	MatchMode_Load(true);
 }
 
 public void OnConfigsExecuted()
@@ -147,7 +151,7 @@ public Action MatchResetTimer(Handle timer)
 	if (!IsHumansOnServer())
 	{
 		PrintToServer("[UL] 没有人想在这台服务器上玩. :(");
-		MatchMode_Unload(true, true);
+		MatchMode_Unload(true);
 	}
 }
 
@@ -280,13 +284,6 @@ public Action LgoLoadPluginCmd(int args)
 		return Plugin_Handled;
 	}
 	
-	BuildPath(Path_SM, path, sizeof(path), "plugins/optional/LGO/%s", plugin);
-	if (FileExists(path))
-	{
-		ServerCommand("sm plugins load optional/LGO/%s", plugin);
-		return Plugin_Handled;
-	}
-	
 	PrintToServer("Load Failed: Plugin %s not found in plugins/ or plugins/optional/", plugin);
 	return Plugin_Handled;
 }
@@ -294,6 +291,7 @@ public Action LgoLoadPluginCmd(int args)
 public Action LgoStartCmd(int args)
 {
 	if (bIsMatchModeLoaded) {return Plugin_Handled;}
+	ServerCommand("sm plugins load_lock");
 	MatchMode_Load(true);
 	return Plugin_Handled;
 }
@@ -309,8 +307,7 @@ public Action SoftMatchCmd(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	ServerCommand("sm plugins load_unlock");
-	UnloadAllPlugins(false);
+	UnloadAllPlugins();
 	
 	char configbuf[64];
 	GetCmdArg(1, configbuf, sizeof(configbuf));
@@ -334,7 +331,7 @@ public Action ForceMatchCmd(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	MatchMode_Unload(false, false);
+	MatchMode_Unload();
 	
 	char configbuf[64];
 	GetCmdArg(1, configbuf, sizeof(configbuf));
@@ -430,10 +427,9 @@ public int CVS_ConVarChange(Handle convar, const char[] oldValue, const char[] n
 
 int MatchMode_Load(bool LgoStart = false)
 {
-	if (bIsMatchModeLoaded) return;
+	hAllBotGame.IntValue = 1;
 	
-	SetConVarInt(hAllBotGame, 1);
-	if (!LgoStart)
+	if (!LgoStart && !bIsMatchModeLoaded)
 	{
 		ServerCommand("sm plugins load_unlock");
 		char sPieces[32][256];
@@ -444,11 +440,11 @@ int MatchMode_Load(bool LgoStart = false)
 		}
 		return;
 	}
-	ServerCommand("sm plugins load_lock");
 	
-	bIsMatchModeLoaded = true;
-
 	ExecuteConfigCfg(MATCH_EXECCFG_ON);
+	
+	if (bIsMatchModeLoaded) return;
+	bIsMatchModeLoaded = true;
 	
 	PrintToChatAll("\x01[\x05Lgofnoc\x01] Match mode loaded!");
 	
@@ -456,16 +452,15 @@ int MatchMode_Load(bool LgoStart = false)
 	PrintToChatAll("\x01[\x05Lgofnoc\x01] Map will restart in 5 seconds!");
 }
 
-int MatchMode_Unload(bool unloadmyself = false, bool restartMap = true)
+int MatchMode_Unload(bool unloadmyself = false)
 {
 	bIsMatchModeLoaded = false;
 	
 	ExecuteConfigCfg(MATCH_EXECCFG_OFF);
 	
-	ServerCommand("sm plugins load_unlock");
 	UnloadAllPlugins(unloadmyself);
 	
-	if (restartMap) RestartMapCountdown(5.0);
+	//if (bForced) RestartMapCountdown(5.0);
 	
 	PrintToChatAll("Lgofnoc Matchmode unloaded.");
 }
@@ -474,44 +469,56 @@ int MatchMode_Unload(bool unloadmyself = false, bool restartMap = true)
 // 参考了 Sir 的 Predictable Plugin Unloader 插件
 stock int UnloadAllPlugins(bool unloadmyself = false)
 {
-	// Reserved Plugins
 	ArrayList aReservedPlugins = new ArrayList(PLATFORM_MAX_PATH);
-	Handle myself = GetMyHandle();
-	char myselfbuf[64];
-	GetPluginFilename(myself, myselfbuf, sizeof(myselfbuf));
-	PushArrayString(aReservedPlugins, myselfbuf);
-	delete myself;
+	char stockpluginname[64];
+	Handle pluginIterator = GetPluginIterator();
+	Handle currentPlugin;
 	
-	Handle plugit = GetPluginIterator();
-	Handle plugin;
-	char namebuf[64];
-	
-	while (MorePlugins(plugit))
+	while (MorePlugins(pluginIterator))
 	{
-		plugin = ReadPlugin(plugit);
-		GetPluginFilename(plugin, namebuf, sizeof(namebuf));
-		
-		// Prevent double pushing.
-		if (!StrEqual(myselfbuf, namebuf, false))
-			PushArrayString(aReservedPlugins, namebuf);
+		currentPlugin = ReadPlugin(pluginIterator);
+		GetPluginFilename(currentPlugin, stockpluginname, sizeof(stockpluginname));
+
+		// We're not pushing this plugin itself into the array as we'll unload it on a timer at the end.
+		if (!StrEqual(myselfbuf, stockpluginname)) 
+		  PushArrayString(aReservedPlugins, stockpluginname);
 	}
-	delete plugit;
-	delete plugin;
+	
+	CloseHandle(currentPlugin); // This one I probably don't have to close, but whatevs.
+	CloseHandle(pluginIterator);
+	
+	ServerCommand("sm plugins load_unlock");
 	
 	for (int iSize = GetArraySize(aReservedPlugins); iSize > 0; iSize--)
 	{
 		char sReserved[PLATFORM_MAX_PATH];
 		GetArrayString(aReservedPlugins, iSize - 1, sReserved, sizeof(sReserved)); // -1 because of how arrays work. :)
-		if (!unloadmyself)
-		{
-			if (!StrEqual(myselfbuf, sReserved, false)) ServerCommand("sm plugins unload %s", sReserved);
-		}
-		else
-		{
-			ServerCommand("sm plugins unload %s", sReserved);
-		}
+		ServerCommand("sm plugins unload %s", sReserved);
 	}
-	delete aReservedPlugins;
+	
+	CloseHandle(aReservedPlugins);
+	
+	if (unloadmyself)
+	{
+		// Refresh first, then unload this plugin.
+		// Using Timers because these are time crucial and ServerCommands aren't a 100% reliable in terms of execution order.
+		CreateTimer(0.1, RefreshPlugins);
+		CreateTimer(0.5, UnloadSelf);
+	}
+}
+
+public Action RefreshPlugins(Handle timer)
+{
+	ServerCommand("sm plugins refresh");
+}
+
+public Action UnloadSelf(Handle timer)
+{
+	char map[64];
+	GetCurrentMap(map, sizeof(map));
+	hAllBotGame.IntValue = 0;
+	ServerCommand("sm plugins unload %s", myselfbuf);
+	ServerCommand("changelevel %s", map);
 }
 
 void RestartMapCountdown(float time)
@@ -521,6 +528,8 @@ void RestartMapCountdown(float time)
 
 public Action RestartMapCallback(Handle timer)
 {
+	char map[64];
+	GetCurrentMap(map, sizeof(map));
 	ForceChangeLevel(map, "Restarting Map for Lgofnoc");
 }
 

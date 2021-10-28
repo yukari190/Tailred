@@ -71,7 +71,7 @@ public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 {
 	if (!client) return Plugin_Continue;
 	
-	//bool bInWater = (GetEntityFlags(client) & FL_INWATER) ? true : false;
+	bool bInWater = (GetEntityFlags(client) & FL_INWATER) ? true : false;
 	
 	if (IsSurvivor(client))
 	{
@@ -81,7 +81,7 @@ public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 		if (GetEntProp(client, Prop_Send, "m_bAdrenalineActive")) 
 		  return Plugin_Continue;
 
-		if (/*bInWater && */!IsLimping(client))
+		if (bInWater && !IsLimping(client))
 		{
 			retVal = SURVIVOR_RUNSPEED;
 			return Plugin_Handled;
