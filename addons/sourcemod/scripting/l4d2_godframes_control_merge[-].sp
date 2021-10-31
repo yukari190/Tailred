@@ -317,6 +317,7 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 {
 	if (!IS_VALID_SURVIVOR(victim) || !IsValidEdict(attacker) || !IsValidEdict(inflictor)) { return Plugin_Continue; }
 
+	// 这部分功能会在Windows系统下引起崩溃, 因此删除.
 	//new CountdownTimer:cTimerGod = L4D2Direct_GetInvulnerabilityTimer(victim);
 	//if (cTimerGod != CTimer_Null) { CTimer_Invalidate(cTimerGod); }
 

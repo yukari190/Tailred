@@ -69,7 +69,7 @@ public void OnMapStart()
 	g_HaloSprite = PrecacheModel("materials/sun/overlay.vmt");
 }
 
-public Action OnPlayerRunCmd(int client, int &buttons)
+/*public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if (IsInReady() && IsValidAndInGame(client) && IsPlayerAlive(client))
 	{
@@ -85,7 +85,7 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 		}
 	}
 	return Plugin_Continue;
-}
+}*/
 
 public void L4D2_OnRealRoundStart()
 {

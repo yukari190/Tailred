@@ -12,6 +12,91 @@
 		// ====================================================================================================
 		"Functions"
 		{
+			/**
+			 * CTankClaw::DoSwing()
+			 **/
+			"CTankClaw::DoSwing"
+			{
+				"signature"		"CTankClaw::DoSwing"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+			}
+
+			/**
+			 * CTankClaw::GroundPound()
+			 **/
+			"CTankClaw::GroundPound"
+			{
+				"signature"		"CTankClaw::GroundPound"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+			}
+
+			/**
+			 * CTankClaw::OnPlayerHit(CTerrorPlayer*, bool)
+			 **/
+			"CTankClaw::OnPlayerHit"
+			{
+				"signature"		"CTankClaw::OnPlayerHit"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+				"arguments"
+				{
+					"player"
+					{
+						"type"		"cbaseentity"
+					}
+					"incap"
+					{
+						"type"		"bool"
+					}
+				}
+			}
+
+			/**
+			 * CTankRock::Detonate()
+			 **/
+			"CTankRock::Detonate"
+			{
+				"signature"		"CTankRock::Detonate"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+			}
+
+			/**
+			 * CTankRock::OnRelease(Vector const&, QAngle const&, Vector const&, Vector const&)
+			 **/
+			"CTankRock::OnRelease"
+			{
+				"signature"		"CTankRock::OnRelease"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+				"arguments"
+				{
+					"vec"
+					{
+						"type"		"vectorptr"
+					}
+					"ang"
+					{
+						"type"		"vectorptr"
+					}
+					"vec2"
+					{
+						"type"		"vectorptr"
+					}
+					"vec3"
+					{
+						"type"		"vectorptr"
+					}
+				}
+			}
+
 			"CDeathFallCamera::Enable"
 			{
 				"signature"		"CDeathFallCamera::Enable"
@@ -503,6 +588,21 @@
 				}
 			}
 
+			"CTerrorMeleeWeapon::GetDamageForVictim"
+			{
+				"signature"		"CTerrorMeleeWeapon::GetDamageForVictim"
+				"callconv"		"thiscall"
+				"return"		"float"
+				"this"			"entity"
+				"arguments"
+				{
+					"victim"
+					{
+						"type" "cbaseentity"
+					}
+				}
+			}
+
 			"StartMeleeSwing"
 			{
 				"signature"		"StartMeleeSwing"
@@ -706,6 +806,54 @@
 				}
 			}
 
+			/**
+			 * CPipeBombProjectile::Create(Vector const&, QAngle const&, Vector const&, Vector const&, CBaseCombatCharacter *, float)
+			 **/
+			"CPipeBombProjectile_Create"
+			{
+				"signature"		"CPipeBombProjectile_Create"
+				"callconv"		"cdecl"
+				"return"		"cbaseentity"
+				"arguments"
+				{
+					"origin"
+					{
+						"type"		"vectorptr"
+					}
+					"angles"
+					{
+						"type"		"vectorptr"
+					}
+					"velocity"
+					{
+						"type"		"vectorptr"
+					}
+					"rotation"
+					{
+						"type"		"vectorptr"
+					}
+					"owner"
+					{
+						"type"		"cbaseentity"
+					}
+					"duration"
+					{
+						"type"		"float"
+					}
+				}
+			}
+
+			/**
+			 * CTerrorPlayer::Extinguish()
+			 **/
+			"CTerrorPlayer::Extinguish"
+			{
+				"signature"		"CTerrorPlayer::Extinguish"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+			}
+
 			"OnVomitedUpon"
 			{
 				"signature"		"CTerrorPlayer_OnVomitedUpon"
@@ -802,6 +950,74 @@
 					"character"
 					{
 						"type"	"int"
+					}
+				}
+			}
+
+			"CInsectSwarm::CanHarm"
+			{
+				"signature"		"CInsectSwarm::CanHarm"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"entity"
+				"arguments"
+				{
+					"CBaseEntity"
+					{
+						"type"	"cbaseentity"
+					}
+				}
+			}
+
+			"CBreakableProp::Break"
+			{
+				"signature"		"CBreakableProp::Break"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"entity"
+				"arguments"
+				{
+					"entity"
+					{
+						"type"	"cbaseentity"
+					}
+					"a3"
+					{
+						"type"	"int"
+					}
+				}
+			}
+
+			"CGasCan::Event_Killed"
+			{
+				"signature"		"CGasCan::Event_Killed"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"entity"
+				"arguments"
+				{
+					"entity"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
+
+			"CGasCan::OnActionComplete"
+			{
+				"signature"		"CGasCan::OnActionComplete"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"entity"
+				"arguments"
+				{
+					"client"
+					{
+						"type"	"cbaseentity"
+					}
+					"entity"
+					{
+						"type"	"cbaseentity"
 					}
 				}
 			}
@@ -1407,7 +1623,7 @@
 				"linux"		"540"
 			}
 
-			// l4d2weapons.inc offsets
+			// l4d2weapons.inc offsets - Offsets can be found in: "CTerrorWeaponInfo::Parse" and "CCSWeaponInfo::Parse" and "FileWeaponInfo_t::Parse"
 			// L4D2IntWeapon
 			"L4D2IntWeapon_Damage"
 			{
@@ -1672,8 +1888,8 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN19CPipeBombProjectile6CreateERK6VectorRK6QAngleS2_S2_P20CBaseCombatCharacterf"
-				"windows"	"\x55\x8B\x2A\x8B\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x2A\x56\x57\x50\x51\x53\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B"
-				/* 55 8B ? 8B ? ? 8B ? ? 53 8B ? ? 56 57 50 51 53 68 ? ? ? ? E8 ? ? ? ? 8B ? ? ? ? ? 83 ? ? ? ? ? ? 8B ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 8B */
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x2A\x56\x57\x50\x51\x53\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B"
+				/* ? ? ? ? ? ? 8B ? ? 53 8B ? ? 56 57 50 51 53 68 ? ? ? ? E8 ? ? ? ? 8B ? ? ? ? ? 83 ? ? ? ? ? ? 8B ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 8B */
 			}
 
 			/*
@@ -1748,6 +1964,25 @@
 				"windows"	"\x55\x8B\x2A\x51\x53\x56\x8B\x2A\x8D\x2A\x2A\x2A\x2A\x2A\x57\x8B\x2A\xE8"
 				/* 55 8B ? 51 53 56 8B ? 8D ? ? ? ? ? 57 8B ? E8 */
 				/* Search: "%s used adrenaline\n" call is 3rd above, match to Linux. */
+			}
+
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTerrorPlayer::Extinguish()
+			 *
+			 * How to find on Windows:
+			 * 1. Find the function's offsets with asherkin's VTable dump.
+			 * 2. In IDA Pro, go to the ".rdata" section of the Windows binary.
+			 * 3. Search for "CTerrorPlayer::`vftable'" to jump to the "CTerrorPlayer" vtable.
+			 * 4. Compare your dump's offsets with asherkin's dump's offsets to find the target function.
+			 * 5. Look for the target function in the Windows binary.
+			 **/
+			"CTerrorPlayer::Extinguish"
+			{
+				"library"	"server"
+				"linux"		"@_ZN13CTerrorPlayer10ExtinguishEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x53\x56\x57\x8B\x2A\x8B\xB7\x2A\x2A\x2A\x2A\x68"
+				/* ? ? ? ? ? ? 53 56 57 8B ? 8B B7 ? ? ? ? 68 */
 			}
 
 			/*
@@ -2317,6 +2552,104 @@
 				/* ? ? ? ? ? ? ? ? ? ? ? 8D B7 ? ? ? ? 74 ? 8B 86 ? ? ? ? 8B 90 ? ? ? ? 8D 8E ? ? ? ? 56 FF ? C6 ? ? 8B ? 8B 90 ? ? ? ? 8B */
 			}
 
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTankClaw::SweepFist(Vector const&, Vector const&)
+			 *
+			 * How to find on Windows:
+			 * 1a. Search for any of the following strings (they can each only be found in this function):
+			 * - "rhand"
+			 * - "lhand"
+			 * - "ValveBiped.Bip01_L_Hand"
+			 * 1b. Search for the "ValveBiped.Bip01_R_Hand" string.
+			 * 2b. One of the functions that references that string should be this function.
+			 **/
+			"CTankClaw::DoSwing"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTankClaw7DoSwingEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x56\x89\x2A\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x85"
+						/* ? ? ? ? ? ? 56 89 ? ? E8 ? ? ? ? 8B ? 85 */
+			}
+
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTankClaw::GroundPound()
+			 *
+			 * How to find on Windows:
+			 * 1. Locate the "CTankClaw::SweepFist" function.
+			 * 2. Click on the second to last function call to go to "CTerrorWeapon::MarkAsHit".
+			 * 3. This function calls "CTerrorWeapon::MarkAsHit" twice.
+			 * 4. To pinpoint the right function, look for the one that sets multiple variables to "0".
+			 **/
+			"CTankClaw::GroundPound"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTankClaw11GroundPoundEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x83\x2A\x2A\x55\x8B\x2A\x2A\x89\x2A\x2A\x2A\x8B\x2A\x81\xEC\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x56\x57\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x89"
+						/* ? ? ? ? ? ? 83 ? ? 83 ? ? 55 8B ? ? 89 ? ? ? 8B ? 81 EC ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 56 57 8B ? E8 ? ? ? ? 8B ? 89 */
+			}
+
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTankClaw::OnPlayerHit(CTerrorPlayer*, bool)
+			 *
+			 * How to find on Windows:
+			 * 1a. Search for the "PlayerGroundPoundedByTank" string.
+			 * 2a. The string can only be found in this function.
+			 *
+			 * 1b. Find the function's offsets with asherkin's VTable dump.
+			 * 2b. In IDA Pro, go to the ".rdata" section of the Windows binary.
+			 * 3b. Search for "CTankClaw::`vftable'" to jump to the "CTankClaw" vtable.
+			 * 4b. Compare your dump's offsets with asherkin's dump's offsets to find the target function.
+			 * 5b. Look for the target function in the Windows binary.
+			 **/
+			"CTankClaw::OnPlayerHit"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTankClaw11OnPlayerHitEP13CTerrorPlayerb"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x53\x56\x8B\x2A\x2A\x57\x8B\x2A\x89\x2A\x2A\xE8"
+						/* ? ? ? ? ? ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 53 56 8B ? ? 57 8B ? 89 ? ? E8 */
+			}
+
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTankRock::Detonate()
+			 *
+			 * How to find on Windows:
+			 * 1a. Search for the "tank_rock_throw_impact_stump" string.
+			 * 2a. The string can only be found in this function.
+			 *
+			 * 1b. Find the function's offsets with asherkin's VTable dump.
+			 * 2b. In IDA Pro, go to the ".rdata" section of the Windows binary.
+			 * 3b. Search for "CTankRock::`vftable'" to jump to the "CTankRock" vtable.
+			 * 4b. Compare your dump's offsets with asherkin's dump's offsets to find the target function.
+			 * 5b. Look for the target function in the Windows binary.
+			 **/
+			"CTankRock::Detonate"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTankRock8DetonateEv"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x53\x56\x8B\x2A\x80\xBE\x2A\x2A\x2A\x2A\x2A\x57\x0F\x84\x2A\x2A\x2A\x2A\xA1"
+						/* ? ? ? ? ? ? 53 56 8B ? 80 BE ? ? ? ? ? 57 0F 84 ? ? ? ? A1 */
+			}
+
+			/**
+			 * Thanks to "Psyk0tik" from: https://github.com/Psykotikism/L4D1-2_Signatures/blob/main/gamedata/l4d_signatures.txt
+			 * CTankRock::OnRelease(Vector const&, QAngle const&, Vector const&, Vector const&)
+			 *
+			 * How to find on Windows:
+			 * 1. Search for the "HulkZombie.Throw.FlyLoop" string.
+			 * 2. One of the functions that references that string should be this function.
+			 **/
+			"CTankRock::OnRelease"
+			{
+				"library"	"server"
+				"linux"		"@_ZN9CTankRock9OnReleaseERK6VectorRK6QAngleS2_S2_"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x57\xC6\x86\x2A\x2A\x2A\x2A\x2A\xC7"
+						/* ? ? ? ? ? ? 57 C6 86 ? ? ? ? ? C7 */
+			}
+
 			/*
 			 * CTerrorGameRules::GetSurvivorSet(void)
 			 *
@@ -2408,6 +2741,16 @@
 				"linux"		"@_ZN14CBaseAnimating22SelectWeightedSequenceE8Activity"
 				"windows"	"\x55\x8B\xEC\x56\x8B\xF1\x83\xBE\x2A\x2A\x2A\x2A\x00\x57\x8B\xBE"
 				/* 55 8B EC 56 8B F1 83 BE ? ? ? ? 00 57 8B BE */
+			}
+
+			/* Thanks to "Lux" for the signature */
+			"CTerrorMeleeWeapon::GetDamageForVictim"
+			{
+				"library"		"server"
+				"linux"			"@_ZN18CTerrorMeleeWeapon18GetDamageForVictimEP11CBaseEntity"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x17\x00\x00\x56\x57"
+				/* ? ? ? ? ? ? 17 00 00 56 57 */
+				/* Search "MeleeSlashSplatter" - the function with "MeleeClubSplatter" below, and "bloodslash" even lower down. */
 			}
 
 			/*
@@ -2586,12 +2929,54 @@
 				/* 55 8B EC 81 EC ? ? ? ? A1 ? ? ? ? 33 C5 89 45 FC 53 56 57 8B F9 8B 97 ? ? ? ? 8D 85 */
 			}
 
+			/*
+			 * CInsectSwarm::CanHarm(CInsectSwarm *this, CBaseEntity *)
+			 */
+			"CInsectSwarm::CanHarm"
+			{
+				"library"	"server"
+				"linux"		"@_ZNK12CInsectSwarm7CanHarmEP11CBaseEntity"
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x8B\x2A\xFF\x2A\x84\x2A\x74\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x50\xE8\x2A\x2A\x2A\x2A\x83\x2A\x2A\x5E\x5D"
+				/* ? ? ? ? ? ? ? 8B ? 8B ? ? ? ? ? 8B ? FF ? 84 ? 74 ? 8B ? E8 ? ? ? ? 50 E8 ? ? ? ? 83 ? ? 5E 5D */
+				/* Search: "spitter_areaofdenial". Few entries down in vtable. */
+			}
+
+			/* CBreakableProp::Break(CBreakableProp *this, CBaseEntity *a2, const CTakeDamageInfo *a3) */
+			"CBreakableProp::Break"
+			{
+				"library"		"server"
+				"linux"			"@_ZN14CBreakableProp5BreakEP11CBaseEntityRK15CTakeDamageInfo"
+				"windows"		"\x55\x8B\x2A\x81\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x2A\x56\x8B\x2A\x8B\x2A\x8B\x2A\x2A\x89"
+				/* 55 8B ? 81 ? ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 8B ? ? 53 8B ? ? 56 8B ? 8B ? 8B ? ? 89 */
+				/* Search: "Fire prop detonated %.0f,%.0f,%.0f.  Breaker:%s. Attacker:%s.\n" */
+			}
+
+			/* CGasCan::Event_Killed(CGasCan *this, const CTakeDamageInfo *) */
+			"CGasCan::Event_Killed"
+			{
+				"library"		"server"
+				"linux"			"@_ZN7CGasCan12Event_KilledERK15CTakeDamageInfo"
+				"windows"		"\x55\x8B\x2A\x81\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x53\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x56\x8B\x2A\x2A\xC1"
+				/* 55 8B ? 81 ? ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 53 8B ? 8B ? ? ? ? ? 56 8B ? ? C1 */
+				/* Search: "scavenge_gas_can_destroyed" */
+			}
+
+			/* CGasCan::OnActionComplete(CGasCan *this, CTerrorPlayer *, CBaseEntity *) */
+			"CGasCan::OnActionComplete"
+			{
+				"library"		"server"
+				"linux"			"@_ZN7CGasCan16OnActionCompleteEP13CTerrorPlayerP11CBaseEntity"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x83"
+				/* ? ? ? ? ? ? ? ? ? A1 ? ? ? ? 33 ? 89 ? ? 8B ? ? 53 8B ? 8B ? ? ? ? ? 83 */
+				/* Search: "gascan_pour_completed" */
+			}
+
 			/* cdecl BossZombiePlayerBot::ChooseVictim(BossZombiePlayerBot *this, CTerrorPlayer *, char, CBaseCombatCharacter *) */
 			"ChooseVictim"
 			{
 				"library"		"server"
-				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x2A\x53\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x56"
 				"linux"			"@_ZN19BossZombiePlayerBot12ChooseVictimEP13CTerrorPlayeriP20CBaseCombatCharacter"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x2A\x53\x8B\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x56"
 				/* ? ? ? ? ? ? ? ? ? ? ? 83 ? ? ? 53 8B ? 8B ? ? ? ? ? 8B ? ? ? ? ? 56 */ // Wildcarded for 3rd party plugins
 				/* 55 8B ? 83 ? ? ? ? ? ? ? 83 ? ? ? 53 8B ? 8B ? ? ? ? ? 8B */
 				/* Search: "switching to mobile victim" */

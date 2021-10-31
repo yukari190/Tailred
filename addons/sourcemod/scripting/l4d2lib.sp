@@ -405,10 +405,10 @@ public void OnMapEnd()
 
 public Action L4D_OnSpawnTank(const float vector[3], const float qangle[3])
 {
-	if (L4D2Direct_GetTankCount() > 0)
+	/*if (L4D2Direct_GetTankCount() > 0)
 	{
 		return Plugin_Handled;
-	}
+	}*/
 	bExpectTankSpawn = true;
 	return Plugin_Continue;
 }

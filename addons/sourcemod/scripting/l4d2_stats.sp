@@ -122,6 +122,7 @@ public Event_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 	if (g_hBoomerKillTimer != null)
 	{
 		KillTimer(g_hBoomerKillTimer);
+		g_hBoomerKillTimer = null;
 	}
 	BoomerKillTime = 0.0;
 	g_iAlarmCarClient = 0;
@@ -402,6 +403,7 @@ public Event_PlayerShoved(Handle:event, const String:name[], bool:dontBroadcast)
 		if (g_hBoomerShoveTimer != null)
 		{
 			KillTimer(g_hBoomerShoveTimer);
+			g_hBoomerShoveTimer = null;
 			if (!g_iBoomerShover || !IsClientInGame(g_iBoomerShover)) g_iBoomerShover = attacker;
 		}
 		else
