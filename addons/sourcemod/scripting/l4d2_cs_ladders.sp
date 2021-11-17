@@ -131,13 +131,13 @@ public Action OnPlayerRunCmd(int client, int &buttons)
 	
 	if (!bM2)
 	{
-		SetEntPropFloat(client, Prop_Send, "m_flNextShoveTime", GetGameTime() + 0.3);
+		//SetEntPropFloat(client, Prop_Send, "m_flNextShoveTime", GetGameTime() + 0.3);
 		
-		/*int activeweapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		int activeweapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 		if (IsValidEdict(activeweapon))
 		{
 			SetEntPropFloat(activeweapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 0.3);
-		}*/
+		}
 	}
 	
 	return Plugin_Continue;

@@ -20,4 +20,8 @@
 	{
 		"name" "Tailred Versus 1v1"
 	}
+	"tailredcompete"
+	{
+		"name" "Tailred Versus (竞赛配置)"
+	}
 }

@@ -116,7 +116,7 @@ public void OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcas
 	
 	if (!RealClientsInServer(client))
 	{
-		PrintToServer("[UL] No human want to play in this server. :(");
+		PrintToServer("[UL] 没有人想在这台服务器上玩. :(");
 		if (hUnreserve.BoolValue)
 			LobbyUnreserve(false);
 		g_bUnreserved = false;

@@ -19,17 +19,18 @@
 	with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma tabsize 0
 #pragma semicolon 1
 #pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <l4d2lib>
-#define L4D2UTIL_STOCKS_ONLY
+#define L4D2UTIL_STOCKS_ONLY 1
 #include <l4d2util>
 
-int g_GlobalWeaponRules[view_as<int>(WEPID_SIZE)] = {-1, ...};
+int
+	g_GlobalWeaponRules[WEPID_SIZE] = {-1, ...};
 
 public Plugin myinfo =
 {
@@ -42,106 +43,99 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	for (int i = 0; i < view_as<int>(WEPID_SIZE); i++) g_GlobalWeaponRules[i] = -1;
-	
 	RegServerCmd("l4d2_addweaponrule", AddWeaponRuleCb);
 	RegServerCmd("l4d2_resetweaponrules", ResetWeaponRulesCb);
-	RegAdminCmd("sm_item_track", Command_ItemTrack, ADMFLAG_ROOT, "");
+	RegAdminCmd("sm_item_track", Command_ItemTrack, ADMFLAG_ROOT);
 	
-	//HookEvent("player_use", SpawnerGiveItem_Event, EventHookMode_PostNoCopy);
+	ResetWeaponRules();
+}
+
+public Action ResetWeaponRulesCb(int args)
+{
+	ResetWeaponRules();
+	return Plugin_Handled;
+}
+
+void ResetWeaponRules()
+{
+	for (int i = 0; i < WEPID_SIZE; i++)
+	{
+		g_GlobalWeaponRules[i] = -1;
+	}
+}
+
+public Action AddWeaponRuleCb(int args)
+{
+	if (args < 2)
+	{
+		PrintToServer("Usage: l4d2_addweaponrule <match> <replace>");
+		return Plugin_Handled;
+	}
+	
+	char weaponbuf[64];
+	GetCmdArg(1, weaponbuf, sizeof(weaponbuf));
+	int match = WeaponNameToId2(weaponbuf);
+	GetCmdArg(2, weaponbuf, sizeof(weaponbuf));
+	int to = WeaponNameToId2(weaponbuf);
+	AddWeaponRule(match, to);
+	return Plugin_Handled;
+}
+
+void AddWeaponRule(int match, int to)
+{
+	if (IsValidWeaponId(match) && (to == -1 || IsValidWeaponId(to)))
+	{
+		g_GlobalWeaponRules[match] = to;
+	}
+}
+
+public Action Command_ItemTrack(int client, int args)
+{
+	WeaponSearchLoop();
+	return Plugin_Handled;
 }
 
 public void L4D2_OnRealRoundStart()
 {
-	CreateTimer(0.3, RoundStartDelay);
+	CreateTimer(0.3, RoundStartDelay, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action RoundStartDelay(Handle hTimer)
 {
 	WeaponSearchLoop();
+	return Plugin_Stop;
 }
 
 void WeaponSearchLoop()
 {
 	int iEntCount = GetEntityCount();
-	for (int i = MaxClients+1; i <= iEntCount; i++)
+	for (int i = (MaxClients + 1); i <= iEntCount; i++)
 	{
-		CheckEntity(i);
+		int source = IdentifyWeapon(i);
+		if (source > WEPID_NONE && g_GlobalWeaponRules[source] != -1)
+		{
+			if (g_GlobalWeaponRules[source] == WEPID_NONE)
+			{
+				KillEntity(i);
+			}
+			else
+			{
+				ConvertWeaponSpawn(i, g_GlobalWeaponRules[source]);
+			}
+		}
 	}
 }
 
-void CheckEntity(int entity)
+int WeaponNameToId2(const char[] name)
 {
-	WeaponId source = IdentifyWeapon(entity);
-	if (g_GlobalWeaponRules[source] != -1)
+	char namebuf[64] = "weapon_";
+	int wepid = WeaponNameToId(name);
+	
+	if (wepid == WEPID_NONE)
 	{
-		if (g_GlobalWeaponRules[source] == view_as<int>(WEPID_NONE))
-		  RemoveEntityLog(entity);
-		else
-		  ConvertWeaponSpawn(entity, view_as<WeaponId>(g_GlobalWeaponRules[source]));
+		strcopy(namebuf[7], sizeof(namebuf) - 7, name);
+		wepid = WeaponNameToId(namebuf);
 	}
-}
 
-/*public Action SpawnerGiveItem_Event(Event event, const char[] name, bool dontBroadcast)
-{
-	WeaponSearchLoop();
-}*/
-
-public Action AddWeaponRuleCb(int args)
-{
-    if (args < 2)
-    {
-        LogMessage("Usage: l4d2_addweaponrule <match> <replace>");
-        return Plugin_Handled;
-    }
-    char weaponbuf[64];
-    GetCmdArg(1, weaponbuf, sizeof(weaponbuf));
-    WeaponId match = WeaponNameToId2(weaponbuf);
-    GetCmdArg(2, weaponbuf, sizeof(weaponbuf));
-    WeaponId to = WeaponNameToId2(weaponbuf);
-	if (IsValidWeaponId(match) && (to == view_as<WeaponId>(-1) || IsValidWeaponId(to))) g_GlobalWeaponRules[match] = view_as<int>(to);
-    return Plugin_Handled;
-}
-
-public Action ResetWeaponRulesCb(int args)
-{
-	for (int i = 0; i < view_as<int>(WEPID_SIZE); i++)
-	{
-		g_GlobalWeaponRules[i] = -1;
-	}
-    return Plugin_Handled;
-}
-
-public Action Command_ItemTrack(int client, int args)
-{
-	if (!client) return Plugin_Handled;
-	WeaponSearchLoop();
-	return Plugin_Handled;
-}
-
-WeaponId WeaponNameToId2(const char[] name)
-{
-    static char namebuf[64]="weapon_";
-    WeaponId wepid = WeaponNameToId(name);
-    if (wepid == WEPID_NONE)
-    {
-        strcopy(namebuf[7], sizeof(namebuf)-7, name);
-        wepid = WeaponNameToId(namebuf);
-    }
-    return wepid;
-}
-
-void RemoveEntityLog(int entity)
-{
-	char pluginName[128], classname[64];
-	GetPluginFilename(INVALID_HANDLE, pluginName, sizeof(pluginName));
-	GetEdictClassname(entity, classname, 64);
-	if (!AcceptEntityInput(entity, "kill"))
-	{
-		LogError("[%s] 删除实体 %s 失败", pluginName, classname);
-	}
-	else
-	{
-		PrintToServer("[%s] Removed %s", pluginName, classname);
-	}
+	return wepid;
 }

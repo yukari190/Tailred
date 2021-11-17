@@ -15,7 +15,6 @@
 
 
 ConVar 
-    //hPluginEnabled,
     hJockeyVoiceInterval;
 
 
@@ -87,12 +86,10 @@ public void OnPluginStart()
     hJockeyVoiceInterval    = CreateConVar("sm_unsilentjockey_interval", "2.0", "Interval between forced jockey sounds.");
 
     fJockeyVoiceInterval = hJockeyVoiceInterval.FloatValue;
-
-    //hPluginEnabled.AddChangeHook(ConVar_Changed);
     hJockeyVoiceInterval.AddChangeHook(ConVar_Changed);
 
     // Events
-    HookEvent("round_start", RoundStart_Event);
+    HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_spawn", PlayerSpawn_Event);
     HookEvent("player_death", PlayerDeath_Event);
     HookEvent("player_team", PlayerTeam_Event);
@@ -127,16 +124,15 @@ public void L4D_OnEnterGhostState(int client)
 
 public void OnClientDisconnect(int client)
 {
-	ChangeJockeyTimerStatus(client, false);
+    ChangeJockeyTimerStatus(client, false);
 }
 
 public Action RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsClientInGame(i))
-			ChangeJockeyTimerStatus(i, false);
-	}
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        ChangeJockeyTimerStatus(i, false);
+    }
 }
 
 public Action PlayerSpawn_Event(Event event, const char[] name, bool dontBroadcast)
@@ -251,5 +247,5 @@ void ChangeJockeyTimerStatus(int client, bool bEnable)
             hJockeySoundTimer[client] = null;
         }
     }
-    else hJockeySoundTimer[client] = CreateTimer(fJockeyVoiceInterval, delayedJockeySound, client, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+    else hJockeySoundTimer[client] = CreateTimer(fJockeyVoiceInterval, delayedJockeySound, client, TIMER_REPEAT);
 }

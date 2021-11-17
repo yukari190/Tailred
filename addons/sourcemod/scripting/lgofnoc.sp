@@ -1,6 +1,6 @@
-#pragma tabsize 0
 #pragma semicolon 1
 #pragma newdecls required
+
 #include <sourcemod>
 #undef REQUIRE_EXTENSIONS
 #include <builtinvotes>
@@ -9,7 +9,7 @@
 #define CUSTOM_CFG_DIR "cfgogl"
 
 #define MATCH_EXECCFG_ON "confogl.cfg"  //Execute this config file upon match mode starts and every map after that.
-#define MATCH_EXECCFG_PLUGINS "server_plugins.cfg;sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
+#define MATCH_EXECCFG_PLUGINS "sharedplugins.cfg;confogl_plugins.cfg"  //Execute this config file upon match mode starts. This will only get executed once and meant for plugins that needs to be loaded.
 #define MATCH_EXECCFG_OFF "confogl_off.cfg"  //Execute this config file upon match mode ends.
 
 #define MATCH_VOTE "configs/matchmodes/matchmodes.txt"
@@ -21,16 +21,25 @@ public Plugin myinfo =
 	name = "LGOFNOC Config Manager",
 	author = "Confogl Team, Yukari190",
 	description = "A competitive configuration management system for Source games",
-	version = "1.4",
-	url = ""
+	version = "2.1b",
+	url = "https://github.com/yukari190/Tailred"
 }
 
+#if SOURCEMOD_V_MINOR > 9
 enum struct CVSEntry
 {
 	ConVar CVSE_cvar;
 	char CVSE_oldval[SV_TAG_SIZE];
 	char CVSE_newval[SV_TAG_SIZE];
 }
+#else
+enum CVSEntry
+{
+	ConVar:CVSE_cvar,
+	String:CVSE_oldval[SV_TAG_SIZE],
+	String:CVSE_newval[SV_TAG_SIZE]
+};
+#endif
 
 ArrayList
 	CvarSettingsArray;
@@ -54,7 +63,9 @@ bool
 KeyValues
 	g_hModesKV = null;
 
-bool IsHumansOnServer() { for (int i = 1; i <= MaxClients; i++) { if (IsClientConnected(i) && !IsFakeClient(i)) { return true; } } return false; }
+GlobalForward
+	hFwdMatchLoad,
+	hFwdMatchUnload;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -63,9 +74,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
+	hFwdMatchLoad = new GlobalForward("LGO_OnMatchModeLoaded", ET_Ignore);
+	hFwdMatchUnload = new GlobalForward("LGO_OnMatchModeUnloaded", ET_Ignore);
+	CreateNative("LGO_IsMatchModeLoaded", _native_IsMatchModeLoaded);
 	CreateNative("LGO_BuildConfigPath", _native_BuildConfigPath);
 	RegPluginLibrary("lgofnoc");
 	return APLRes_Success;
+}
+
+public any _native_IsMatchModeLoaded(Handle plugin, int numParams)
+{
+	return bIsMatchModeLoaded;
 }
 
 public any _native_BuildConfigPath(Handle plugin, int numParams)
@@ -98,16 +117,21 @@ public void OnPluginStart()
 	if (!FileToKeyValues(g_hModesKV, sBuffer))
 	{
 		delete g_hModesKV;
-		LogError("[LGO] 找不到 matchmodes.txt!");
+		LogError("[lgofnoc] 找不到 %s 文件!", MATCH_VOTE);
 	}
 	
+#if SOURCEMOD_V_MINOR > 9
+	CvarSettingsArray = new ArrayList(sizeof(CVSEntry));
+#else
+	CvarSettingsArray = new ArrayList(view_as<int>(CVSEntry));
+#endif
+
 	hAllBotGame = FindConVar("sb_all_bot_game");
-	RegAdminCmd("sm_forcematch", ForceMatchCmd, ADMFLAG_CONFIG, "Loads matchmode on a given config. Will unload a previous config if one is loaded");
+	RegAdminCmd("sm_forcematch", SoftMatchCmd, ADMFLAG_CONFIG, "Loads matchmode on a given config. Will unload a previous config if one is loaded");
 	RegAdminCmd("sm_softmatch", SoftMatchCmd, ADMFLAG_CONFIG, "Loads matchmode on a given config only if no match is currently running.");
 	RegServerCmd("lgo_loadplugin", LgoLoadPluginCmd);
 	RegServerCmd("lgo_start", LgoStartCmd);
 	
-	CvarSettingsArray = new ArrayList(sizeof(CVSEntry));
 	RegServerCmd("lgo_addcvar", CVS_AddCvar_Cmd, "Add a ConVar to be set by Lgofnoc");
 	RegServerCmd("confogl_addcvar", CVS_AddCvar_Cmd, "Add a ConVar to be set by Confogl");
 	RegServerCmd("lgo_setcvars", CVS_SetCvars_Cmd, "Starts enforcing ConVars that have been added.");
@@ -120,6 +144,16 @@ public void OnPluginStart()
 	// Gotta reserve ourself of course.
 	// - Supports moving the plugin to another folder. (INVALID_HANDLE simply gets the calling plugin)
 	GetPluginFilename(INVALID_HANDLE, myselfbuf, sizeof(myselfbuf));
+}
+
+public int CVS_ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	if (bTrackingStarted)
+	{
+		char name[SV_TAG_SIZE];
+		convar.GetName(name, sizeof(name));
+		PrintToChatAll("!!! [Lgofnoc] Tracked Server CVar \"%s\" changed from \"%s\" to \"%s\" !!!", name, oldValue, newValue);
+	}
 }
 
 public void OnPluginEnd()
@@ -147,46 +181,12 @@ public void OnClientDisconnect(int client)
 
 public Action MatchResetTimer(Handle timer)
 {
-	if (!bIsMatchModeLoaded) return;
+	if (!bIsMatchModeLoaded) return Plugin_Stop;
 	if (!IsHumansOnServer())
 	{
-		PrintToServer("[UL] 没有人想在这台服务器上玩. :(");
 		MatchMode_Unload(true);
 	}
-}
-
-// Commands
-public Action MatchRequest(int client, int args)
-{
-	if (g_hModesKV == null || !client) return Plugin_Handled;
-	char sInfo[64], sBuffer[64];
-	KvRewind(g_hModesKV);
-	if (KvJumpToKey(g_hModesKV, sInfo) && KvGotoFirstSubKey(g_hModesKV))
-	{
-		Handle hMenu = CreateMenu(ConfigsMenuHandler);
-		SetMenuTitle(hMenu, "选择 Match 模式:");
-		do
-		{
-			KvGetSectionName(g_hModesKV, sInfo, sizeof(sInfo));
-			KvGetString(g_hModesKV, "name", sBuffer, sizeof(sBuffer));
-			AddMenuItem(hMenu, sInfo, sBuffer);
-		} while (KvGotoNextKey(g_hModesKV));
-		DisplayMenu(hMenu, client, 20);
-	}
-	return Plugin_Handled;
-}
-
-public int ConfigsMenuHandler(Handle menu, MenuAction action, int param1, int param2)
-{
-	if (action == MenuAction_Select)
-	{
-		char sInfo[64], sBuffer[64];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
-		strcopy(matchName, sizeof(matchName), sInfo);
-		Format(sBuffer, sizeof(sBuffer), "将配置更改为 '%s'?", sBuffer);
-		StartVote(param1, sBuffer);
-	}
-	if (action == MenuAction_End) CloseHandle(menu);
+	return Plugin_Stop;
 }
 
 public Action CVS_SetCvars_Cmd(int args)
@@ -231,24 +231,45 @@ public Action CVS_AddCvar_Cmd(int args)
 		LogError("[Lgofnoc] CvarSettings: Could not find CVar specified (%s)", cvar);
 		return Plugin_Handled;
 	}
+#if SOURCEMOD_V_MINOR > 9
 	CVSEntry newEntry;
 	char cvarBuffer[SV_TAG_SIZE];
-	for (int i; i < GetArraySize(CvarSettingsArray); i++)
+	for (int i; i < CvarSettingsArray.Length; i++)
 	{
 		CvarSettingsArray.GetArray(i, newEntry, sizeof(newEntry));
-		GetConVarName(newEntry.CVSE_cvar, cvarBuffer, SV_TAG_SIZE);
+		newEntry.CVSE_cvar.GetName(cvarBuffer, SV_TAG_SIZE);
 		if (StrEqual(cvar, cvarBuffer, false))
 		{
 			LogError("[Lgofnoc] CvarSettings: Attempt to track ConVar %s, which is already being tracked.", cvar);
 			return Plugin_Handled;
 		}
 	}
-	GetConVarString(newCvar, cvarBuffer, SV_TAG_SIZE);
+	newCvar.GetString(cvarBuffer, SV_TAG_SIZE);
 	newEntry.CVSE_cvar = newCvar;
 	strcopy(newEntry.CVSE_oldval, SV_TAG_SIZE, cvarBuffer);
 	strcopy(newEntry.CVSE_newval, SV_TAG_SIZE, newval);
 	newCvar.AddChangeHook(CVS_ConVarChange);
 	CvarSettingsArray.PushArray(newEntry, sizeof(newEntry));
+#else
+	int newEntry[CVSEntry];
+	char cvarBuffer[SV_TAG_SIZE];
+	for (int i; i < CvarSettingsArray.Length; i++)
+	{
+		CvarSettingsArray.GetArray(i, newEntry[0]);
+		newEntry[CVSE_cvar].GetName(cvarBuffer, SV_TAG_SIZE);
+		if (StrEqual(cvar, cvarBuffer, false))
+		{
+			LogError("[Confogl] CvarSettings: Attempt to track ConVar %s, which is already being tracked.", cvar);
+			return;
+		}
+	}
+	newCvar.GetString(cvarBuffer, SV_TAG_SIZE);
+	newEntry[CVSE_cvar] = newCvar;
+	strcopy(newEntry[CVSE_oldval], SV_TAG_SIZE, cvarBuffer);
+	strcopy(newEntry[CVSE_newval], SV_TAG_SIZE, newval);
+	newCvar.AddChangeHook(CVS_ConVarChange);
+	CvarSettingsArray.PushArray(newEntry[0]);
+#endif
 	return Plugin_Handled;
 }
 
@@ -316,226 +337,77 @@ public Action SoftMatchCmd(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action ForceMatchCmd(int client, int args)
+public Action MatchRequest(int client, int args)
 {
-	if (!bIsMatchModeLoaded)
+	if (g_hModesKV == null)
 	{
-		SoftMatchCmd(client, args);
+		LogError("[lgofnoc] 找不到 %s 文件!", MATCH_VOTE);
 		return Plugin_Handled;
 	}
 	
-	if (args < 1)
+	if (client == 0 || args > 0)
 	{
-		SetCustomCfg("");
-		ReplyToCommand(client, "Must specify a config to use.");
-		return Plugin_Handled;
+		char sInfo[64], sBuffer[64];
+		GetCmdArg(1, sInfo, sizeof(sInfo));
+		if (FindConfigName(sInfo, sBuffer, sizeof(sBuffer)))
+		{
+			strcopy(matchName, sizeof(matchName), sInfo);
+			Format(sBuffer, sizeof(sBuffer), "将配置更改为 '%s'?", sBuffer);
+			StartVote(client, sBuffer);
+			return Plugin_Handled;
+		}
 	}
 	
-	MatchMode_Unload();
-	
-	char configbuf[64];
-	GetCmdArg(1, configbuf, sizeof(configbuf));
-	SetCustomCfg(configbuf);
-	
-	CreateTimer(5.0, TimerMMload);
-	
+	Handle hMenu = CreateMenu(ConfigsMenuHandler);
+	SetMenuTitle(hMenu, "选择 Match 模式:");
+	char sInfo[64], sBuffer[64];
+	g_hModesKV.Rewind();
+	if (g_hModesKV.GotoFirstSubKey())
+	{
+		do
+		{
+			g_hModesKV.GetSectionName(sInfo, sizeof(sInfo));
+			g_hModesKV.GetString("name", sBuffer, sizeof(sBuffer));
+			AddMenuItem(hMenu, sInfo, sBuffer);
+		}
+		while (g_hModesKV.GotoNextKey());
+	}
+	DisplayMenu(hMenu, client, 20);
 	return Plugin_Handled;
 }
 
-public Action TimerMMload(Handle timer)
+bool FindConfigName(const char[] cfg, char[] name, int maxlength)
 {
-	MatchMode_Load();
-}
-
-
-void SetCustomCfg(const char[] cfgname)
-{
-	if (!strlen(cfgname)) return;
-	
-	Format(customCfgPath, sizeof(customCfgPath), "%s%s%c%s", cfgPath, CUSTOM_CFG_DIR, DirSeparator, cfgname);
-	if (!DirExists(customCfgPath))
+	g_hModesKV.Rewind();
+	if (g_hModesKV.JumpToKey(cfg))
 	{
-		LogError("[Configs] Custom config directory %s does not exist!", customCfgPath);
-		// Revert customCfgPath
-		customCfgPath[0]=0;
-		return;
+		g_hModesKV.GetString("name", name, maxlength);
+		return true;
 	}
-	int thislen = strlen(customCfgPath);
-	if (thislen+1 < sizeof(customCfgPath))
+	return false;
+}
+
+public int ConfigsMenuHandler(Handle menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
 	{
-		customCfgPath[thislen] = DirSeparator;
-		customCfgPath[thislen+1] = 0;
+		char sInfo[64], sBuffer[64];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
+		strcopy(matchName, sizeof(matchName), sInfo);
+		Format(sBuffer, sizeof(sBuffer), "将配置更改为 '%s'?", sBuffer);
+		StartVote(param1, sBuffer);
 	}
-	else
-	{
-		LogError("[Configs] Custom config directory %s path too long!", customCfgPath);
-		customCfgPath[0]=0;
-	}
+	if (action == MenuAction_End) CloseHandle(menu);
 }
-
-int ExecuteConfigCfg(const char[] sFileName)
-{
-	if (strlen(sFileName) == 0) return;
-	char sFilePath[PLATFORM_MAX_PATH];
-	if (customCfgPath[0])
-	{
-		Format(sFilePath, sizeof(sFilePath), "%s%s", customCfgPath, sFileName);
-		if (FileExists(sFilePath))
-		{
-			ServerCommand("exec %s%s", customCfgPath[strlen(cfgPath)], sFileName);
-			return;
-		}
-	}
-	Format(sFilePath, sizeof(sFilePath), "%s%s", cfgPath, sFileName);
-	
-	if (FileExists(sFilePath)) ServerCommand("exec %s", sFileName);
-	else LogError("[Configs] Could not execute server config \"%s\", file not found", sFilePath);
-}
-
-int ClearAllCvarSettings()
-{
-	bTrackingStarted = false;
-	CVSEntry cvsetting;
-	for (int i; i < GetArraySize(CvarSettingsArray); i++)
-	{
-		CvarSettingsArray.GetArray(i, cvsetting, sizeof(cvsetting));
-		UnhookConVarChange(cvsetting.CVSE_cvar, CVS_ConVarChange);
-		SetConVarString(cvsetting.CVSE_cvar, cvsetting.CVSE_oldval);
-	}
-	ClearArray(CvarSettingsArray);
-}
-
-int SetEnforcedCvars()
-{
-	CVSEntry cvsetting;
-	for (int i; i < GetArraySize(CvarSettingsArray); i++)
-	{
-		CvarSettingsArray.GetArray(i, cvsetting, sizeof(cvsetting));
-		SetConVarString(cvsetting.CVSE_cvar, cvsetting.CVSE_newval);
-	}
-}
-
-public int CVS_ConVarChange(Handle convar, const char[] oldValue, const char[] newValue)
-{
-	if (bTrackingStarted)
-	{
-		char name[SV_TAG_SIZE];
-		GetConVarName(convar, name, sizeof(name));
-		PrintToChatAll("!!! [Lgofnoc] Tracked Server CVar \"%s\" changed from \"%s\" to \"%s\" !!!", name, oldValue, newValue);
-	}
-}
-
-int MatchMode_Load(bool LgoStart = false)
-{
-	hAllBotGame.IntValue = 1;
-	
-	if (!LgoStart && !bIsMatchModeLoaded)
-	{
-		ServerCommand("sm plugins load_unlock");
-		char sPieces[32][256];
-		int iNumPieces = ExplodeString(MATCH_EXECCFG_PLUGINS, ";", sPieces, sizeof(sPieces), sizeof(sPieces[]));
-		for(int i = 0; i < iNumPieces; i++)
-		{
-			ExecuteConfigCfg(sPieces[i]);
-		}
-		return;
-	}
-	
-	ExecuteConfigCfg(MATCH_EXECCFG_ON);
-	
-	if (bIsMatchModeLoaded) return;
-	bIsMatchModeLoaded = true;
-	
-	PrintToChatAll("\x01[\x05Lgofnoc\x01] Match mode loaded!");
-	
-	RestartMapCountdown(5.0);
-	PrintToChatAll("\x01[\x05Lgofnoc\x01] Map will restart in 5 seconds!");
-}
-
-int MatchMode_Unload(bool unloadmyself = false)
-{
-	bIsMatchModeLoaded = false;
-	
-	ExecuteConfigCfg(MATCH_EXECCFG_OFF);
-	
-	UnloadAllPlugins(unloadmyself);
-	
-	//if (bForced) RestartMapCountdown(5.0);
-	
-	PrintToChatAll("Lgofnoc Matchmode unloaded.");
-}
-
-// Unload all plugins except one
-// 参考了 Sir 的 Predictable Plugin Unloader 插件
-stock int UnloadAllPlugins(bool unloadmyself = false)
-{
-	ArrayList aReservedPlugins = new ArrayList(PLATFORM_MAX_PATH);
-	char stockpluginname[64];
-	Handle pluginIterator = GetPluginIterator();
-	Handle currentPlugin;
-	
-	while (MorePlugins(pluginIterator))
-	{
-		currentPlugin = ReadPlugin(pluginIterator);
-		GetPluginFilename(currentPlugin, stockpluginname, sizeof(stockpluginname));
-
-		// We're not pushing this plugin itself into the array as we'll unload it on a timer at the end.
-		if (!StrEqual(myselfbuf, stockpluginname)) 
-		  PushArrayString(aReservedPlugins, stockpluginname);
-	}
-	
-	CloseHandle(currentPlugin); // This one I probably don't have to close, but whatevs.
-	CloseHandle(pluginIterator);
-	
-	ServerCommand("sm plugins load_unlock");
-	
-	for (int iSize = GetArraySize(aReservedPlugins); iSize > 0; iSize--)
-	{
-		char sReserved[PLATFORM_MAX_PATH];
-		GetArrayString(aReservedPlugins, iSize - 1, sReserved, sizeof(sReserved)); // -1 because of how arrays work. :)
-		ServerCommand("sm plugins unload %s", sReserved);
-	}
-	
-	CloseHandle(aReservedPlugins);
-	
-	if (unloadmyself)
-	{
-		// Refresh first, then unload this plugin.
-		// Using Timers because these are time crucial and ServerCommands aren't a 100% reliable in terms of execution order.
-		CreateTimer(0.1, RefreshPlugins);
-		CreateTimer(0.5, UnloadSelf);
-	}
-}
-
-public Action RefreshPlugins(Handle timer)
-{
-	ServerCommand("sm plugins refresh");
-}
-
-public Action UnloadSelf(Handle timer)
-{
-	char map[64];
-	GetCurrentMap(map, sizeof(map));
-	hAllBotGame.IntValue = 0;
-	ServerCommand("sm plugins unload %s", myselfbuf);
-	ServerCommand("changelevel %s", map);
-}
-
-void RestartMapCountdown(float time)
-{
-	CreateTimer(time, RestartMapCallback);
-}
-
-public Action RestartMapCallback(Handle timer)
-{
-	char map[64];
-	GetCurrentMap(map, sizeof(map));
-	ForceChangeLevel(map, "Restarting Map for Lgofnoc");
-}
-
 
 bool StartVote(int client, char[] sArgument)
 {
+	if (client == 0 || IsClientAdmin(client))
+	{
+		ChangeMatch(matchName);
+		PrintToChatAll("[Lgofnoc] 管理员更改了模式.");
+		return true;
+	}
 	if (!IsNewBuiltinVoteAllowed())
 	{
 		PrintToChat(client, "[Lgofnoc] 无法开始投票.");
@@ -596,10 +468,258 @@ public int VoteResultHandler(Handle vote, int num_votes, int num_clients, const 
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2))
 			{
 				DisplayBuiltinVotePass(vote, " ");
-				ServerCommand("sm_forcematch %s", matchName);
+				ChangeMatch(matchName);
 				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+void ChangeMatch(char[] configbuf)
+{
+	if (!bIsMatchModeLoaded)
+	{
+		UnloadAllPlugins();
+		SetCustomCfg(configbuf);
+		MatchMode_Load();
+	}
+	else
+	{
+		MatchMode_Unload();
+		SetCustomCfg(configbuf);
+		CreateTimer(5.0, TimerMMload);
+	}
+}
+
+public Action TimerMMload(Handle timer)
+{
+	MatchMode_Load();
+	return Plugin_Stop;
+}
+
+void SetCustomCfg(const char[] cfgname)
+{
+	if (!strlen(cfgname)) return;
+	
+	Format(customCfgPath, sizeof(customCfgPath), "%s%s%c%s", cfgPath, CUSTOM_CFG_DIR, DirSeparator, cfgname);
+	if (!DirExists(customCfgPath))
+	{
+		LogError("[Configs] Custom config directory %s does not exist!", customCfgPath);
+		// Revert customCfgPath
+		customCfgPath[0]=0;
+		return;
+	}
+	int thislen = strlen(customCfgPath);
+	if (thislen+1 < sizeof(customCfgPath))
+	{
+		customCfgPath[thislen] = DirSeparator;
+		customCfgPath[thislen+1] = 0;
+	}
+	else
+	{
+		LogError("[Configs] Custom config directory %s path too long!", customCfgPath);
+		customCfgPath[0]=0;
+	}
+}
+
+int ExecuteConfigCfg(const char[] sFileName)
+{
+	if (strlen(sFileName) == 0) return;
+	char sFilePath[PLATFORM_MAX_PATH];
+	if (customCfgPath[0])
+	{
+		Format(sFilePath, sizeof(sFilePath), "%s%s", customCfgPath, sFileName);
+		if (FileExists(sFilePath))
+		{
+			ServerCommand("exec %s%s", customCfgPath[strlen(cfgPath)], sFileName);
+			return;
+		}
+	}
+	Format(sFilePath, sizeof(sFilePath), "%s%s", cfgPath, sFileName);
+	
+	if (FileExists(sFilePath)) ServerCommand("exec %s", sFileName);
+	else LogError("[Configs] Could not execute server config \"%s\", file not found", sFilePath);
+}
+
+int ClearAllCvarSettings()
+{
+	bTrackingStarted = false;
+#if SOURCEMOD_V_MINOR > 9
+	CVSEntry cvsetting;
+	for (int i; i < CvarSettingsArray.Length; i++)
+	{
+		CvarSettingsArray.GetArray(i, cvsetting, sizeof(cvsetting));
+		cvsetting.CVSE_cvar.RemoveChangeHook(CVS_ConVarChange);
+		cvsetting.CVSE_cvar.SetString(cvsetting.CVSE_oldval);
+	}
+#else
+	int cvsetting[CVSEntry];
+	for (int i; i < CvarSettingsArray.Length; i++)
+	{
+		CvarSettingsArray.GetArray(i, cvsetting[0]);
+		cvsetting[CVSE_cvar].RemoveChangeHook(CVS_ConVarChange);
+		cvsetting[CVSE_cvar].SetString(cvsetting[CVSE_oldval]);
+	}
+#endif
+	CvarSettingsArray.Clear();
+}
+
+int SetEnforcedCvars()
+{
+#if SOURCEMOD_V_MINOR > 9
+	CVSEntry cvsetting;
+	for (int i; i < CvarSettingsArray.Length; i++)
+	{
+		CvarSettingsArray.GetArray(i, cvsetting, sizeof(cvsetting));
+		cvsetting.CVSE_cvar.SetString(cvsetting.CVSE_newval);
+	}
+#else
+	int cvsetting[CVSEntry];
+	for (int i; i < CvarSettingsArray.Length; i++)
+	{
+		CvarSettingsArray.GetArray(i, cvsetting[0]);
+		cvsetting[CVSE_cvar].SetString(cvsetting[CVSE_newval]);
+	}
+#endif
+}
+
+int MatchMode_Load(bool LgoStart = false)
+{
+	hAllBotGame.SetInt(1);
+	
+	if (!LgoStart && !bIsMatchModeLoaded)
+	{
+		ServerCommand("sm plugins load_unlock");
+		ServerCommand("exec %s", "generalfixes.cfg");
+		char sPieces[32][256];
+		int iNumPieces = ExplodeString(MATCH_EXECCFG_PLUGINS, ";", sPieces, sizeof(sPieces), sizeof(sPieces[]));
+		for(int i = 0; i < iNumPieces; i++)
+		{
+			ExecuteConfigCfg(sPieces[i]);
+		}
+		return;
+	}
+	
+	ExecuteConfigCfg(MATCH_EXECCFG_ON);
+	
+	if (bIsMatchModeLoaded) return;
+	bIsMatchModeLoaded = true;
+	
+	PrintToChatAll("\x01[\x05Lgofnoc\x01] Match mode loaded!");
+	
+	RestartMapCountdown(5.0);
+	PrintToChatAll("\x01[\x05Lgofnoc\x01] Map will restart in 5 seconds!");
+	
+	Call_StartForward(hFwdMatchLoad);
+	Call_Finish();
+}
+
+int MatchMode_Unload(bool unloadmyself = false)
+{
+	bIsMatchModeLoaded = false;
+	
+	Call_StartForward(hFwdMatchUnload);
+	Call_Finish();
+	
+	ExecuteConfigCfg(MATCH_EXECCFG_OFF);
+	
+	UnloadAllPlugins(unloadmyself);
+	
+	//if (bForced) RestartMapCountdown(5.0);
+	
+	PrintToChatAll("Lgofnoc Matchmode unloaded.");
+}
+
+// Unload all plugins except one
+// 感谢 Sir 的 Predictable Plugin Unloader 插件
+int UnloadAllPlugins(bool unloadmyself = false)
+{
+	ArrayList aReservedPlugins = new ArrayList(PLATFORM_MAX_PATH);
+	char stockpluginname[64];
+	Handle pluginIterator = GetPluginIterator();
+	Handle currentPlugin;
+	
+	while (MorePlugins(pluginIterator))
+	{
+		currentPlugin = ReadPlugin(pluginIterator);
+		GetPluginFilename(currentPlugin, stockpluginname, sizeof(stockpluginname));
+
+		// We're not pushing this plugin itself into the array as we'll unload it on a timer at the end.
+		if (!StrEqual(myselfbuf, stockpluginname)) 
+		  aReservedPlugins.PushString(stockpluginname);
+	}
+	
+	CloseHandle(currentPlugin); // This one I probably don't have to close, but whatevs.
+	CloseHandle(pluginIterator);
+	
+	ServerCommand("sm plugins load_unlock");
+	
+	for (int iSize = aReservedPlugins.Length; iSize > 0; iSize--)
+	{
+		char sReserved[PLATFORM_MAX_PATH];
+		aReservedPlugins.GetString(iSize - 1, sReserved, sizeof(sReserved)); // -1 because of how arrays work. :)
+		ServerCommand("sm plugins unload %s", sReserved);
+	}
+	
+	CloseHandle(aReservedPlugins);
+	
+	if (unloadmyself)
+	{
+		// Refresh first, then unload this plugin.
+		// Using Timers because these are time crucial and ServerCommands aren't a 100% reliable in terms of execution order.
+		CreateTimer(0.1, RefreshPlugins);
+		CreateTimer(0.5, UnloadSelf);
+	}
+}
+
+public Action RefreshPlugins(Handle timer)
+{
+	ServerCommand("sm plugins refresh");
+	return Plugin_Stop;
+}
+
+public Action UnloadSelf(Handle timer)
+{
+	char map[64];
+	GetCurrentMap(map, sizeof(map));
+	hAllBotGame.SetInt(0);
+	ServerCommand("sm plugins unload %s", myselfbuf);
+	ServerCommand("changelevel %s", map);
+	return Plugin_Stop;
+}
+
+void RestartMapCountdown(float time)
+{
+	CreateTimer(time, RestartMapCallback);
+}
+
+public Action RestartMapCallback(Handle timer)
+{
+	char map[64];
+	GetCurrentMap(map, sizeof(map));
+	ForceChangeLevel(map, "Restarting Map for Lgofnoc");
+	return Plugin_Stop;
+}
+
+bool IsHumansOnServer()
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientConnected(i) && !IsFakeClient(i))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool IsClientAdmin(int client)
+{
+	int flags = GetUserFlagBits(client);
+	if (flags & ADMFLAG_ROOT || flags & ADMFLAG_RESERVATION)
+	{
+		return true;
+	}
+	return false;
 }

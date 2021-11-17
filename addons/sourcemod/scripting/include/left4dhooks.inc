@@ -1188,6 +1188,52 @@ forward Action L4D2_CGasCan_ActionComplete(int client, int gascan, int nozzle);
 forward Action L4D2_CInsectSwarm_CanHarm(int acid, int spitter, int entity);
 
 /**
+ * @brief Called whenever CTerrorPlayer::OnPouncedOnSurvivor() is invoked
+ * @remarks Called when a Survivor player is about to be pounced on by a Hunter
+ *
+ * @param victim			the client who's being pounced
+ * @param attacker			the Hunter pouncing on someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnPouncedOnSurvivor(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::GrabVictimWithTongue() is invoked
+ * @remarks Called when a Survivor player is about to be grabbed by a Smoker
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Smoker grabbing someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnGrabWithTongue(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnLeptOnSurvivor() is invoked
+ * @remarks Called when a Survivor player is about to be ridden by a Jockey
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Jockey grabbing someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_OnJockeyRide(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnStartCarryingVictim() is invoked
+ * @remarks Called when a Survivor player is about to be carried by a Charger
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Charger picking up someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_OnStartCarryingVictim(int victim, int attacker);
+
+/**
  * @brief Called whenever CTerrorPlayer::OnVomitedUpon is invoked
  * @remarks Called when a Survivor player is covered in Boomer bile, or when using "Bile the World" plugin by "AtomicStryker"
  *

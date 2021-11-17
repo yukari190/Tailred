@@ -141,6 +141,8 @@ public EventVoteEnd(Handle:event, const String:name[], bool:dontBroadcast)
 public Action:VoteDelay(Handle:timer, any:client)
 {
 	postVoteDelay = false;
+	
+	return Plugin_Stop;
 }
 
 
@@ -408,6 +410,8 @@ public Action:Callvote_Handler(client, args)
 public Action:TimeOutOver(Handle:timer, any:client)
 {
 	inVoteTimeout[client] = false;
+	
+	return Plugin_Stop;
 }
 
 
@@ -782,4 +786,6 @@ public Action:EndCustomVote(Handle:timer, any:client){
 	
 	}
 	customVoteInProgress=false;
+	
+	return Plugin_Stop;
 }

@@ -59,7 +59,7 @@ public void OnPluginStart()
         g_hAccess.AddChangeHook(ConVarChanged_Cvars);
         g_hHideSlots.AddChangeHook(ConVarChanged_Cvars);
 
-        AutoExecConfig(true, "l4d_reservedslots");
+        //AutoExecConfig(true, "l4d_reservedslots");
 
 	if (bLate)
 	{
@@ -132,14 +132,14 @@ public Action OnTimedKick(Handle timer, any client)
 {	
 	if (!client || !IsClientInGame(client))
 	{
-		return Plugin_Handled;
+		return Plugin_Stop;
 	}
 	
 	KickClient(client, MSG_KICK_REASON);
 	
 	CheckHiddenSlots();
 	
-	return Plugin_Handled;
+	return Plugin_Stop;
 }
 
 public bool IsServerFull(int client)

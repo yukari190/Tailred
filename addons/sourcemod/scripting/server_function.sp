@@ -25,7 +25,7 @@ public Plugin myinfo =
 	description = "Yukari190",
 	author = "",
 	version = "1.1",
-	url = ""
+	url = "https://github.com/yukari190/Tailred"
 };
 
 enum VoteType
@@ -50,8 +50,11 @@ TopMenuObject
 	spawn_melee_weapons_menu,
 	spawn_items_menu,
 	respawn_menu,
-	teleport_menu;
+	teleport_menu,
+	give_tank_menu,
+	swap_teams_menu;
 ConVar
+	g_hDisableAddons,
 	hAllowInfectedBots;
 bool 
 	casterSystemAvailable,
@@ -86,20 +89,25 @@ public void OnPluginStart()
 	
 	hAllowInfectedBots = FindConVar("director_allow_infected_bots");
 	
+	g_hDisableAddons = CreateConVar("sm_disable_addons", "0", "Whether to disallow addons", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	
 	RegConsoleCmd("sm_zs", Command_Suicide, "玩家自杀");
 	RegConsoleCmd("sm_vmp", SlotsRequest);
 	RegConsoleCmd("sm_vhp", Command_RestoreHealth);
 	RegConsoleCmd("sm_vcm", ChangeMaps);
 	RegConsoleCmd("sm_vbot", AllowInfectedBots_Cmd);
 	
+	RegAdminCmd("sm_taketank", TS_CMD_TakeTank, ADMFLAG_CHEATS, " Take over the current Tank ");
+	
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != null))
 	  OnAdminMenuReady(top_menu);
 	
-	AddCommandListener(TeamSay_Callback, "say_team");
-	
-	HookEvent("player_changename", Event_NameChange, EventHookMode_Pre);
 	HookEvent("revive_success", EventReviveSuccess);
-	HookEvent("player_bot_replace", PlayerBotReplace);
+}
+
+public Action L4D2_OnClientDisableAddons(const char[] SteamID)
+{
+	return (!g_hDisableAddons.BoolValue || L4D_IsCoopMode() || L4D_IsSurvivalMode()) ? Plugin_Handled : Plugin_Continue;
 }
 
 public void OnClientPutInServer(int client)
@@ -113,34 +121,8 @@ public Action Announce_Timer(Handle timer, any client)
 	{
 		CPrintToChat(client, "{LG}命令: !match(换模式) | !vcm(换地图) | !vmp(修改人数) | !vhp(回血) | !vbot(对抗启用机器人特感)");
 	}
-}
-
-public void L4D2_OnPlayerTeamChanged(int client, int oldteam, int team)
-{
-	if (!IsValidAndInGame(client) || IsFakeClient(client)) return;
-	CreateTimer(1.0, TeamChange_Timer, client);
-}
-
-public Action TeamChange_Timer(Handle timer, any client)
-{
-	if (IsValidAndInGame(client) && !IsFakeClient(client))
-	{
-		if (GetClientTeam(client) == 1)
-			SetEntProp(client, Prop_Send, "m_bNightVisionOn", 1);
-		else
-			SetEntProp(client, Prop_Send, "m_bNightVisionOn", 0);
-	}
-}
-
-
-public Action Event_NameChange(Event event, const char[] name, bool dontBroadcast)
-{
-    int client = GetClientOfUserId(event.GetInt("userid"));
-	if (IsValidSpectator(client))
-	{
-		return Plugin_Handled;
-	}
-    return Plugin_Continue;
+	
+	return Plugin_Stop;
 }
 
 public Action EventReviveSuccess(Event event, const char[] name, bool dontBroadcast)
@@ -151,37 +133,6 @@ public Action EventReviveSuccess(Event event, const char[] name, bool dontBroadc
 		if (!IsValidAndInGame(target)) return;
 		PrintHintTextToAll("%N 黑白了!", target);
 	}
-}
-
-public Action PlayerBotReplace(Event event, const char[] name, bool dontBroadcast)
-{
-	int bot = GetClientOfUserId(event.GetInt("bot"));
-	if (IsValidInfected(bot) && GetInfectedClass(bot) == L4D2Infected_Tank)
-	{
-		PrintToChatAll("[!] Tank控制权丢失, 启用代打模式!");
-	}
-}
-
-
-public Action TeamSay_Callback(int client, char[] command, int args)
-{
-	if (!IsValidAndInGame(client)) return Plugin_Continue;
-	
-	L4D2_Team team = view_as<L4D2_Team>(GetClientTeam(client));
-    if (team == L4D2Team_Survivor || team == L4D2Team_Infected)
-    {
-        char sChat[256];
-        GetCmdArgString(sChat, sizeof(sChat));
-        StripQuotes(sChat);
-        for (int i = 1; i <= MaxClients; i++)
-        {
-            if (IsSpectator(i))
-            {
-                CPrintToChat(i, "{W}%s%N {W}: %s", (team == L4D2Team_Survivor ? "(生还者) {B}" : team == L4D2Team_Infected ? "(感染者) {R}" : "(观众) {W}"), client, sChat);
-            }
-        }
-    }
-    return Plugin_Continue;
 }
 
 public Action Command_Suicide(int client, int args)
@@ -233,22 +184,22 @@ public Action ChangeMaps(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	char sInfo[64], map_name[64];
-	KvRewind(g_hInfoKV);
-	if (KvJumpToKey(g_hInfoKV, sInfo) && KvGotoFirstSubKey(g_hInfoKV))
+	char sMapCode[64], sMapName[64];
+	g_hInfoKV.Rewind();
+	if (g_hInfoKV.GotoFirstSubKey())
 	{
 		Handle hMenu = CreateMenu(Start_Menu);
 		SetMenuTitle(hMenu, "请选择地图:");
 		do
 		{
-			KvGetSectionName(g_hInfoKV, sInfo, sizeof(sInfo));
-			if (IsMapValid(sInfo))
+			g_hInfoKV.GetSectionName(sMapCode, sizeof(sMapCode));
+			if (IsMapValid(sMapCode))
 			{
-				KvGetString(g_hInfoKV, "name", map_name, sizeof(map_name));
-				AddMenuItem(hMenu, sInfo, map_name);
+				g_hInfoKV.GetString("name", sMapName, sizeof(sMapName));
+				AddMenuItem(hMenu, sMapCode, sMapName);
 			}
 		}
-		while (KvGotoNextKey(g_hInfoKV));
+		while (g_hInfoKV.GotoNextKey());
 		SetMenuExitBackButton(hMenu, true);
 		SetMenuExitButton(hMenu, true);
 		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
@@ -282,6 +233,12 @@ public Action AllowInfectedBots_Cmd(int client, int args)
 	return Plugin_Handled;
 }
 
+public Action TS_CMD_TakeTank(int client, int args)
+{
+    TakeTank(client);
+    return Plugin_Handled;
+}
+
 
 void RespawnPlayer(int player_id)
 {
@@ -292,11 +249,11 @@ void RespawnPlayer(int player_id)
 	if(canTeleport)
 		PerformTeleport(client,player_id,g_pos);*/
 	float g_pos[3];
-	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0 || index == player_id) continue;
-		GetClientAbsOrigin(index, g_pos);
+		if (!IsClientInGame(i) || GetClientTeam(i) != 2 || !IsPlayerAlive(i)) continue;
+		if (i == player_id) continue;
+		GetClientAbsOrigin(i, g_pos);
 		g_pos[2]+=40.0;
 		TeleportEntity(player_id, g_pos, NULL_VECTOR, NULL_VECTOR);
 	}
@@ -307,26 +264,32 @@ void SpawnTank(int client)
 	char feedback[64];
 	Format(feedback, sizeof(feedback), "A Tank has been spawned");
 	float location[3];
-	if (!Misc_TraceClientViewToLocation(client, location)) {
-		GetClientAbsOrigin(client, location);
+	if (!L4D_GetRandomPZSpawnPosition(GetRandomSurvivor(), 8, 20, location))
+	{
+		if (!Misc_TraceClientViewToLocation(client, location)) {
+			GetClientAbsOrigin(client, location);
+		}
 	}
 	L4D2_SpawnTank(location, NULL_VECTOR);
 	NotifyPlayers(client, feedback);
 	LogAction(client, -1, "[NOTICE]: (%L) has spawned a Tank", client);
 }
 
-void Do_SpawnInfected(int client, L4D2_Infected class)
+void Do_SpawnInfected(int client, int class)
 {
 	char arguments[16];
 	char feedback[64];
 	GetInfectedClassName(class, arguments, 16);
 	Format(feedback, sizeof(feedback), "A %s has been spawned", arguments);
 	float location[3];
-	if (!Misc_TraceClientViewToLocation(client, location)) {
-		GetClientAbsOrigin(client, location);
+	if (!L4D_GetRandomPZSpawnPosition(GetRandomSurvivor(), class, 20, location))
+	{
+		if (!Misc_TraceClientViewToLocation(client, location)) {
+			GetClientAbsOrigin(client, location);
+		}
 	}
 	//TriggerSpawn(class, location);
-	L4D2_SpawnSpecial(view_as<int>(class), location, NULL_VECTOR);
+	L4D2_SpawnSpecial(class, location, NULL_VECTOR);
 	NotifyPlayers(client, feedback);
 	LogAction(client, -1, "[NOTICE]: (%L) has spawned a %s", client, arguments);
 }
@@ -406,20 +369,23 @@ public void OnAdminMenuReady(Handle menu)
 {
 	if (menu == admin_menu) return;
 	admin_menu = menu;
-	AddToTopMenu(admin_menu, "All4Dead 命令", TopMenuObject_Category, Menu_CategoryHandler, INVALID_TOPMENUOBJECT);
-	TopMenuObject a4d_menu = FindTopMenuCategory(admin_menu, "All4Dead 命令");
+	AddToTopMenu(admin_menu, "管理员工具", TopMenuObject_Category, Menu_CategoryHandler, INVALID_TOPMENUOBJECT);
+	TopMenuObject a4d_menu = FindTopMenuCategory(admin_menu, "管理员工具");
 	if (a4d_menu == INVALID_TOPMENUOBJECT) return;
-	teleport_menu = AddToTopMenu(admin_menu, "a4d_teleport_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_teleport_menu", ADMFLAG_CHEATS);
-	respawn_menu = AddToTopMenu(admin_menu, "a4d_respawn_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_respawn_menu", ADMFLAG_CHEATS);
-	spawn_special_infected_menu = AddToTopMenu(admin_menu, "a4d_spawn_special_infected_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_spawn_special_infected_menu", ADMFLAG_CHEATS);
-	spawn_melee_weapons_menu = AddToTopMenu(admin_menu, "a4d_spawn_melee_weapons_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_spawn_melee_weapons_menu", ADMFLAG_CHEATS);
-	spawn_weapons_menu = AddToTopMenu(admin_menu, "a4d_spawn_weapons_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_spawn_weapons_menu", ADMFLAG_CHEATS);
-	spawn_items_menu = AddToTopMenu(admin_menu, "a4d_spawn_items_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "a4d_spawn_items_menu", ADMFLAG_CHEATS);
+	teleport_menu = AddToTopMenu(admin_menu, "tm_teleport_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_teleport_menu", ADMFLAG_CHEATS);
+	respawn_menu = AddToTopMenu(admin_menu, "tm_respawn_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_respawn_menu", ADMFLAG_CHEATS);
+	spawn_special_infected_menu = AddToTopMenu(admin_menu, "tm_spawn_special_infected_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_spawn_special_infected_menu", ADMFLAG_CHEATS);
+	spawn_melee_weapons_menu = AddToTopMenu(admin_menu, "tm_spawn_melee_weapons_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_spawn_melee_weapons_menu", ADMFLAG_CHEATS);
+	spawn_weapons_menu = AddToTopMenu(admin_menu, "tm_spawn_weapons_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_spawn_weapons_menu", ADMFLAG_CHEATS);
+	spawn_items_menu = AddToTopMenu(admin_menu, "tm_spawn_items_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_spawn_items_menu", ADMFLAG_CHEATS);
+	
+	give_tank_menu = AddToTopMenu(admin_menu, "tm_give_tank_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_give_tank_menu", ADMFLAG_CHEATS);
+	swap_teams_menu = AddToTopMenu(admin_menu, "tm_swap_teams_menu", TopMenuObject_Item, Menu_TopItemHandler, a4d_menu, "tm_swap_teams_menu", ADMFLAG_CHEATS);
 }
 
 public void Menu_CategoryHandler(Handle topmenu, TopMenuAction action, TopMenuObject object_id, int client, char[] buffer, int maxlength) {
-	if (action == TopMenuAction_DisplayTitle) Format(buffer, maxlength, "All4Dead 命令:");
-	else if (action == TopMenuAction_DisplayOption) Format(buffer, maxlength, "All4Dead 命令");
+	if (action == TopMenuAction_DisplayTitle) Format(buffer, maxlength, "管理员工具:");
+	else if (action == TopMenuAction_DisplayOption) Format(buffer, maxlength, "管理员工具");
 }
 
 public void Menu_TopItemHandler(Handle topmenu, TopMenuAction action, TopMenuObject object_id, int client, char[] buffer, int maxlength)
@@ -438,6 +404,11 @@ public void Menu_TopItemHandler(Handle topmenu, TopMenuAction action, TopMenuObj
 			Format(buffer, maxlength, "创建 武器");
 		else if (object_id == spawn_items_menu)
 			Format(buffer, maxlength, "创建 物品");
+			
+		else if (object_id == give_tank_menu)
+			Format(buffer, maxlength, "给坦克");
+		else if (object_id == swap_teams_menu)
+			Format(buffer, maxlength, "交换双方队伍");
 	}
 	else if (action == TopMenuAction_SelectOption)
 	{
@@ -453,6 +424,11 @@ public void Menu_TopItemHandler(Handle topmenu, TopMenuAction action, TopMenuObj
 			Menu_CreateWeaponMenu(client, false);
 		else if (object_id == spawn_items_menu)
 			Menu_CreateItemMenu(client, false);
+			
+		else if (object_id == give_tank_menu)
+			Menu_CreateTankMenu(client, false);
+		else if (object_id == swap_teams_menu)
+			Menu_CreateSwapTeamsMenu(client, false);
 	}
 }
 
@@ -688,7 +664,7 @@ public Action Menu_CreateTeleportMenu(int client, int args)
 	char name[MAX_NAME_LENGTH], number[10];
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (!IsClientInGame(i) || GetClientTeam(i) < 2 || !IsPlayerAlive(i)) continue;
+		if (!IsClientInGame(i) || GetClientTeam(i) != 2 || !IsPlayerAlive(i)) continue;
 		
 		userid = GetClientUserId(i);
 		Format(number, sizeof(number), "%i", userid);
@@ -761,12 +737,11 @@ public int Menu_TPMenuHandler2(Handle menu, MenuAction action, int cindex, int i
 		}
 		else
 		{
-			for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+			for (int i = 1; i <= MaxClients; i++)
 			{
-				int index = L4D2_GetSurvivorOfIndex(i);
-				if (index == 0) continue;
-				if (index == targetClient) continue;
-				TeleportEntityEx(index, targetClient);
+				if (!IsClientInGame(i) || GetClientTeam(i) != 2 || !IsPlayerAlive(i)) continue;
+				if (i == targetClient) continue;
+				TeleportEntityEx(i, targetClient);
 			}
 		}
 	}
@@ -826,36 +801,109 @@ public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, i
 	}
 }
 
+public Action Menu_CreateTankMenu(int client, int args)
+{
+	Handle hMenu = CreateMenu(Menu_CreateTankMenuHandler);
+	SetMenuTitle(hMenu, "你想把坦克交给谁?");
+	SetMenuExitBackButton(hMenu, true);
+	SetMenuExitButton(hMenu, true);
+	
+	char userid[12];
+	char name[MAX_NAME_LENGTH];
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsInfected(i) && !IsFakeClient(i) && GetInfectedClass(i) != L4D2Infected_Tank)
+		{
+			IntToString(GetClientUserId(i), userid, sizeof(userid));
+			GetClientName(i, name, sizeof(name));
+			AddMenuItem(hMenu, userid, name);
+		}
+	}
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public int Menu_CreateTankMenuHandler(Handle menu, MenuAction action, int cindex, int itempos)
+{
+	if (action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if (action == MenuAction_Select)
+	{
+		char sInfo[64];
+		GetMenuItem(menu, itempos, sInfo, sizeof(sInfo));
+		int client = GetClientOfUserId(StringToInt(sInfo));
+		if (!IsValidInfected(client) || GetInfectedClass(client) == L4D2Infected_Tank) return;
+		
+		TakeTank(client);
+		//Menu_CreateTankMenu(cindex, false);
+	}
+	else if (action == MenuAction_Cancel)
+	{
+		if (itempos == MenuCancel_ExitBack && admin_menu != null)
+			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
+	}
+}
+
+public Action Menu_CreateSwapTeamsMenu(int client, int args)
+{
+	FakeClientCommand(client, "sm_swapteams");
+	return Plugin_Handled;
+}
+
+void TakeTank(int client)
+{
+    if (L4D_IsMissionFinalMap()) return;
+    
+    if (!IsValidInfected(client)) return;
+    
+    int target = FindAliveTankClient();
+    
+    if (target == -1)
+    {
+        PrintToChat(client, "There is no human Tank in Play");
+        return;
+    }
+    else if (target == client)
+    {
+        PrintToChat(client, "Dont try to use dangerous SDKCalls with experimental inputs.");
+        return;
+    }
+    
+    if (GetClientHealth(client) > 1 && !IsInfectedGhost(client))
+    {
+        L4D_ReplaceWithBot(client);
+    }
+    L4D_ReplaceTank(target, client);
+}
+
 bool IsClientAdmin(int client)
 {
-	AdminId id = GetUserAdmin(client);
-	if (id == INVALID_ADMIN_ID) return false;
-	if (
-		GetAdminFlag(id, Admin_Reservation) || 
-		GetAdminFlag(id, Admin_Root) || 
-		GetAdminFlag(id, Admin_Kick) || 
-		GetAdminFlag(id, Admin_Generic)
-	) return true;
+	int flags = GetUserFlagBits(client);
+	if (flags & ADMFLAG_ROOT || flags & ADMFLAG_RESERVATION)
+	{
+		return true;
+	}
 	return false;
 }
 
 public Action ChangeLevel(Handle timer)
 {
 	if (IsMapValid(TargetMap_Code)) ForceChangeLevel(TargetMap_Code, "");
-	else ForceChangeLevel("c1m1_hotel", "");
+	
+	return Plugin_Stop;
 }
 
 void RestoreHealth()
 {
-	for (int i = 0; i < L4D2_GetSurvivorCount(); i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		int index = L4D2_GetSurvivorOfIndex(i);
-		if (index == 0) continue;
+		if (!IsClientInGame(i) || GetClientTeam(i) != 2 || !IsPlayerAlive(i)) continue;
 		
-		CheatCommand(index, "give", "health");
-		SetEntPropFloat(index, Prop_Send, "m_healthBuffer", 0.0);		
-		SetEntProp(index, Prop_Send, "m_currentReviveCount", 0); //reset incaps
-		SetEntProp(index, Prop_Send, "m_bIsOnThirdStrike", false);
+		CheatCommand(i, "give", "health");
+		SetEntPropFloat(i, Prop_Send, "m_healthBuffer", 0.0);		
+		SetEntProp(i, Prop_Send, "m_currentReviveCount", 0); //reset incaps
+		SetEntProp(i, Prop_Send, "m_bIsOnThirdStrike", false);
 	}
 }
 

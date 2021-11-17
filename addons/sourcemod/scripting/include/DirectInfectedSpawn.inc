@@ -6,10 +6,10 @@
 /*
  * Reposition the SI to a random point on a 2D grid around the survivors. 
  */
-native bool GridSpawn(L4D2_Infected zombieClass, int attempts, float vecPos[3]);
+native bool GridSpawn(int zombieClass, int attempts, float vecPos[3]);
 
 
-native void TriggerSpawn(L4D2_Infected class, float[3] pos);
+native void TriggerSpawn(int class, float[3] pos);
 
 public SharedPlugin __pl_DirectInfectedSpawn = 
 {

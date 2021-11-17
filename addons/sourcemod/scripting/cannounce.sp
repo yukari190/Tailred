@@ -53,7 +53,7 @@ void PrintFormattedMessageToAll(char rawmsg[301], int client)
 	char steamid[256], ip[16], country[46];
 	bool bIsLanIp;
 	
-	GetClientAuthId(client, AuthId_Steam3, steamid, sizeof(steamid));
+	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid));
 	GetClientIP(client, ip, sizeof(ip)); 
 	bIsLanIp = IsLanIP(ip);
 	if (!GeoipCountry(ip, country, sizeof(country)))

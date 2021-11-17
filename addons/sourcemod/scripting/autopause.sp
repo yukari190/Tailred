@@ -53,7 +53,7 @@ public OnPluginStart() {
 
     HookEvent("round_start", round_start);
     HookEvent("round_end", round_end);
-    HookEvent("player_team", playerTeam);
+    //HookEvent("player_team", playerTeam);
     HookEvent("player_disconnect", playerDisconnect, EventHookMode_Pre);
 }
 
@@ -83,7 +83,7 @@ public round_end(Handle:event, const String:name[], bool:dontBroadcast) {
 }
 
 // Handles players leaving and joining the infected team.
-public playerTeam(Handle:event, const String:name[], bool:dontBroadcast) {
+/*public playerTeam(Handle:event, const String:name[], bool:dontBroadcast) {
     new client = GetClientOfUserId(GetEventInt(event, "userid"));
     if (client <= 0 || client > MaxClients) return;
     decl String:steamId[64];
@@ -109,7 +109,7 @@ public playerTeam(Handle:event, const String:name[], bool:dontBroadcast) {
             if (GetConVarBool(apdebug)) LogMessage("[AutoPause] Added player %s to infected team.", steamId);
         }
     }
-}
+}*/
 
 public playerDisconnect(Handle:event, const String:name[], bool:dontBroadcast) {
     new client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -140,12 +140,12 @@ public playerDisconnect(Handle:event, const String:name[], bool:dontBroadcast) {
             {
                 FakeClientCommand(client, "sm_pause");
             }
-            CPrintToChatAll("{blue}[{default}AutoPause{blue}] {olive}%s {default}crashed.", playerName);
+            CPrintToChatAll("{blue}[{default}AutoPause{blue}] {olive}%s {default}崩溃了.", playerName);
         }
     }
 
     // If the leaving player was on infected, save their spawn timer.
-    if (FindStringInArray(infectedPlayers, steamId) != -1) {
+    /*if (FindStringInArray(infectedPlayers, steamId) != -1) {
         decl Float:timeLeft;
         new CountdownTimer:spawnTimer = L4D2Direct_GetSpawnTimer(client);
         if (spawnTimer != CTimer_Null) {
@@ -153,5 +153,5 @@ public playerDisconnect(Handle:event, const String:name[], bool:dontBroadcast) {
             LogMessage("[AutoPause] Player %s left the game with %f time until spawn.", steamId, timeLeft);
             SetTrieValue(crashedPlayers, steamId, timeLeft);
         }
-    }
+    }*/
 }

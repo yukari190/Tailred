@@ -57,6 +57,10 @@ public Action Round_Start(Event event, const char[] name, bool dontBroadcast)
 
 public void OnEntityCreated(int entity, const char[] classname) 
 {
+    if (classname[0] != 'p') {
+        return;
+    }
+    
     if (StrEqual(classname, "prop_door_rotating_checkpoint")) //Saferoom Door
     {
         CreateTimer(1.0, DelayDoor, entity);
@@ -80,6 +84,8 @@ public Action DelayDoor(Handle timer, any entity)
         }
         else CreateTimer (1.0, NoDoors, entity);
     }
+    
+    return Plugin_Stop;
 }
 
 public Action NoDoors(Handle timer, any entity)
@@ -89,6 +95,8 @@ public Action NoDoors(Handle timer, any entity)
         Door = entity;
         FoundYou();
     }
+    
+    return Plugin_Stop;
 }
 
 void FoundYou()

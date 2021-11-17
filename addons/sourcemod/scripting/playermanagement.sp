@@ -197,6 +197,7 @@ public Action SecureSpec(Handle timer, any client)
 {
 	KillTimer(SpecTimer[client]);
 	SpecTimer[client] = INVALID_HANDLE;
+	return Plugin_Stop;
 }
 
 public Action RespecDelay_Timer(Handle timer, any client)
@@ -206,6 +207,7 @@ public Action RespecDelay_Timer(Handle timer, any client)
 		ChangeClientTeamEx(client, L4D2Team_Spectator, true);
 		blockVotes[client] = false;
 	}
+	return Plugin_Stop;
 }
 
 public Action JoinSurvivor_Cmd(int client, int args)

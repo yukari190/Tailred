@@ -51,6 +51,8 @@ public void OnPluginStart()
 	hCvarSurvivorLimpspeed.AddChangeHook(OnConVarChanged);
 	hCvarTankSpeedVS.AddChangeHook(OnConVarChanged);
 	OnConVarChanged(null, "", "");
+	
+	HookEvent("player_hurt", PlayerHurt_Event, EventHookMode_Post);
 }
 
 public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -59,8 +61,10 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	fTankRunSpeed = hCvarTankSpeedVS.FloatValue;
 }
 
-public void L4D2_OnPlayerHurt(int victim, int attacker, int health, char[] weapon, int damage, int dmgtype, int hitgroup)
+public void PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
 {
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	
 	if (IsValidInfected(victim)) 
 	{
 		SetEntPropFloat(victim, Prop_Send, "m_flVelocityModifier", 1.0);

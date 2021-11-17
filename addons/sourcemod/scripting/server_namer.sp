@@ -95,7 +95,7 @@ public OnPluginStart()
 	
 	g_hNameKV = CreateKeyValues("server_name");
 	BuildPath(Path_SM, filepath, sizeof(filepath), "../../cfg/server1.cfg");
-	if (!FileToKeyValues(g_hNameKV, filepath))
+	if (!g_hNameKV.ImportFromFile(filepath))
 	{
 		SetFailState("server1.cfg not found!");
 	}
@@ -257,10 +257,10 @@ SetConfoglName()
 ParseNameAndSendToMainConVar(String:sBuffer[])
 {
 	char ServerName[128];
-	KvRewind(g_hNameKV);
-	if (KvJumpToKey(g_hNameKV, ServerName) && KvGotoFirstSubKey(g_hNameKV))
+	g_hNameKV.Rewind();
+	if (g_hNameKV.GotoFirstSubKey())
 	{
-		KvGetSectionName(g_hNameKV, ServerName, sizeof(ServerName));
+		g_hNameKV.GetSectionName(ServerName, sizeof(ServerName));
 	}
 	
 	decl String:tBuffer[128];

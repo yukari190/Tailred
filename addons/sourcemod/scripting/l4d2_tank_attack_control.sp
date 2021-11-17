@@ -42,13 +42,13 @@ public void OnPluginStart()
 
 public void L4D2_OnRealRoundStart()
 {
-	for (int i = 1; i <= MAXPLAYERS; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		throwQueuedAt[i] = 0.0;
 	}
 }
 
-public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
+public void L4D2_OnTankPassControl(int oldTank, int newTank)
 {
 	if (IsFakeClient(newTank)) return;
 
@@ -69,7 +69,7 @@ public void L4D2_OnTankPassControl(int oldTank, int newTank, int passCount)
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
-	if (!IsValidClient(client) || !IsTank(client) || IsFakeClient(client))
+	if (!IsValidTank(client) || IsFakeClient(client))
 		return Plugin_Continue;
 	
 	//if tank

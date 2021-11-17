@@ -184,6 +184,8 @@ public Action FirstDamage(Handle hTimer, any userid)
 		delete g_hTimers[client];
 		g_hTimers[client] = CreateTimer(fTimer, TimerDamage, userid, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 	}
+	
+	return Plugin_Stop;
 }
 
 public Action TimerDamage(Handle timer, any client)

@@ -527,6 +527,7 @@ public void OnPluginStart()
     g_hCvar_HUD4_Width       = CreateConVar("l4d2_scripted_hud_hud4_width", "1.5", "Text area Width.", CVAR_FLAGS, true, 0.0, true, 2.0);
     g_hCvar_HUD4_Height      = CreateConVar("l4d2_scripted_hud_hud4_height", "0.026", "Text area Height.", CVAR_FLAGS, true, 0.0, true, 2.0);
 
+    SetConVars();
     // Hook plugin ConVars change
     //g_hCvar_pain_pills_decay_rate.AddChangeHook(Event_ConVarChanged);
     g_hCvar_Enabled.AddChangeHook(Event_ConVarChanged);
@@ -617,7 +618,7 @@ public void OnPluginStart()
     g_hCvar_HUD4_Height.AddChangeHook(Event_ConVarChanged);
 
     // Load plugin configs from .cfg
-    AutoExecConfig(true, CONFIG_FILENAME);
+    //AutoExecConfig(true, CONFIG_FILENAME);
 
     // Admin Commands
     RegAdminCmd("sm_l4d2_scripted_hud_reload_data", CmdReloadData, ADMFLAG_ROOT, "Reload the HUD texts set in the data file.");
@@ -664,8 +665,30 @@ public void LoadPluginData()
 
 /****************************************************************************************************/
 
+void SetConVars()
+{
+	g_hCvar_HUD1_X.SetFloat(0.0);
+	g_hCvar_HUD1_Height.SetFloat(0.029);
+	
+	g_hCvar_HUD2_X.SetFloat(0.1);
+	g_hCvar_HUD2_Y.SetFloat(0.1);
+	g_hCvar_HUD2_Width.SetFloat(1.5);
+	g_hCvar_HUD2_Height.SetFloat(0.029);
+	
+	g_hCvar_HUD3_X.SetFloat(0.1);
+	g_hCvar_HUD3_Y.SetFloat(0.2);
+	g_hCvar_HUD3_Width.SetFloat(1.5);
+	g_hCvar_HUD3_Height.SetFloat(0.029);
+	
+	g_hCvar_HUD4_X.SetFloat(0.1);
+	g_hCvar_HUD4_Y.SetFloat(0.3);
+	g_hCvar_HUD4_Width.SetFloat(1.5);
+	g_hCvar_HUD4_Height.SetFloat(0.029);
+}
+
 public void OnConfigsExecuted()
 {
+    SetConVars();
     GetCvars();
 
     LateLoad();
@@ -689,6 +712,7 @@ public void Event_ConVarChanged(ConVar convar, const char[] oldValue, const char
     else if (convar == g_hCvar_HUD4_Background)
         RequestFrame(OnNextFrameHUDBackground, HUD4);
 
+    SetConVars();
     GetCvars();
 
     HookEvents(g_bCvar_Enabled);
@@ -1018,7 +1042,7 @@ public void Event_TankSpawn(Event event, const char[] name, bool dontBroadcast)
 
 public Action TimerAliveTankCheck(Handle timer)
 {
-    if (IsInTransition() || GetSeriousClientCount(true) == 0) return Plugin_Continue;
+    if ((bIsInTransition() && L4D2_IsInTransition()) || GetSeriousClientCount(true) == 0) return Plugin_Continue;
     if (g_bAliveTank)
         g_bAliveTank = HasAnyTankAlive();
 
@@ -1746,4 +1770,9 @@ stock int GetSeriousClientCount(bool inGame = false)
 	}
 	
 	return clients;
+}
+
+bool bIsInTransition()
+{
+	return (GetFeatureStatus(FeatureType_Native, "L4D2_IsInTransition") != FeatureStatus_Unknown);
 }

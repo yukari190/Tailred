@@ -12,6 +12,8 @@
 
 #define IsFinite(%0) ((%0 & view_as<float>(0x7F800000)) != view_as<float>(0x7F800000))
 
+#define LOGFILE "logs/user_commands.txt"
+
 public Plugin myinfo =
 {
     name = "[L4D2] Usercommands Check",
@@ -80,14 +82,18 @@ bool g_bSMAC;
 ConVar sm_usercmd_null_invalid_commands;
 int g_iNull;
 
+char path[PLATFORM_MAX_PATH];
+
 public void OnPluginStart()
 {
+	BuildPath(Path_SM, path, PLATFORM_MAX_PATH, LOGFILE);
+	
 	m_nTickBase = FindSendPropInfo("CBasePlayer", "m_nTickBase");
 	
 	sm_usercmd_null_invalid_commands = CreateConVar("sm_usercmd_null_invalid_commands", "0", "Null invalid commands");
 	sm_usercmd_null_invalid_commands.AddChangeHook(OnConVarChanged);
 	
-	AutoExecConfig(true, "l4d2_user_commands");
+	//AutoExecConfig(true, "l4d2_user_commands");
 	
 	g_iNull = sm_usercmd_null_invalid_commands.IntValue;
 	
@@ -99,7 +105,7 @@ public void OnPluginStart()
 	
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if (IsClientInGame(i))
+		if ( IsClientConnected(i) )
 		{
 			OnClientPutInServer(i);
 		}
@@ -156,11 +162,11 @@ public MRESReturn ProcessUsercmds (int client, DHookParam params)
 				
 				if ( !g_bSMAC )
 				{
-					LogMessage("Player %L is suspected in using invalid user commands (dropped packets %i)", client, dropped_packets);
+					LogToFile(path, "玩家 %L 被怀疑使用了无效的用户命令 (丢包 %i)", client, dropped_packets);
 				}
 				else
 				{
-					SMAC_Log("Player %L is suspected in using invalid user commands (dropped packets %i)", client, dropped_packets);
+					SMAC_Log("玩家 %L 被怀疑使用了无效的用户命令 (丢包 %i)", client, dropped_packets);
 				}
 			}
 		}

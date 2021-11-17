@@ -52,7 +52,7 @@ new bool:bTiebreakerEligibility[2];
 public Plugin:myinfo =
 {
 	name = "L4D2 Scoremod+",
-	author = "Visor", //Add support sm1.11 - A1m`
+	author = "Visor",
 	description = "The next generation scoring mod",
 	version = "2.2.4",
 	url = "https://github.com/Attano/L4D2-Competitive-Framework"
@@ -73,10 +73,10 @@ public APLRes:AskPluginLoad2(Handle:plugin, bool:late, String:error[], errMax)
 
 public OnPluginStart()
 {
-	hCvarBonusPerSurvivorMultiplier = CreateConVar("sm2_bonus_per_survivor_multiplier", "0.5", "总逃生奖励 = 这个 * 逃生人数 * 地图距离");
-	hCvarPermanentHealthProportion = CreateConVar("sm2_permament_health_proportion", "0.75", "永久健康奖励 = 这个 * 地图奖励; 休息用于临时健康奖金");
-	hCvarPillsHpFactor = CreateConVar("sm2_pills_hp_factor", "6.0", "未使用的药丸HP值 = 地图加成HP值 / 这个");
-	hCvarPillsMaxBonus = CreateConVar("sm2_pills_max_bonus", "30", "未使用的药丸不能比这更高");
+	hCvarBonusPerSurvivorMultiplier = CreateConVar("sm2_bonus_per_survivor_multiplier", "0.5", "Total Survivor Bonus = this * Number of Survivors * Map Distance");
+	hCvarPermanentHealthProportion = CreateConVar("sm2_permament_health_proportion", "0.75", "Permanent Health Bonus = this * Map Bonus; rest goes for Temporary Health Bonus");
+	hCvarPillsHpFactor = CreateConVar("sm2_pills_hp_factor", "6.0", "Unused pills HP worth = map bonus HP value / this");
+	hCvarPillsMaxBonus = CreateConVar("sm2_pills_max_bonus", "30", "Unused pills cannot be worth more than this");
 	// hCvarTiebreakerBonus = CreateConVar("sm2_tiebreaker_bonus", "25", "Tiebreaker for those cases when both teams make saferoom with no bonus");
 	
 	hCvarValveSurvivalBonus = FindConVar("vs_survival_bonus");
@@ -85,7 +85,7 @@ public OnPluginStart()
 	HookConVarChange(hCvarBonusPerSurvivorMultiplier, CvarChanged);
 	HookConVarChange(hCvarPermanentHealthProportion, CvarChanged);
 
-	HookEvent("round_start", EventHook:RoundStartEvent, EventHookMode_PostNoCopy);
+	HookEvent("round_start", RoundStartEvent, EventHookMode_PostNoCopy);
 	HookEvent("player_ledge_grab", OnPlayerLedgeGrab);
 	HookEvent("player_incapacitated", OnPlayerIncapped);
 	HookEvent("player_hurt", OnPlayerHurt);
@@ -165,7 +165,7 @@ public OnClientDisconnect(client)
 	SDKUnhook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 }
 
-public RoundStartEvent()
+public void RoundStartEvent(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 {
 	for (new i = 0; i <= MAXPLAYERS; i++)
 	{
@@ -219,25 +219,25 @@ public Action:CmdBonus(client, args)
 
 	if (StrEqual(sCmdType, "full"))
 	{
-		if (InSecondHalfOfRound2())
+		if (InSecondHalfOfRound())
 		{
 			PrintToChat(client, "%s\x01R\x04#1\x01 Bonus: \x05%d\x01/\x05%d\x01 <\x03%.1f%%\x01> [%s]", PLUGIN_TAG, RoundToFloor(fSurvivorBonus[0]), RoundToFloor(fMapBonus + fMaxPillsBonus), CalculateBonusPercent(fSurvivorBonus[0]), sSurvivorState[0]);
 		}
-		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01> [HB: \x05%d\x01 <\x03%.1f%%\x01> | DB: \x05%d\x01 <\x03%.1f%%\x01> | Pills: \x05%d\x01 <\x03%.1f%%\x01>]", PLUGIN_TAG, InSecondHalfOfRound2() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus), RoundToFloor(fHealthBonus), CalculateBonusPercent(fHealthBonus, fMapHealthBonus), RoundToFloor(fDamageBonus), CalculateBonusPercent(fDamageBonus, fMapDamageBonus), RoundToFloor(fPillsBonus), CalculateBonusPercent(fPillsBonus, fMaxPillsBonus));
+		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01> [HB: \x05%d\x01 <\x03%.1f%%\x01> | DB: \x05%d\x01 <\x03%.1f%%\x01> | Pills: \x05%d\x01 <\x03%.1f%%\x01>]", PLUGIN_TAG, InSecondHalfOfRound() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus), RoundToFloor(fHealthBonus), CalculateBonusPercent(fHealthBonus, fMapHealthBonus), RoundToFloor(fDamageBonus), CalculateBonusPercent(fDamageBonus, fMapDamageBonus), RoundToFloor(fPillsBonus), CalculateBonusPercent(fPillsBonus, fMaxPillsBonus));
 		// R#1 Bonus: 556 <69.5%> [HB: 439 <73.1%> | DB: 117 <58.5%> | Pills: 90 <75.0%>]
 	}
 	else if (StrEqual(sCmdType, "lite"))
 	{
-		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01>", PLUGIN_TAG, InSecondHalfOfRound2() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus));
+		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01>", PLUGIN_TAG, InSecondHalfOfRound() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus));
 		// R#1 Bonus: 556 <69.5%>
 	}
 	else
 	{
-		if (InSecondHalfOfRound2())
+		if (InSecondHalfOfRound())
 		{
 			PrintToChat(client, "%s\x01R\x04#1\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01>", PLUGIN_TAG, RoundToFloor(fSurvivorBonus[0]), CalculateBonusPercent(fSurvivorBonus[0]));
 		}
-		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01> [HB: \x03%.0f%%\x01 | DB: \x03%.0f%%\x01 | Pills: \x03%.0f%%\x01]", PLUGIN_TAG, InSecondHalfOfRound2() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus), CalculateBonusPercent(fHealthBonus, fMapHealthBonus), CalculateBonusPercent(fDamageBonus, fMapDamageBonus), CalculateBonusPercent(fPillsBonus, fMaxPillsBonus));
+		PrintToChat(client, "%s\x01R\x04#%i\x01 Bonus: \x05%d\x01 <\x03%.1f%%\x01> [HB: \x03%.0f%%\x01 | DB: \x03%.0f%%\x01 | Pills: \x03%.0f%%\x01]", PLUGIN_TAG, InSecondHalfOfRound() + 1, RoundToFloor(fHealthBonus + fDamageBonus + fPillsBonus), CalculateBonusPercent(fHealthBonus + fDamageBonus + fPillsBonus, fMapHealthBonus + fMapDamageBonus + fMaxPillsBonus), CalculateBonusPercent(fHealthBonus, fMapHealthBonus), CalculateBonusPercent(fDamageBonus, fMapDamageBonus), CalculateBonusPercent(fPillsBonus, fMaxPillsBonus));
 		// R#1 Bonus: 556 <69.5%> [HB: 73% | DB: 58% | Pills: 75%]
 	}
 	return Plugin_Handled;
@@ -266,7 +266,7 @@ public Action:CmdMapInfo(client, args)
 
 public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
 {
-	if (!IsValidSurvivor(victim) || IsPlayerIncap(victim)) return Plugin_Continue;
+	if (!IsSurvivor(victim) || IsPlayerIncap(victim)) return Plugin_Continue;
 
 #if SM2_DEBUG
 	if (GetSurvivorTemporaryHealth(victim) > 0) PrintToChatAll("\x04%N\x01 has \x05%d\x01 temp HP now(damage: \x03%.1f\x01)", victim, GetSurvivorTemporaryHealth(victim), damage);
@@ -274,7 +274,7 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 	iTempHealth[victim] = GetSurvivorTemporaryHealth(victim);
 	
 	// Small failsafe/workaround for stuff that inflicts more than 100 HP damage (like tank hittables); we don't want to reward that more than it's worth
-	if (!IsAnyInfected(attacker)) iSiDamage[InSecondHalfOfRound2()] += (damage <= 100.0 ? RoundFloat(damage) : 100);
+	if (!IsAnyInfected(attacker)) iSiDamage[InSecondHalfOfRound()] += (damage <= 100.0 ? RoundFloat(damage) : 100);
 	
 	return Plugin_Continue;
 }
@@ -282,32 +282,36 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 public OnPlayerLedgeGrab(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	iLostTempHealth[InSecondHalfOfRound2()] += L4D2Direct_GetPreIncapHealthBuffer(client);
+	iLostTempHealth[InSecondHalfOfRound()] += L4D2Direct_GetPreIncapHealthBuffer(client);
 }
 
 public OnPlayerIncapped(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (IsValidSurvivor(client))
+	if (IsSurvivor(client))
 	{
-		iLostTempHealth[InSecondHalfOfRound2()] += RoundToFloor((fMapDamageBonus / 100.0) * 5.0 / fTempHpWorth);
+		iLostTempHealth[InSecondHalfOfRound()] += RoundToFloor((fMapDamageBonus / 100.0) * 5.0 / fTempHpWorth);
 	} 
 }
 
-public Action OnPlayerRevived(Handle:event, const String:name[], bool:dontBroadcast)
+public void OnPlayerRevived(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	bool bLedge = GetEventBool(event, "ledge_hang");
-	if (!bLedge) return;
-
+	if (!bLedge) {
+		return;
+	}
+	
 	int client = GetClientOfUserId(GetEventInt(event, "subject"));
-	if (!IsValidSurvivor(client)) return;
-
+	if (!IsSurvivor(client)) {
+		return;
+	}
+	
 	RequestFrame(Revival, client);
 }
 
 public void Revival(int client)
 {
-	iLostTempHealth[InSecondHalfOfRound2()] -= GetSurvivorTemporaryHealth(client);
+	iLostTempHealth[InSecondHalfOfRound()] -= GetSurvivorTemporaryHealth(client);
 }
 
 public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast) 
@@ -324,12 +328,12 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 	// Player can't be Incapped.
 	// Damage has to be from manipulated Shotgun FF. (Plasma)
 	// Damage has to be higher than the Survivor's permanent health.
-	if (!IsValidSurvivor(victim) || !IsValidSurvivor(attacker) || IsPlayerIncap(victim) || damagetype != DMG_PLASMA || fFakeDamage < GetSurvivorPermanentHealth(victim)) return Plugin_Continue;
+	if (!IsSurvivor(victim) || !IsSurvivor(attacker) || IsPlayerIncap(victim) || damagetype != DMG_PLASMA || fFakeDamage < GetSurvivorPermanentHealth(victim)) return Plugin_Continue;
 
 	iTempHealth[victim] = GetSurvivorTemporaryHealth(victim);
 	if (fFakeDamage > iTempHealth[victim]) fFakeDamage = iTempHealth[victim];
 
-	iLostTempHealth[InSecondHalfOfRound2()] += fFakeDamage;
+	iLostTempHealth[InSecondHalfOfRound()] += fFakeDamage;
 	iTempHealth[victim] = GetSurvivorTemporaryHealth(victim) - fFakeDamage;
 
 	return Plugin_Continue;
@@ -337,18 +341,18 @@ public Action:OnPlayerHurt(Handle:event, const String:name[], bool:dontBroadcast
 
 public OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype)
 {
-	if (!IsValidSurvivor(victim)) return;
+	if (!IsSurvivor(victim)) return;
 		
 #if SM2_DEBUG
 	PrintToChatAll("\x03%N\x01\x05 lost %i\x01 temp HP after being attacked(arg damage: \x03%.1f\x01)", victim, iTempHealth[victim] - (IsPlayerAlive(victim) ? GetSurvivorTemporaryHealth(victim) : 0), damage);
 #endif
 	if (!IsPlayerAlive(victim) || (IsPlayerIncap(victim) && !IsPlayerLedged(victim)))
 	{
-		iLostTempHealth[InSecondHalfOfRound2()] += iTempHealth[victim];
+		iLostTempHealth[InSecondHalfOfRound()] += iTempHealth[victim];
 	}
 	else if (!IsPlayerLedged(victim))
 	{
-		iLostTempHealth[InSecondHalfOfRound2()] += iTempHealth[victim] ? (iTempHealth[victim] - GetSurvivorTemporaryHealth(victim)) : 0;
+		iLostTempHealth[InSecondHalfOfRound()] += iTempHealth[victim] ? (iTempHealth[victim] - GetSurvivorTemporaryHealth(victim)) : 0;
 	}
 	iTempHealth[victim] = IsPlayerIncap(victim) ? 0 : GetSurvivorTemporaryHealth(victim);
 }
@@ -359,19 +363,19 @@ public L4D2_ADM_OnTemporaryHealthSubtracted(client, oldHealth, newHealth)
 {
 	new healthLost = oldHealth - newHealth;
 	iTempHealth[client] = newHealth;
-	iLostTempHealth[InSecondHalfOfRound2()] += healthLost;
-	iSiDamage[InSecondHalfOfRound2()] += healthLost; // this forward doesn't fire for ledged/incapped survivors so we're good
+	iLostTempHealth[InSecondHalfOfRound()] += healthLost;
+	iSiDamage[InSecondHalfOfRound()] += healthLost; // this forward doesn't fire for ledged/incapped survivors so we're good
 }
 
 public Action:L4D2_OnEndVersusModeRound(bool:countSurvivors)
 {
 #if SM2_DEBUG
-	PrintToChatAll("CDirector::OnEndVersusModeRound() called. InSecondHalfOfRound2(): %d, countSurvivors: %d", InSecondHalfOfRound2(), countSurvivors);
+	PrintToChatAll("CDirector::OnEndVersusModeRound() called. InSecondHalfOfRound(): %d, countSurvivors: %d", InSecondHalfOfRound(), countSurvivors);
 #endif
 	if (bRoundOver)
 		return Plugin_Continue;
 
-	new team = InSecondHalfOfRound2();
+	new team = InSecondHalfOfRound();
 	new iSurvivalMultiplier = GetUprightSurvivors();    // I don't know how reliable countSurvivors is and I'm too lazy to test
 	fSurvivorBonus[team] = GetSurvivorHealthBonus() + GetSurvivorDamageBonus() + GetSurvivorPillBonus();
 	fSurvivorBonus[team] = float(RoundToFloor(fSurvivorBonus[team] / float(iTeamSize)) * iTeamSize); // make it a perfect divisor of team size value
@@ -414,20 +418,39 @@ public Action:L4D2_OnEndVersusModeRound(bool:countSurvivors)
 
 public Action:PrintRoundEndStats(Handle:timer) 
 {
-	for (new i = 0; i <= InSecondHalfOfRound2(); i++)
+	for (new i = 0; i <= InSecondHalfOfRound(); i++)
 	{
-		PrintToChatAll("%s\x01Round \x04%i\x01 Bonus: \x05%d\x01/\x05%d\x01 <\x03%.1f%%\x01> [%s]", PLUGIN_TAG, (i + 1), RoundToFloor(fSurvivorBonus[i]), RoundToFloor(fMapBonus + float(iPillWorth * iTeamSize)), CalculateBonusPercent(fSurvivorBonus[i]), sSurvivorState[i]);
+		PrintToChatAll("%s\x01回合 \x04#%i\x01 奖励分: \x05%d\x01/\x05%d\x01 <\x03%.1f%%\x01> [%s]", PLUGIN_TAG, (i + 1), RoundToFloor(fSurvivorBonus[i]), RoundToFloor(fMapBonus + float(iPillWorth * iTeamSize)), CalculateBonusPercent(fSurvivorBonus[i]), sSurvivorState[i]);
 		// [EQSM :: Round 1] Bonus: 487/1200 <42.7%> [3/4]
 	}
 	
-	if (InSecondHalfOfRound2() && bTiebreakerEligibility[0] && bTiebreakerEligibility[1])
+	int ScoreA = L4D2Direct_GetVSCampaignScore(0), ScoreB = L4D2Direct_GetVSCampaignScore(1);
+	int iPointsDiff = (ScoreA > ScoreB) ? (ScoreA - ScoreB) : (ScoreB - ScoreA);
+	PrintToChatAll("%s\x01回合 \x04#%i\x01 分差: \x05%i", PLUGIN_TAG, (InSecondHalfOfRound() + 1), iPointsDiff);
+	
+	if (!InSecondHalfOfRound())
 	{
-		PrintToChatAll("%s\x03TIEBREAKER\x01: Team \x04%#1\x01 - \x05%i\x01, Team \x04%#2\x01 - \x05%i\x01", PLUGIN_TAG, iSiDamage[0], iSiDamage[1]);
-		if (iSiDamage[0] == iSiDamage[1])
+		int iMaxScore = L4D_GetVersusMaxCompletionScore();
+		if (iMaxScore >= iPointsDiff)
 		{
-			PrintToChatAll("%s\x05Teams have performed absolutely equal! Impossible to decide a clear round winner", PLUGIN_TAG);
+			PrintToChatAll("%s\x01回合 \x04#%i\x01 分数逆转: \x05%i \x01以上", PLUGIN_TAG, (InSecondHalfOfRound() + 1), iPointsDiff);
+		}
+		else
+		{
+			PrintToChatAll("%s\x01回合 \x04#%i\x01 分数逆转: \x05%i \x04+ \x05%i \x01以上", PLUGIN_TAG, (InSecondHalfOfRound() + 1), iMaxScore, (iPointsDiff - iMaxScore));
 		}
 	}
+	
+	if (InSecondHalfOfRound() && bTiebreakerEligibility[0] && bTiebreakerEligibility[1])
+	{
+		PrintToChatAll("%s\x03决胜局\x01: 团队 \x04%#1\x01 - \x05%i\x01, 团队 \x04%#2\x01 - \x05%i\x01", PLUGIN_TAG, iSiDamage[0], iSiDamage[1]);
+		if (iSiDamage[0] == iSiDamage[1])
+		{
+			PrintToChatAll("%s\x05两队平分秋色", PLUGIN_TAG);
+		}
+	}
+	
+	return Plugin_Stop;
 }
 
 Float:GetSurvivorHealthBonus()
@@ -456,7 +479,7 @@ Float:GetSurvivorHealthBonus()
 Float:GetSurvivorDamageBonus()
 {
 	new survivalMultiplier = GetUprightSurvivors();
-	new Float:fDamageBonus = (fMapTempHealthBonus - float(iLostTempHealth[InSecondHalfOfRound2()])) * fTempHpWorth / iTeamSize * survivalMultiplier;
+	new Float:fDamageBonus = (fMapTempHealthBonus - float(iLostTempHealth[InSecondHalfOfRound()])) * fTempHpWorth / iTeamSize * survivalMultiplier;
 #if SM2_DEBUG
 	PrintToChatAll("\x01Adding temp hp bonus: \x05%.1f\x01 (eligible survivors: \x05%d\x01)", fDamageBonus, survivalMultiplier);
 #endif
@@ -493,9 +516,14 @@ Float:CalculateBonusPercent(Float:score, Float:maxbonus = -1.0)
 /** Stocks **/
 /************/
 
-InSecondHalfOfRound2()
+InSecondHalfOfRound()
 {
 	return GameRules_GetProp("m_bInSecondHalfOfRound");
+}
+
+bool:IsSurvivor(client)
+{
+	return client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == 2;
 }
 
 bool:IsAnyInfected(entity)
@@ -548,6 +576,15 @@ GetSurvivorTemporaryHealth(client)
 {
 	new temphp = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * GetConVarFloat(FindConVar("pain_pills_decay_rate")))) - 1;
 	return (temphp > 0 ? temphp : 0);
+}
+
+GetSurvivorPermanentHealth(client)
+{
+	// Survivors always have minimum 1 permanent hp
+	// so that they don't faint in place just like that when all temp hp run out
+	// We'll use a workaround for the sake of fair calculations
+	// Edit 2: "Incapped HP" are stored in m_iHealth too; we heard you like workarounds, dawg, so we've added a workaround in a workaround
+	return GetEntProp(client, Prop_Send, "m_currentReviveCount") > 0 ? 0 : (GetEntProp(client, Prop_Send, "m_iHealth") > 0 ? GetEntProp(client, Prop_Send, "m_iHealth") : 0);
 }
 
 bool:HasPills(client)

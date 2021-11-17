@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <readyup>
+#include <l4d2lib>
 #include <l4d2util>
 
 #define Pai 3.14159265358979323846 
@@ -69,7 +70,7 @@ public void OnMapStart()
 	g_HaloSprite = PrecacheModel("materials/sun/overlay.vmt");
 }
 
-/*public Action OnPlayerRunCmd(int client, int &buttons)
+public Action OnPlayerRunCmd(int client, int &buttons)
 {
 	if (IsInReady() && IsValidAndInGame(client) && IsPlayerAlive(client))
 	{
@@ -85,14 +86,14 @@ public void OnMapStart()
 		}
 	}
 	return Plugin_Continue;
-}*/
+}
 
 public void L4D2_OnRealRoundStart()
 {
 	ResetAllState();
 }
 
-public void OnReadyupCountdown()
+public void OnRoundLiveCountdownPre()
 {
 	ResetAllState();
 }
