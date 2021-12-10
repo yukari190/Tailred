@@ -3,6 +3,7 @@
 #pragma newdecls required
 #include <sourcemod>
 #include <sdktools>
+#include <left4dhooks>
 #include <l4d2util>
 #include <l4d2lib>
 #undef REQUIRE_PLUGIN
@@ -28,7 +29,7 @@ static const int safeSpawns[SPAWNCOUNT] =
 
 public void OnPluginStart()
 {
-	RegAdminCmd("sm_spawn_gun", Command_ItemTrack, ADMFLAG_ROOT);
+	RegAdminCmd("sm_guns", Command_ItemTrack, ADMFLAG_ROOT);
 }
 
 public Action Command_ItemTrack(int client, int args)
@@ -39,17 +40,19 @@ public Action Command_ItemTrack(int client, int args)
 
 public void OnRoundIsLive()
 {
+	if (L4D_IsVersusMode() || L4D2_IsScavengeMode()) return;
 	GiveStartingWeapon();
 }
 
 public void L4D2_OnRealRoundStart()
 {
+	if (L4D_IsVersusMode() || L4D2_IsScavengeMode()) return;
 	CreateTimer(1.5, Timer_DelayedOnRoundStart, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
 public Action Timer_DelayedOnRoundStart(Handle timer)
 {
-	if (GetSeriousClientCount(true) != 0)
+	if (!L4D2_IsInTransition() && GetSeriousClientCount(true) != 0)
 	{
 		float SpawnPosition[3], SpawnAngle[3];
 		int count = 0;

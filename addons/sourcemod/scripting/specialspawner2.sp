@@ -429,6 +429,7 @@ void GenerateAndExecuteSpawnQueue()
 			{
 				if (!GridSpawn(SIClass, 100, spawnPos))
 				{
+					PrintToServer("[SS] 没有找到合适的位置生成特感");
 					return;
 				}
 			}

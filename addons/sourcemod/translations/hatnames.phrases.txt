@@ -1,0 +1,383 @@
+"Phrases"
+{
+	"Hat 1"
+	{
+		"en"		"Hand Gib"
+	}
+	"Hat 2"
+	{
+		"en"		"Boomer Head"
+	}
+	"Hat 3"
+	{
+		"en"		"Head Gib"
+	}
+	"Hat 4"
+	{
+		"en"		"Circular Saw"
+	}
+	"Hat 5"
+	{
+		"en"		"Red Emergency Light"
+	}
+	"Hat 6"
+	{
+		"en"		"Alligator"
+	}
+	"Hat 7"
+	{
+		"en"		"Mr Mustachio"
+	}
+	"Hat 8"
+	{
+		"en"		"Traffic Cone"
+	}
+	"Hat 9"
+	{
+		"en"		"Teddy Bear"
+	}
+	"Hat 10"
+	{
+		"en"		"Toilet Seat"
+	}
+	"Hat 11"
+	{
+		"en"		"Water bottle"
+	}
+	"Hat 12"
+	{
+		"en"		"Dock Pylon"
+	}
+	"Hat 13"
+	{
+		"en"		"Life Ring"
+	}
+	"Hat 14"
+	{
+		"en"		"Construction Light"
+	}
+	"Hat 15"
+	{
+		"en"		"Speech Quote"
+	}
+	"Hat 16"
+	{
+		"en"		"Smoker Tongue"
+	}
+	"Hat 17"
+	{
+		"en"		"Ceiling Fan Blades"
+	}
+	"Hat 18"
+	{
+		"en"		"F-18 Jet Plane"
+	}
+	"Hat 19"
+	{
+		"en"		"Civilian Radio"
+	}
+	"Hat 20"
+	{
+		"en"		"Riot Faceplate"
+	}
+	"Hat 21"
+	{
+		"en"		"Styrofoam Cups"
+	}
+	"Hat 22"
+	{
+		"en"		"Bug Lamp Zapper"
+	}
+	"Hat 23"
+	{
+		"en"		"BBQ Grill"
+	}
+	"Hat 24"
+	{
+		"en"		"Luggage Cart"
+	}
+	"Hat 25"
+	{
+		"en"		"Lantern"
+	}
+	"Hat 26"
+	{
+		"en"		"Exit Sign"
+	}
+	"Hat 27"
+	{
+		"en"		"Garden Hose"
+	}
+	"Hat 28"
+	{
+		"en"		"Pink Flamingo"
+	}
+	"Hat 29"
+	{
+		"en"		"Money Pile"
+	}
+	"Hat 30"
+	{
+		"en"		"Elephant"
+	}
+	"Hat 31"
+	{
+		"en"		"Giraffe"
+	}
+	"Hat 32"
+	{
+		"en"		"Popcorn Box"
+	}
+	"Hat 33"
+	{
+		"en"		"Gnome Closet"
+	}
+	"Hat 34"
+	{
+		"en"		"Snake"
+	}
+	"Hat 35"
+	{
+		"en"		"Toaster"
+	}
+	"Hat 36"
+	{
+		"en"		"Doll"
+	}
+	"Hat 37"
+	{
+		"en"		"Hub Cap"
+	}
+	"Hat 38"
+	{
+		"en"		"Mannequin Hand"
+	}
+	"Hat 39"
+	{
+		"en"		"Desk Lamp"
+	}
+	"Hat 40"
+	{
+		"en"		"Big Helicopter"
+	}
+	"Hat 41"
+	{
+		"en"		"News Helicopter"
+	}
+	"Hat 42"
+	{
+		"en"		"Missile"
+	}
+	"Hat 43"
+	{
+		"en"		"Fishing Boat"
+	}
+	"Hat 44"
+	{
+		"en"		"Childs Trike"
+	}
+	"Hat 45"
+	{
+		"en"		"Deer Head"
+	}
+	"Hat 46"
+	{
+		"en"		"Saucepan"
+	}
+	"Hat 47"
+	{
+		"en"		"Frying Pan"
+	}
+	"Hat 48"
+	{
+		"en"		"Skull"
+	}
+	"Hat 49"
+	{
+		"en"		"Case of Beer"
+	}
+	"Hat 50"
+	{
+		"en"		"Office Chair"
+	}
+	"Hat 51"
+	{
+		"en"		"Graveyard Cross"
+	}
+	"Hat 52"
+	{
+		"en"		"Kiddyland Rocket"
+	}
+	"Hat 53"
+	{
+		"en"		"Toilet"
+	}
+	"Hat 54"
+	{
+		"en"		"Lamp Shade"
+	}
+	"Hat 55"
+	{
+		"en"		"Saddle"
+	}
+	"Hat 56"
+	{
+		"en"		"Wheel Chair"
+	}
+	"Hat 57"
+	{
+		"en"		"Mega Phone"
+	}
+	"Hat 58"
+	{
+		"en"		"Flood lights"
+	}
+	"Hat 59"
+	{
+		"en"		"Car Tire"
+	}
+	"Hat 60"
+	{
+		"en"		"Ceiling Fan"
+	}
+	"Hat 61"
+	{
+		"en"		"Fan"
+	}
+	"Hat 62"
+	{
+		"en"		"Pot Plant 1"
+	}
+	"Hat 63"
+	{
+		"en"		"Pot Plant 2"
+	}
+	"Hat 64"
+	{
+		"en"		"Ironing Board"
+	}
+	"Hat 65"
+	{
+		"en"		"Coin"
+	}
+	"Hat 66"
+	{
+		"en"		"Jockey"
+	}
+	"Hat 67"
+	{
+		"en"		"Gift"
+	}
+	"Hat 68"
+	{
+		"en"		"Fire Hydrant"
+	}
+	"Hat 69"
+	{
+		"en"		"Gnome"
+	}
+	"Hat 70"
+	{
+		"en"		"Sail Boat"
+	}
+	"Hat 71"
+	{
+		"en"		"Red Bulkhead Light"
+	}
+	"Hat 72"
+	{
+		"en"		"Wheel Hubcap"
+	}
+	"Hat 73"
+	{
+		"en"		"Graveyard Cross"
+	}
+	"Hat 74"
+	{
+		"en"		"Tea Pot"
+	}
+	"Hat 75"
+	{
+		"en"		"Pyrotechnics"
+	}
+	"Hat 76"
+	{
+		"en"		"Coffee Maker"
+	}
+	"Hat 77"
+	{
+		"en"		"Kettle"
+	}
+	"Hat 78"
+	{
+		"en"		"TV"
+	}
+	"Hat 79"
+	{
+		"en"		"Lamp Shade 1"
+	}
+	"Hat 80"
+	{
+		"en"		"Lamp Shade 2"
+	}
+	"Hat 81"
+	{
+		"en"		"Lamp Shade 3"
+	}
+	"Hat 82"
+	{
+		"en"		"Dog Food"
+	}
+	"Hat 83"
+	{
+		"en"		"Dalek Flash Light"
+	}
+	"Hat 84"
+	{
+		"en"		"Ball Light"
+	}
+	"Hat 85"
+	{
+		"en"		"Cash Register"
+	}
+	"Hat 86"
+	{
+		"en"		"Gun Trophy 1"
+	}
+	"Hat 87"
+	{
+		"en"		"Gun Trophy 2"
+	}
+	"Hat 88"
+	{
+		"en"		"Spitter Arms"
+	}
+	"Hat 89"
+	{
+		"en"		"Jockey Claws"
+	}
+	"Hat 90"
+	{
+		"en"		"Tank Claws"
+	}
+	"Hat 91"
+	{
+		"en"		"Grenade Shell"
+	}
+	"Hat 92"
+	{
+		"en"		"Propane Cylinder"
+	}
+	"Hat 93"
+	{
+		"en"		"Medkit Cap"
+	}
+	"Hat 94"
+	{
+		"en"		"Riot Shield"
+	}
+	"Hat 95"
+	{
+		"en"		"Tug Boat"
+	}
+}

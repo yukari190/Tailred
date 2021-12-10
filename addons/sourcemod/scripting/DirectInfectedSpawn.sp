@@ -519,7 +519,7 @@ void TriggerSpawn(int desiredClass, float[3] pos)
 	else
 	{ // spawn on short delay
 		DataPack data = CreateDataPack();
-		data.WriteCell(view_as<int>(desiredClass));
+		data.WriteCell(desiredClass);
 		data.WriteFloat(pos[0]);
 		data.WriteFloat(pos[1]);
 		data.WriteFloat(pos[2]);
@@ -581,12 +581,12 @@ void CreateInfectedWithParams(int desiredClass, float[3] pos)
 		}
 		default:
 		{
-			LogError("Spawn function was passed invalid class number %d", view_as<int>(desiredClass));
+			LogError("Spawn function was passed invalid class number %d", desiredClass);
 		}		
 	}
 	if (!IsValidEntity(spawnedClient))
 	{
-		LogError("[ DirectInfectedSpawn ] - Failed to spawn SI class %d at position [%f, %f, %f]", view_as<int>(desiredClass), pos[0], pos[1], pos[2]);
+		LogError("[ DirectInfectedSpawn ] - Failed to spawn SI class %d at position [%f, %f, %f]", desiredClass, pos[0], pos[1], pos[2]);
 	}
 }
 
