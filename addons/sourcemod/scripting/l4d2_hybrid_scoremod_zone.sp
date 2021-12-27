@@ -594,7 +594,7 @@ bool:HasPills(client)
 	{
 		decl String:buffer[64];
 		GetEdictClassname(item, buffer, sizeof(buffer));
-		return StrEqual(buffer, "weapon_pain_pills");
+		return StrEqual(buffer, "weapon_pain_pills") || StrEqual(buffer, "weapon_adrenaline");
 	}
 	return false;
 }

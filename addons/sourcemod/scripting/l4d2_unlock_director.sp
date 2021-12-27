@@ -32,7 +32,7 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	g_hMapDirectorOptions = CreateConVar("l4d2_directoroptions_overwrite", "DisallowThreatType=0;ProhibitBosses=0;TankLimit=1", "Overwrites DirectorOptions key values. Seperate with ';' and assign with '=' (Assign to nothing will remove the key value). (e.g WitchLimit=;TankLimit=5)", FCVAR_SPONLY);
+	g_hMapDirectorOptions = CreateConVar("l4d2_directoroptions_overwrite", "DisallowThreatType=0;ProhibitBosses=0", "Overwrites DirectorOptions key values. Seperate with ';' and assign with '=' (Assign to nothing will remove the key value). (e.g WitchLimit=;TankLimit=5)", FCVAR_SPONLY);
 	g_hCheckDelay = CreateConVar("l4d2_directoroptions_use_check_delay", "1", "Use delays to set or remove director option keyvalues, may not precise.", FCVAR_SPONLY, true, 0.0, true, 1.0);
 	HookConVarChange(g_hMapDirectorOptions, ConVarChanged);
 	HookConVarChange(g_hCheckDelay, ConVarChanged);

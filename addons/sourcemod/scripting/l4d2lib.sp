@@ -254,16 +254,16 @@ public void OnPluginStart()
 	
 	Handle hGameData = LoadGameConfigFile(LEFT4FRAMEWORK_GAMEDATA);
 	if (hGameData == null) {
-		SetFailState("Missing gamedata \"%s\".", LEFT4FRAMEWORK_GAMEDATA);
+		LogError("Missing gamedata \"%s\".", LEFT4FRAMEWORK_GAMEDATA);
 	}
 	
 	g_hDetour = DHookCreateFromConf(hGameData, "L4DD::ZombieManager::SpawnTank");
 	if (g_hDetour == null) {
-		SetFailState("Failed to create detour \"L4DD::ZombieManager::SpawnTank\" from gamedata.");
+		LogError("Failed to create detour \"L4DD::ZombieManager::SpawnTank\" from gamedata.");
 	}
 	
-	if (!DHookEnableDetour(g_hDetour, true, OnSpawnTank)) {
-		SetFailState("Failed to enable detour \"L4DD::ZombieManager::SpawnTank\".");
+	if (!DHookEnableDetour(g_hDetour, true, OnSpawnTank_Post)) {
+		LogError("Failed to enable detour \"L4DD::ZombieManager::SpawnTank\".");
 	}
 
 	delete hGameData;
@@ -288,8 +288,8 @@ public void OnPluginEnd()
 	delete kvMapInfo;
 	delete kvSafeRoomInfo;
 	
-	if (!DHookDisableDetour(g_hDetour, true, OnSpawnTank))
-		SetFailState("Failed to disable detour \"L4DD::ZombieManager::SpawnTank\".");
+	if (!DHookDisableDetour(g_hDetour, true, OnSpawnTank_Post))
+		LogError("Failed to disable detour \"L4DD::ZombieManager::SpawnTank\".");
 }
 
 public void LGO_OnMatchModeLoaded()
@@ -375,7 +375,7 @@ public void OnRoundStart()
 	}
 }
 
-public MRESReturn OnSpawnTank(Handle hReturn, Handle hParams)
+public MRESReturn OnSpawnTank_Post(Handle hReturn, Handle hParams)
 {
 	bool ret = DHookGetReturn(hReturn) != 0; // left4dhooks sets it 0 to disable tank spawns
 	

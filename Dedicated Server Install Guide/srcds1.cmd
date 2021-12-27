@@ -32,7 +32,7 @@ set SVNUM=1
 set IP=0.0.0.0
 set PORT=27020
 set NAME=L4D2_Server%SVNUM%
-set PARAMS=-insecure -console -game left4dead2 -ip %IP% -port %PORT% -noipx -nomaster +sv_clockcorrection_msecs 25 -timeout 10 -tickrate 60 +map c1m1_hotel -maxplayers 32 +servercfgfile server%SVNUM%.cfg
+set PARAMS=-console -game left4dead2 -ip %IP% -port %PORT% -noipx -nomaster +sv_clockcorrection_msecs 25 -timeout 10 -tickrate 60 +map c1m1_hotel -maxplayers 32 +servercfgfile server%SVNUM%.cfg
 set DESC="L4D2 Dedicated Server #%SVNUM% on port %PORT%"
 echo.
 echo.
