@@ -4,7 +4,8 @@
 
 enum CLSAction
 {
-	CLSA_Kick = 0,
+	CLSA_Spec = 0,
+	CLSA_Kick,
 	CLSA_Log
 };
 
@@ -78,6 +79,10 @@ public Action _ClientSettings_Cmd(int client, int args)
 		}
 		switch (clsetting.CLSE_action)
 		{
+			case CLSA_Spec:
+			{
+				StrCat(message, sizeof(message), "Action: Spec");
+			}
 			case CLSA_Kick:
 			{
 				StrCat(message, sizeof(message), "Action: Kick");
@@ -108,6 +113,10 @@ public Action _ClientSettings_Cmd(int client, int args)
 		}
 		switch (clsetting[CLSE_action])
 		{
+			case CLSA_Spec:
+			{
+				StrCat(message, sizeof(message), "Action: Spec");
+			}
 			case CLSA_Kick:
 			{
 				StrCat(message, sizeof(message), "Action: Kick");
@@ -133,7 +142,7 @@ public Action _TrackClientCvar_Cmd(int args)
 	char sBuffer[CLS_CVAR_MAXLEN], cvar[CLS_CVAR_MAXLEN];
 	bool hasMin, hasMax;
 	float min, max;
-	CLSAction action = CLSA_Kick;
+	CLSAction action = CLSA_Spec;
 	GetCmdArg(1, cvar, sizeof(cvar));
 	if (!strlen(cvar))
 	{
@@ -257,6 +266,20 @@ public void _EnforceCliSettings_QueryReply(QueryCookie cookie, int client, ConVa
 	{
 		switch (clsetting.CLSE_action)
 		{
+			case CLSA_Spec:
+			{
+				LogToFile(path, "[Confogl] ClientSettings: Specing %L for bad %s value (%f). Min: %d %f Max: %d %f", \
+					client, cvarName, fCvarVal, clsetting.CLSE_hasMin, clsetting.CLSE_min, clsetting.CLSE_hasMax, clsetting.CLSE_max);
+				CPrintToChatAll("{blue}[{default}Confogl{blue}] {olive}%L {default} 因 {green}%s {blue}({default}%f{blue}) {default}的非法值而旁观", client, cvarName, fCvarVal);
+				char kickMessage[256] = "Illegal Client Value for ";
+				Format(kickMessage, sizeof(kickMessage), "%s%s (%.2f)", kickMessage, cvarName, fCvarVal);
+				if (clsetting.CLSE_hasMin)
+					Format(kickMessage, sizeof(kickMessage), "%s, Min %.2f", kickMessage, clsetting.CLSE_min);
+				if (clsetting.CLSE_hasMax)
+					Format(kickMessage, sizeof(kickMessage), "%s, Max %.2f", kickMessage, clsetting.CLSE_max);
+				ChangeClientTeam(client, 1);
+				PrintToChat(client, "%s", kickMessage);
+			}
 			case CLSA_Kick:
 			{
 				LogToFile(path, "[Confogl] ClientSettings: Kicking %L for bad %s value (%f). Min: %d %f Max: %d %f", \
@@ -285,6 +308,20 @@ public void _EnforceCliSettings_QueryReply(QueryCookie cookie, int client, ConVa
 	{
 		switch (clsetting[CLSE_action])
 		{
+			case CLSA_Spec:
+			{
+				LogToFile(path, "[Confogl] ClientSettings: Specing %L for bad %s value (%f). Min: %d %f Max: %d %f", \
+				client, cvarName, fCvarVal, clsetting[CLSE_hasMin], clsetting[CLSE_min], clsetting[CLSE_hasMax], clsetting[CLSE_max]);
+				CPrintToChatAll("{blue}[{default}Confogl{blue}] {olive}%L {default} 因 {green}%s {blue}({default}%f{blue}) {default}的非法值而旁观", client, cvarName, fCvarVal);
+				char kickMessage[256] = "Illegal Client Value for ";
+				Format(kickMessage, sizeof(kickMessage), "%s%s (%.2f)", kickMessage, cvarName, fCvarVal);
+				if (clsetting[CLSE_hasMin])
+					Format(kickMessage, sizeof(kickMessage), "%s, Min %.2f", kickMessage, clsetting[CLSE_min]);
+				if (clsetting[CLSE_hasMax])
+					Format(kickMessage, sizeof(kickMessage), "%s, Max %.2f", kickMessage, clsetting[CLSE_max]);
+				ChangeClientTeam(client, 1);
+				PrintToChat(client, "%s", kickMessage);
+			}
 			case CLSA_Kick:
 			{
 				LogToFile(path, "[Confogl] ClientSettings: Kicking %L for bad %s value (%f). Min: %d %f Max: %d %f", \

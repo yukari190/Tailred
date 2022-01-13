@@ -321,6 +321,11 @@ public void OnLibraryRemoved(const char[] name)
 	FindCasterSystem();
 }
 
+public void OnLibraryAdded(const char[] name)
+{
+	FindCasterSystem();
+}
+
 void LoadTranslation()
 {
 	char sPath[PLATFORM_MAX_PATH];
@@ -633,7 +638,7 @@ public Action Vote_Callback(int client, const char[] command, int argc)
 
 public Action Ready_Cmd(int client, int args)
 {
-	if (inReadyUp && IsPlayer(client))
+	if (inReadyUp && (IsPlayer(client) || (casterSystemAvailable && IsClientCaster(client))))
 	{
 		isPlayerReady[client] = true;
 		if (l4d_ready_secret.BoolValue)
@@ -660,7 +665,7 @@ public Action Unready_Cmd(int client, int args)
 		}
 		else
 		{
-			if (IsPlayer(client))
+			if (IsPlayer(client) || (casterSystemAvailable && IsClientCaster(client)))
 			{
 				SetEngineTime(client);
 				isPlayerReady[client] = false;
@@ -893,8 +898,18 @@ void UpdatePanel()
 				if (casterSystemAvailable && IsClientCaster(client))
 				{
 					++casterCount;
-					Format(nameBuf, sizeof(nameBuf), "%s\n", nameBuf);
-					StrCat(casterBuffer, sizeof(casterBuffer), nameBuf);
+					if (isPlayerReady[client])
+					{
+						if (!inLiveCountdown && !isAutoStartMode) PrintHintText(client, "%t", "HintReady");
+						Format(nameBuf, sizeof(nameBuf), isAutoStartMode ? "%s\n" : "☑ %s\n", nameBuf);
+						StrCat(casterBuffer, sizeof(casterBuffer), nameBuf);
+					}
+					else 
+					{
+						if (!inLiveCountdown && !isAutoStartMode) PrintHintText(client, "%t", "HintUnready");
+						Format(nameBuf, sizeof(nameBuf), isAutoStartMode ? "%s\n" : "☐ %s\n", nameBuf);
+						StrCat(casterBuffer, sizeof(casterBuffer), nameBuf);
+					}
 				}
 				else
 				{
@@ -1210,15 +1225,27 @@ public Action ReadyCountdownDelay_Timer(Handle timer)
 
 bool CheckFullReady()
 {
-	int survReadyCount = 0, infReadyCount = 0;
+	int survReadyCount = 0, infReadyCount = 0, casterCount = 0, casterReadyCount = 0;
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (IsClientInGame(client) && isPlayerReady[client])
+		if (IsClientInGame(client))
 		{
-			switch (GetClientTeam(client))
+			if (casterSystemAvailable && IsClientCaster(client))
 			{
-				case L4D2Team_Survivor: survReadyCount++;
-				case L4D2Team_Infected: infReadyCount++;
+				casterCount++;
+				if (isPlayerReady[client])
+				{
+					casterReadyCount++;
+				}
+			}
+
+			if (isPlayerReady[client])
+			{
+				switch (GetClientTeam(client))
+				{
+					case L4D2Team_Survivor: survReadyCount++;
+					case L4D2Team_Infected: infReadyCount++;
+				}
 			}
 		}
 	}
@@ -1234,11 +1261,13 @@ bool CheckFullReady()
 		if (iBaseline > zombLimit) iBaseline = zombLimit;
 		
 		return (iBaseline <= GetTeamHumanCount(L4D2Team_Survivor) <= survReadyCount)
-			&& (iBaseline <= GetTeamHumanCount(L4D2Team_Infected) <= infReadyCount);
+			&& (iBaseline <= GetTeamHumanCount(L4D2Team_Infected) <= infReadyCount)
+			&& casterReadyCount >= casterCount;
 	}
 	else
 	{
-		return (survReadyCount + infReadyCount) >= survLimit + zombLimit;
+		return (survReadyCount + infReadyCount) >= survLimit + zombLimit
+			&& casterReadyCount >= casterCount;
 	}
 }
 

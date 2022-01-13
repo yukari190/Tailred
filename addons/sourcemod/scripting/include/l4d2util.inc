@@ -11,29 +11,6 @@
 #include <l4d2util_tanks>
 #include <l4d2util_weapons>
 
-/**
- *
- * @return: the index to a random survivor
- */
-stock int GetRandomSurvivor()
-{
-	int survivors[MAXPLAYERS+1];
-	for (int i = 0; i <= MAXPLAYERS; ++i)
-	{
-		survivors[i] = -1;	
-	}
-	int numSurvivors = 0;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsSurvivor(i) && IsPlayerAlive(i))
-		{
-		    survivors[numSurvivors] = i;
-		    numSurvivors++;
-		}
-	}
-	return survivors[GetRandomInt(0, numSurvivors - 1)];
-}
-
 stock int GetSurvivorAttacker(int survivor)
 {
 	int attacker = -1;
