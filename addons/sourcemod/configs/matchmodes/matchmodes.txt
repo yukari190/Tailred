@@ -22,6 +22,6 @@
 	}
 	"tailredcompete"
 	{
-		"name" "Tailred Versus (竞赛配置)"
+		"name" "Tailred Versus (手动准备)"
 	}
 }

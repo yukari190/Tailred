@@ -479,7 +479,7 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
 		g_iLastSI[iVictim] = 0;
 	}
 	
-	if (cTimerGod != CTimer_Null && IsValidInfected(iAttacker))
+	if (cTimerGod != CTimer_Null && IsValidInfected(iAttacker) && fTimeLeft <= 0.0 && !StrEqual(sClassname, "insect_swarm"))
 	{
 		iDamagetype = DMG_FALL;
 		return Plugin_Changed;
