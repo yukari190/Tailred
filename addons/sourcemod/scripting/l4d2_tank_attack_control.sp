@@ -28,9 +28,9 @@ public Plugin myinfo =
 	name = "Tank Attack Control", 
 	author = "vintik, CanadaRox, Jacob, Visor",
 	description = "",
-	version = "0.7.1",
+	version = "0.7.2",
 	url = "https://github.com/Attano/L4D2-Competitive-Framework"
-}
+};
 
 public void OnPluginStart()
 {

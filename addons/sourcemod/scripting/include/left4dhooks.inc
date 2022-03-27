@@ -59,17 +59,17 @@
 
 
 // Natives:
-// L4D1 = 24 [left4downtown] + 47 [l4d_direct] + 15 [l4d2addresses] + 44 [silvers - mine!] + 4 [anim] = 126
-// L4D2 = 53 [left4downtown] + 61 [l4d_direct] + 26 [l4d2addresses] + 79 [silvers - mine!] + 4 [anim] = 212
+// L4D1 = 25 [left4downtown] + 47 [l4d_direct] + 15 [l4d2addresses] + 50 [silvers - mine!] + 4 [anim] = 139
+// L4D2 = 54 [left4downtown] + 61 [l4d_direct] + 26 [l4d2addresses] + 87 [silvers - mine!] + 4 [anim] = 229
 
 // Forwards:
-// L4D1 = 61;
-// L4D2 = 78;
+// L4D1 = 62;
+// L4D2 = 82;
 
-// Stocks: (L4D1 = 106. L4D2 = 149)
-// left4dhooks_silver			37 stocks	(L4D2 = 4,		L4D1 = 0)
-// left4dhooks_stocks			82 stocks	(L4D2 = 39,		L4D1 = 4)
-// left4dhooks_lux_library		34 stocks	(L4D2 = 4,		L4D1 = 0)
+// Stocks: (L4D1 = 107. L4D2 = 152)
+// left4dhooks_silver			39 stocks	(Only: L4D2 = 6,		L4D1 = 0)
+// left4dhooks_stocks			83 stocks	(Only: L4D2 = 39,		L4D1 = 4)
+// left4dhooks_lux_library		34 stocks	(Only: L4D2 = 4,		L4D1 = 0)
 
 
 
@@ -141,6 +141,9 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_AreWanderersAllowed");
 	MarkNativeAsOptional("L4D2_GetCurrentFinaleStage");
 	MarkNativeAsOptional("L4D2_ForceNextStage");
+	MarkNativeAsOptional("L4D_ForceVersusStart");
+	MarkNativeAsOptional("L4D_ForceSurvivalStart");
+	MarkNativeAsOptional("L4D2_ForceScavengeStart");
 	MarkNativeAsOptional("L4D2_IsTankInPlay");
 	MarkNativeAsOptional("L4D2_GetScriptValueInt");
 	MarkNativeAsOptional("L4D2_NavAreaTravelDistance");
@@ -196,6 +199,10 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D_GetMobSpawnTimerDuration");
 	MarkNativeAsOptional("L4D2_ChangeFinaleStage");
 	MarkNativeAsOptional("L4D2_SpawnWitchBride");
+	MarkNativeAsOptional("L4D_LobbyUnreserve");
+	MarkNativeAsOptional("L4D_LobbyIsReserved");
+	MarkNativeAsOptional("L4D_GetLobbyReservation");
+	MarkNativeAsOptional("L4D_SetLobbyReservation");
 
 	// l4d2weapons.inc
 	MarkNativeAsOptional("L4D_GetWeaponID");
@@ -497,7 +504,7 @@ native int AnimGetFromActivity(char[] activity);
  * @remarks Only used for bot special spawns (not players)
  * @remarks zombieClass: 1=Smoker, 2=Boomer, 3=Hunter, 4=Spitter, 5=Jockey, 6=Charger
  *
- * @param zombieClass	Zombie class that will be spawned.
+ * @param zombieClass	Zombie class that will be spawned
  * @param vecPos		Vector coordinate where special will be spawned
  * @param vecAng		QAngle where spcial will be facing
  *
@@ -511,8 +518,8 @@ forward Action L4D_OnSpawnSpecial(int &zombieClass, const float vecPos[3], const
  * @remarks Only used for bot special spawns (not players)
  * @remarks zombieClass: 1=Smoker, 2=Boomer, 3=Hunter, 4=Spitter, 5=Jockey, 6=Charger
  *
- * @param client		The client index who spawned
- * @param zombieClass	Zombie class that will be spawned.
+ * @param client		The client index who spawned. Can be 0 if spawning failed
+ * @param zombieClass	Zombie class that will be spawned
  * @param vecPos		Vector coordinate where special will be spawned
  * @param vecAng		QAngle where spcial will be facing
  *
@@ -1257,6 +1264,19 @@ forward void L4D_CBreakableProp_Break(int prop, int entity);
 forward void L4D2_CGasCan_EventKilled(int gascan, int inflictor, int attacker);
 
 /**
+ * @brief Called whenever CGasCan::ShouldStartAction() is invoked
+ * @remarks Called when someone is about to pour a gascan into a nozzle
+ *
+ * @param client			the client pouring
+ * @param gascan			the gascan entity index that is being consumed
+ * @param nozzle			the nozzle being poured into
+ *
+ * @return					Plugin_Handled to block adding to Scavenge score (see "Scavenge Score Fix" plugin for more details), Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_CGasCan_ShouldStartAction(int client, int gascan);
+
+/**
  * @brief Called whenever CGasCan::OnActionComplete() is invoked
  * @remarks Called when someone completes pouring a gascan into a nozzle
  *
@@ -1352,6 +1372,15 @@ forward Action L4D_OnVomitedUpon(int victim, int &attacker, bool &boomerExplosio
 forward Action L4D2_OnHitByVomitJar(int victim, int &attacker);
 
 /**
+ * @brief Called when the server changes hibernation status
+ *
+ * @param hibernating		true when hibernating, false when waking up
+ *
+ * @noreturn
+ */
+forward void L4D_OnServerHibernationUpdate(bool hibernating);
+
+/**
  * @brief Called when the client's material system is expecting instructions from the server in regards to addons
  * @remarks Doesn't fire if l4d2_addons_eclipse is -1 or 0
  *
@@ -1394,7 +1423,9 @@ forward void L4D2_OnWaterMove(int client);
  * @remarks You can use the "GAMEMODE_*" enums provided above to match the mode.
  * @remarks Only triggers when the server starts and after when the game mode changes.
  *
- * @return	Current game mode.
+ * @param gamemode		Current game mode.
+ *
+ * @noreturn
  */
 forward void L4D_OnGameModeChange(int gamemode);
 
@@ -1410,6 +1441,20 @@ forward void L4D_OnGameModeChange(int gamemode);
  **/
 // L4D2 only.
 forward Action L4D2_OnPlayerFling(int client, int attacker, float vecDir[3]);
+
+/**
+ * @brief Called when CTerrorPlayer::Fling(Vector const&, PlayerAnimEvent_t, CBaseCombatCharacter*, float) is invoked.
+ * @remarks Called when a player is flung to the ground.
+ * @remarks This will not trigger if the fling is being blocked by other plugins
+ *
+ * @param client		Client index of the player.
+ * @param attacker		Client index of the attacker.
+ * @param vecDir		Vector direction of the fling.
+ *
+ * @noreturn
+ **/
+// L4D2 only.
+forward void L4D2_OnPlayerFling_Post(int client, int attacker, float vecDir[3]);
 
 /**
  * @brief Called when CDeathFallCamera::Enable(CBasePlayer*) is invoked.
@@ -1915,6 +1960,28 @@ native int L4D2_GetCurrentFinaleStage();
 native void L4D2_ForceNextStage();
 
 /**
+ * @brief Forces the game to start in Versus.
+ *
+ * @noreturn
+ */
+native void L4D_ForceVersusStart();
+
+/**
+ * @brief Forces the game to start in Survival.
+ *
+ * @noreturn
+ */
+native void L4D_ForceSurvivalStart();
+
+/**
+ * @brief Forces the game to start in Scavenge.
+ *
+ * @noreturn
+ */
+// L4D2 only.
+native void L4D2_ForceScavengeStart();
+
+/**
  * @brief Returns true when any tanks are on the map
  *
  * @return			True when any tanks are on the map. False when no tanks.
@@ -2325,10 +2392,38 @@ native int L4D2_SpawnWitchBride(const float vecPos[3], const float vecAng[3]);
 
 /**
  * @brief Removes lobby reservation from a server
- * @remarks Sets the reservation cookie to 0,
- *			it is safe to call this even if it's unreserved.
+ * @remarks Sets the reservation cookie to 0, it is safe to call this even if it's unreserved.
+ *
+ * @noreturn
  */
 native void L4D_LobbyUnreserve();
+
+/**
+ * @brief Checks if the server is currently reserved for a lobby
+ * @remarks Server is automatically unreserved if it hibernates or if all players leave.
+ *
+ * @return			true if reserved, false if not reserved
+ */
+native bool L4D_LobbyIsReserved();
+
+/**
+ * @brief Returns the lobby reservation ID
+ *
+ * @reservation		String to store the reservation ID to
+ * @maxlength		Maximum length of the string to store to
+ *
+ * @noreturn
+ */
+native void L4D_GetLobbyReservation(char [] reservation, int maxlength);
+
+/**
+ * @brief Sets the lobby reservation ID
+ *
+ * @reservation		The reservation ID to set
+ *
+ * @noreturn
+ */
+native void L4D_SetLobbyReservation(char reservation[20]);
 
 /**
  * @brief Get the current campaign scores stored in the Director
@@ -2345,17 +2440,6 @@ native void L4D_LobbyUnreserve();
 #pragma deprecated Use GetTeamScore and OnClearTeamScores instead
 native int L4D_GetCampaignScores(int &scoreA, int &scoreB);
 
-/**
- * @brief Checks if the server is currently reserved for a lobby
- * @remarks Server is automatically unreserved if it hibernates or
- *			if all players leave.
- *
- * @deprecated This will always return false on L4D2 or on Linux.
- *
- * @return			true if reserved, false if not reserved
- */
-#pragma deprecated This will always return false on L4D2 or on Linux.
-native bool L4D_LobbyIsReserved();
 /**
  * @brief Get the time remaining before the next director horde.
  * @remarks This timer is used for scripted event hordes and natural timed hordes
@@ -2704,6 +2788,8 @@ enum L4D2FloatWeaponAttributes
 	L4D2FWA_PelletScatterYaw,
 	L4D2FWA_VerticalPunch,
 	L4D2FWA_HorizontalPunch, // Requires "z_gun_horiz_punch" cvar changed to "1".
+	L4D2FWA_GainRange,
+	L4D2FWA_ReloadDuration,
 	MAX_SIZE_L4D2FloatWeaponAttributes
 };
 
