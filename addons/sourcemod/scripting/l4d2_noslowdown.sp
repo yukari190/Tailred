@@ -39,10 +39,18 @@ public Plugin myinfo =
 
 ConVar 
 	hCvarSurvivorLimpspeed,
-	hCvarTankSpeedVS;
+	hCvarTankSpeedVS,
+	hCvarCrouchSpeedMod;
 
-float fTankRunSpeed;
-int iSurvivorLimpHealth;
+float
+	fTankRunSpeed,
+	fCrouchSpeedMod;
+int
+	iSurvivorLimpHealth;
+
+bool
+	bFoundCrouchTrigger = false,
+	bPlayerInCrouchTrigger[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
@@ -50,6 +58,10 @@ public void OnPluginStart()
 	hCvarTankSpeedVS = FindConVar("z_tank_speed_vs");
 	hCvarSurvivorLimpspeed.AddChangeHook(OnConVarChanged);
 	hCvarTankSpeedVS.AddChangeHook(OnConVarChanged);
+
+	hCvarCrouchSpeedMod = CreateConVar("l4d2_slowdown_crouch_speed_mod", "1.0", "Modifier of player crouch speed when inside a designated trigger, 75 is the defualt for everyone (1: default speed)", _, true, 0.0);
+	hCvarCrouchSpeedMod.AddChangeHook(OnConVarChanged);
+	
 	OnConVarChanged(null, "", "");
 	
 	HookEvent("player_hurt", PlayerHurt_Event, EventHookMode_Post);
@@ -59,6 +71,72 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 {
 	iSurvivorLimpHealth = hCvarSurvivorLimpspeed.IntValue;
 	fTankRunSpeed = hCvarTankSpeedVS.FloatValue;
+	fCrouchSpeedMod = hCvarCrouchSpeedMod.FloatValue;
+}
+
+public void L4D2_OnRealRoundStart()
+{
+	HookCrouchTriggers();
+}
+
+// Hook trigger_multiple entities that are named "l4d2_slowdown_crouch_speed"
+public void HookCrouchTriggers()
+{
+	bFoundCrouchTrigger = false;
+
+	// Reset array
+	for (int i = 1; i <= MaxClients; i++) {
+		bPlayerInCrouchTrigger[i] = false;
+	}
+
+	int iEntity = -1;
+	char targetname[128];
+
+	while ((iEntity = FindEntityByClassname(iEntity, "trigger_multiple")) != -1) {
+		GetEntPropString(iEntity, Prop_Data, "m_iName", targetname, sizeof(targetname));
+
+		if (StrEqual(targetname, "l4d2_slowdown_crouch_speed", false)) {
+			HookSingleEntityOutput(iEntity, "OnStartTouch", CrouchSpeedStartTouch);
+			HookSingleEntityOutput(iEntity, "OnEndTouch", CrouchSpeedEndTouch);
+
+			bFoundCrouchTrigger = true;
+		}
+	}
+}
+
+public void CrouchSpeedStartTouch(const char[] output, int caller, int activator, float delay)
+{
+	if (0 < activator <= MaxClients && IsClientInGame(activator)) {
+		bPlayerInCrouchTrigger[activator] = true;
+	}
+}
+
+public void CrouchSpeedEndTouch(const char[] output, int caller, int activator, float delay)
+{
+	if (0 < activator <= MaxClients && IsClientInGame(activator)) {
+		bPlayerInCrouchTrigger[activator] = false;
+	}
+}
+
+/**
+ *
+ * Slowdown from crouching: All players
+ *
+**/
+public Action L4D_OnGetCrouchTopSpeed(int client, float &retVal)
+{
+	if (fCrouchSpeedMod == 1.0 || !bFoundCrouchTrigger || !IsClientInGame(client)) {
+		return Plugin_Continue;
+	}
+
+	if (bPlayerInCrouchTrigger[client]) {
+		if (GetEntityFlags(client) & FL_ONGROUND) {
+			retVal *= fCrouchSpeedMod; // 75 * modifier
+			return Plugin_Handled;
+		}
+	}
+
+	return Plugin_Continue;
 }
 
 public void PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)

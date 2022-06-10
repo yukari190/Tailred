@@ -104,6 +104,7 @@ public any _native_BuildConfigPath(Handle plugin, int numParams)
 		}
 	}
 	SetNativeString(1, buf, len);
+	return 0;
 }
 
 public void OnPluginStart()
@@ -114,7 +115,7 @@ public void OnPluginStart()
 	char sBuffer[128];
 	g_hModesKV = new KeyValues("MatchModes");
 	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), MATCH_VOTE);
-	if (!FileToKeyValues(g_hModesKV, sBuffer))
+	if (!g_hModesKV.ImportFromFile(sBuffer))
 	{
 		delete g_hModesKV;
 		LogError("[lgofnoc] 找不到 %s 文件!", MATCH_VOTE);
@@ -146,7 +147,7 @@ public void OnPluginStart()
 	GetPluginFilename(INVALID_HANDLE, myselfbuf, sizeof(myselfbuf));
 }
 
-public int CVS_ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
+public void CVS_ConVarChange(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if (bTrackingStarted)
 	{
@@ -196,11 +197,12 @@ public Action CVS_SetCvars_Cmd(int args)
 		if (bTrackingStarted)
 		{
 			PrintToServer("Tracking has already been started");
-			return;
+			return Plugin_Handled;
 		}
 		SetEnforcedCvars();
 		bTrackingStarted = true;
 	}
+	return Plugin_Handled;
 }
 
 public Action CVS_AddCvar_Cmd(int args)
@@ -358,8 +360,8 @@ public Action MatchRequest(int client, int args)
 		}
 	}
 	
-	Handle hMenu = CreateMenu(ConfigsMenuHandler);
-	SetMenuTitle(hMenu, "选择 Match 模式:");
+	Menu hMenu = new Menu(ConfigsMenuHandler);
+	hMenu.SetTitle("选择 Match 模式:");
 	char sInfo[64], sBuffer[64];
 	g_hModesKV.Rewind();
 	if (g_hModesKV.GotoFirstSubKey())
@@ -398,6 +400,7 @@ public int ConfigsMenuHandler(Handle menu, MenuAction action, int param1, int pa
 		StartVote(param1, sBuffer);
 	}
 	if (action == MenuAction_End) CloseHandle(menu);
+	return 0;
 }
 
 bool StartVote(int client, char[] sArgument)
@@ -444,7 +447,7 @@ bool StartVote(int client, char[] sArgument)
 	return false;
 }
 
-public int VoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+public void VoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -459,7 +462,7 @@ public int VoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, 
 	}
 }
 
-public int VoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void VoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++)
 	{
@@ -523,7 +526,7 @@ void SetCustomCfg(const char[] cfgname)
 	}
 }
 
-int ExecuteConfigCfg(const char[] sFileName)
+void ExecuteConfigCfg(const char[] sFileName)
 {
 	if (strlen(sFileName) == 0) return;
 	char sFilePath[PLATFORM_MAX_PATH];
@@ -542,7 +545,7 @@ int ExecuteConfigCfg(const char[] sFileName)
 	else LogError("[Configs] Could not execute server config \"%s\", file not found", sFilePath);
 }
 
-int ClearAllCvarSettings()
+void ClearAllCvarSettings()
 {
 	bTrackingStarted = false;
 #if SOURCEMOD_V_MINOR > 9
@@ -565,7 +568,7 @@ int ClearAllCvarSettings()
 	CvarSettingsArray.Clear();
 }
 
-int SetEnforcedCvars()
+void SetEnforcedCvars()
 {
 #if SOURCEMOD_V_MINOR > 9
 	CVSEntry cvsetting;
@@ -584,7 +587,7 @@ int SetEnforcedCvars()
 #endif
 }
 
-int MatchMode_Load(bool LgoStart = false)
+void MatchMode_Load(bool LgoStart = false)
 {
 	hAllBotGame.SetInt(1);
 	
@@ -615,7 +618,7 @@ int MatchMode_Load(bool LgoStart = false)
 	Call_Finish();
 }
 
-int MatchMode_Unload(bool unloadmyself = false)
+void MatchMode_Unload(bool unloadmyself = false)
 {
 	bIsMatchModeLoaded = false;
 	
@@ -633,7 +636,7 @@ int MatchMode_Unload(bool unloadmyself = false)
 
 // Unload all plugins except one
 // 感谢 Sir 的 Predictable Plugin Unloader 插件
-int UnloadAllPlugins(bool unloadmyself = false)
+void UnloadAllPlugins(bool unloadmyself = false)
 {
 	ArrayList aReservedPlugins = new ArrayList(PLATFORM_MAX_PATH);
 	char stockpluginname[64];
