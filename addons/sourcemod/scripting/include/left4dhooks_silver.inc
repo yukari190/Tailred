@@ -245,6 +245,67 @@ stock int L4D_EntityParent(int entity)
 	return GetEntPropEnt(entity, Prop_Data, "m_pParent");
 }
 
+/**
+ * @brief Checks if a player is using any mounted weapon (minigun or 50cal)
+ *
+ * @param client			Client to check
+ *
+ * @return true if using a mounted weapon, false otherwise
+ */
+stock bool IsUsingMinigun(int client)
+{
+	return ((GetEntProp(client, Prop_Send, "m_usingMountedWeapon") > 0) || (GetEntProp(client, Prop_Send, L4D_IsEngineLeft4Dead2() ? "m_usingMountedGun" : "m_usingMinigun") > 0));
+}
+
+/**
+ * @brief Stops a client using a mounted weapon
+ *
+ * @param client			Entity index to check
+ *
+ * @return entity index or -1 if none
+ */
+stock void StopUsingMinigun(int client)
+{
+	if( IsUsingMinigun(client) )
+	{
+		int entity = GetEntPropEnt(client, Prop_Send, "m_hUseEntity");
+		if( entity > 0 && entity < 2048 )
+		{
+			SetEntPropEnt(entity, Prop_Send, "m_owner", -1);
+		}
+
+		SetEntProp(client, Prop_Send, L4D_IsEngineLeft4Dead2() ? "m_usingMountedGun" : "m_usingMinigun", 0);
+		SetEntProp(client, Prop_Send, "m_usingMountedWeapon", 0);
+		SetEntPropEnt(client, Prop_Send, "m_hUseEntity", -1);
+	}
+}
+
+/**
+ * @brief Returns if a player is on fire
+ *
+ * @param client			Client index to check
+ *
+ * @return true on fire, false otherwise
+ */
+stock bool L4D_IsPlayerOnFire(int client)
+{
+	if( GetEntProp(client, Prop_Data, "m_fFlags") & FL_ONFIRE ) return true;
+	else return false;
+}
+
+/**
+ * @brief Returns if a player is burning
+ *
+ * @param client			Client index to check
+ *
+ * @return true on burning, false otherwise
+ */
+stock bool L4D_IsPlayerBurning(int client)
+{
+	float fBurning = GetEntPropFloat(client, Prop_Send, "m_burnPercent");
+	return (fBurning > 0.0) ? true : false;
+}
+
 
 
 // ==================================================
@@ -323,8 +384,8 @@ stock int L4D_SpawnCommonInfected(float vPos[3], float vAng[3] = { 0.0, 0.0, 0.0
 	int entity = CreateEntityByName("infected");
 	if( entity != -1 )
 	{
-		DispatchSpawn(entity);
 		TeleportEntity(entity, vPos, vAng, NULL_VECTOR);
+		DispatchSpawn(entity);
 	}
 
 	return entity;
@@ -660,6 +721,131 @@ stock bool L4D_IsPlayerPinned(int client)
 	return L4D_GetPinnedInfected(client) != 0;
 }
 
+/**
+ * @brief Returns if a Survivor is being attacked in the Smokers arms
+ *
+ * @param client			Client ID of the player to check
+ *
+ * @return Returns true if player has reached the Smoker, false otherwise
+ */
+stock bool L4D_HasReachedSmoker(int client)
+{
+	// m_isHangingFromTongue sometimes returns 1 when still being dragged, using this instead
+	return GetEntProp(client, Prop_Send, "m_reachedTongueOwner", 1) == 1;
+}
+
+
+
+// ==================================================
+// CHARGER STOCKS - Written by "Forgetest"
+// ==================================================
+#define QueuedPummel_Victim		0
+#define QueuedPummel_StartTime	4
+#define QueuedPummel_Attacker	8
+
+/**
+ * @brief Internally used to get offset to the start of queued pummel field.
+ *
+ * @return					Offset into CTerrorPlayer to the start of queued pummel props
+ */
+static stock int L4D2_OffsQueuedPummelInfo()
+{
+	static int m_hQueuedPummelVictim = -1;
+	if( m_hQueuedPummelVictim == -1 )
+		m_hQueuedPummelVictim = FindSendPropInfo("CTerrorPlayer", "m_pummelAttacker") + 4;
+
+	return m_hQueuedPummelVictim;
+}
+
+/**
+ * @brief Returns the timestamp when the queued pummel begins.
+ *
+ * @param client			Client ID of the charger to check
+ *
+ * @return timestamp or -1.0 if no queued pummel
+ */
+stock float L4D2_GetQueuedPummelStartTime(int charger)
+{
+	return GetEntDataFloat(charger, L4D2_OffsQueuedPummelInfo() + QueuedPummel_StartTime);
+}
+
+/**
+ * @brief Sets the timestamp when the queued pummel begins.
+ *
+ * @param client			Client ID of the charger to check
+ * @param timestamp			Timestamp to set
+ *
+ * @noreturn
+ */
+stock void L4D2_SetQueuedPummelStartTime(int charger, float timestamp)
+{
+	SetEntDataFloat(charger, L4D2_OffsQueuedPummelInfo() + QueuedPummel_StartTime, timestamp);
+}
+
+/**
+ * @brief Returns if a Charger is in a queued pummel.
+ *
+ * @param charger			Client ID of the charger to check
+ *
+ * @return true if in queued pummel, false otherwise
+ */
+stock bool L4D2_IsInQueuedPummel(int charger)
+{
+	float flTimestamp = L4D2_GetQueuedPummelStartTime(charger);
+
+	return flTimestamp != -1.0 && flTimestamp > GetGameTime();
+}
+
+/**
+ * @brief Returns the victim of a Charger in a queued pummel.
+ *
+ * @param client			Client ID of the player to check
+ *
+ * @return client index or -1 if none
+ */
+stock int L4D2_GetQueuedPummelVictim(int client)
+{
+	return GetEntDataEnt2(client, L4D2_OffsQueuedPummelInfo() + QueuedPummel_Victim);
+}
+
+/**
+ * @brief Sets the victim of a Charger in a queued pummel.
+ *
+ * @param client			Client ID of the player to set
+ * @param target			Client ID of the target to set
+ *
+ * @noreturn
+ */
+stock void L4D2_SetQueuedPummelVictim(int client, int target)
+{
+	SetEntDataEnt2(client, L4D2_OffsQueuedPummelInfo() + QueuedPummel_Victim, target);
+}
+
+/**
+ * @brief Returns the attacker of a Survivor in a queued pummel.
+ *
+ * @param client			Client ID of the player to check
+ *
+ * @return client index or -1 if none
+ */
+stock int L4D2_GetQueuedPummelAttacker(int client)
+{
+	return GetEntDataEnt2(client, L4D2_OffsQueuedPummelInfo() + QueuedPummel_Attacker);
+}
+
+/**
+ * @brief Sets the attacker of a Survivor in a queued pummel.
+ *
+ * @param client			Client ID of the player to set
+ * @param target			Client ID of the target to set
+ *
+ * @noreturn
+ */
+stock void L4D2_SetQueuedPummelAttacker(int client, int target)
+{
+	SetEntDataEnt2(client, L4D2_OffsQueuedPummelInfo() + QueuedPummel_Attacker, target);
+}
+
 
 
 // ==================================================
@@ -872,7 +1058,7 @@ stock void L4D_StopReviveAction(int client)
 			owner_save = owner;
 		}
 
-		if( target != -1 )
+		if( target > 0 && target <= MaxClients )
 		{
 			SetEntPropEnt(target, Prop_Send, "m_useActionOwner", -1);
 			SetEntPropEnt(target, Prop_Send, "m_useActionTarget", -1);
