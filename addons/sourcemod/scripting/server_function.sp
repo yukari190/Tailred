@@ -125,7 +125,7 @@ public Action Announce_Timer(Handle timer, any client)
 	return Plugin_Stop;
 }
 
-public Action EventReviveSuccess(Event event, const char[] name, bool dontBroadcast)
+public void EventReviveSuccess(Event event, const char[] name, bool dontBroadcast)
 {
 	if (event.GetBool("lastlife"))
 	{
@@ -188,37 +188,41 @@ public Action ChangeMaps(int client, int args)
 	g_hInfoKV.Rewind();
 	if (g_hInfoKV.GotoFirstSubKey())
 	{
-		Handle hMenu = CreateMenu(Start_Menu);
-		SetMenuTitle(hMenu, "请选择地图:");
+		Menu hMenu = new Menu(Start_Menu);
+		hMenu.SetTitle("请选择地图:");
 		do
 		{
 			g_hInfoKV.GetSectionName(sMapCode, sizeof(sMapCode));
 			if (IsMapValid(sMapCode))
 			{
 				g_hInfoKV.GetString("name", sMapName, sizeof(sMapName));
-				AddMenuItem(hMenu, sMapCode, sMapName);
+				hMenu.AddItem(sMapCode, sMapName);
 			}
 		}
 		while (g_hInfoKV.GotoNextKey());
 		SetMenuExitBackButton(hMenu, true);
 		SetMenuExitButton(hMenu, true);
-		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+		hMenu.Display(client, MENU_TIME_FOREVER);
 	}
 	return Plugin_Handled;
 }
 
-public int Start_Menu(Handle menu, MenuAction action, int client, int itemNum)
+public int Start_Menu(Menu menu, MenuAction action, int client, int itemNum)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+	else if (action == MenuAction_Select)
 	{
 		char sInfo[64], sBuffer[64];
-		GetMenuItem(menu, itemNum, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
+		menu.GetItem(itemNum, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
 		strcopy(TargetMap_Code, sizeof(TargetMap_Code), sInfo);
 		iVoteType = VoteType_ChangeMap;
 		Format(sBuffer, sizeof(sBuffer), "将地图更改为 %s ?", sBuffer);
 		BuiltinVotes_StartVoteAllTeam(client, sBuffer);
 	}
-	if (action == MenuAction_End) CloseHandle(menu);
+	return 0;
 }
 
 public Action AllowInfectedBots_Cmd(int client, int args)
@@ -413,47 +417,47 @@ public void Menu_TopItemHandler(Handle topmenu, TopMenuAction action, TopMenuObj
 	else if (action == TopMenuAction_SelectOption)
 	{
 		if (object_id == teleport_menu)
-			Menu_CreateTeleportMenu(client, false);
+			Menu_CreateTeleportMenu(client);
 		else if (object_id == respawn_menu)
-			Menu_CreateRespawnMenu(client, false);
+			Menu_CreateRespawnMenu(client);
 		else if (object_id == spawn_special_infected_menu)
-			Menu_CreateSpecialInfectedMenu(client, false);
+			Menu_CreateSpecialInfectedMenu(client);
 		else if (object_id == spawn_melee_weapons_menu)
-			Menu_CreateMeleeWeaponMenu(client, false);
+			Menu_CreateMeleeWeaponMenu(client);
 		else if (object_id == spawn_weapons_menu)
-			Menu_CreateWeaponMenu(client, false);
+			Menu_CreateWeaponMenu(client);
 		else if (object_id == spawn_items_menu)
-			Menu_CreateItemMenu(client, false);
+			Menu_CreateItemMenu(client);
 			
 		else if (object_id == give_tank_menu)
-			Menu_CreateTankMenu(client, false);
+			Menu_CreateTankMenu(client);
 		else if (object_id == swap_teams_menu)
-			Menu_CreateSwapTeamsMenu(client, false);
+			Menu_CreateSwapTeamsMenu(client);
 	}
 }
 
-public Action Menu_CreateSpecialInfectedMenu(int client, int args)
+public void Menu_CreateSpecialInfectedMenu(int client)
 {
-	Handle menu = CreateMenu(Menu_SpawnSInfectedHandler);
-	SetMenuTitle(menu, "创建 特殊感染者");
+	Menu menu = new Menu(Menu_SpawnSInfectedHandler);
+	menu.SetTitle("创建 特殊感染者");
 	SetMenuExitBackButton(menu, true);
 	SetMenuExitButton(menu, true);
-	AddMenuItem(menu, "st", "创建 tank");
-	AddMenuItem(menu, "sw", "创建 witch");
-	AddMenuItem(menu, "sb", "创建 boomer");
-	AddMenuItem(menu, "sh", "创建 hunter");
-	AddMenuItem(menu, "ss", "创建 smoker");
-	AddMenuItem(menu, "sp", "创建 spitter");
-	AddMenuItem(menu, "sj", "创建 jockey");
-	AddMenuItem(menu, "sc", "创建 charger");
-	AddMenuItem(menu, "sb", "创建 mob");
-	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
-	return Plugin_Handled;
+	menu.AddItem("st", "创建 tank");
+	menu.AddItem("sw", "创建 witch");
+	menu.AddItem("sb", "创建 boomer");
+	menu.AddItem("sh", "创建 hunter");
+	menu.AddItem("ss", "创建 smoker");
+	menu.AddItem("sp", "创建 spitter");
+	menu.AddItem("sj", "创建 jockey");
+	menu.AddItem("sc", "创建 charger");
+	menu.AddItem("sb", "创建 mob");
+	menu.Display(client, MENU_DISPLAY_TIME);
 }
 
-public int Menu_SpawnSInfectedHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_SpawnSInfectedHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
 		switch (itempos)
 		{
@@ -476,43 +480,43 @@ public int Menu_SpawnSInfectedHandler(Handle menu, MenuAction action, int cindex
 			case 8:
 				CheatCommand(cindex, "z_spawn", "mob");
 		}
-		Menu_CreateSpecialInfectedMenu(cindex, false);
+		Menu_CreateSpecialInfectedMenu(cindex);
 	}
-	else if (action == MenuAction_End) CloseHandle(menu);
 	else if (action == MenuAction_Cancel)
 	{
 		if (itempos == MenuCancel_ExitBack && admin_menu != null) DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
+	return 0;
 }
 
-public Action Menu_CreateItemMenu(int client, int args)
+public void Menu_CreateItemMenu(int client)
 {
-	Handle menu = CreateMenu(Menu_SpawnItemsHandler);
-	SetMenuTitle(menu, "创建 物品");
+	Menu menu = new Menu(Menu_SpawnItemsHandler);
+	menu.SetTitle("创建 物品");
 	SetMenuExitBackButton(menu, true);
 	SetMenuExitButton(menu, true);
-	AddMenuItem(menu, "sd", "创建 除颤器");
-	AddMenuItem(menu, "sm", "创建 急救包");
-	AddMenuItem(menu, "sp", "创建 药丸");
-	AddMenuItem(menu, "sa", "创建 肾上腺素");
-	AddMenuItem(menu, "sv", "创建 燃烧弹");
-	AddMenuItem(menu, "sb", "创建 土制炸弹");
-	AddMenuItem(menu, "sb", "创建 胆汁罐");
-	AddMenuItem(menu, "sg", "创建 汽油桶");
-	AddMenuItem(menu, "st", "创建 丙烷罐");
-	AddMenuItem(menu, "so", "创建 氧气罐");
-	AddMenuItem(menu, "sa", "创建 弹药堆");
-	AddMenuItem(menu, "si", "创建 燃烧弹包");
-	AddMenuItem(menu, "se", "创建 高爆弹包");
-	AddMenuItem(menu, "lp", "创建 激光瞄准包");
-	AddMenuItem(menu, "gn", "创建 地精玩偶");
-	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
-	return Plugin_Handled;
+	menu.AddItem("sd", "创建 除颤器");
+	menu.AddItem("sm", "创建 急救包");
+	menu.AddItem("sp", "创建 药丸");
+	menu.AddItem("sa", "创建 肾上腺素");
+	menu.AddItem("sv", "创建 燃烧弹");
+	menu.AddItem("sb", "创建 土制炸弹");
+	menu.AddItem("sb", "创建 胆汁罐");
+	menu.AddItem("sg", "创建 汽油桶");
+	menu.AddItem("st", "创建 丙烷罐");
+	menu.AddItem("so", "创建 氧气罐");
+	menu.AddItem("sa", "创建 弹药堆");
+	menu.AddItem("si", "创建 燃烧弹包");
+	menu.AddItem("se", "创建 高爆弹包");
+	menu.AddItem("lp", "创建 激光瞄准包");
+	menu.AddItem("gn", "创建 地精玩偶");
+	menu.Display(client, MENU_DISPLAY_TIME);
 }
 
-public int Menu_SpawnItemsHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_SpawnItemsHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
 		switch (itempos)
 		{
@@ -546,40 +550,40 @@ public int Menu_SpawnItemsHandler(Handle menu, MenuAction action, int cindex, in
 			}
 			case 14: Do_SpawnItem(cindex, "gnome");
 		}
-		Menu_CreateItemMenu(cindex, false);
+		Menu_CreateItemMenu(cindex);
 	}
-	else if (action == MenuAction_End) CloseHandle(menu);
 	else if (action == MenuAction_Cancel)
 	{
 		if (itempos == MenuCancel_ExitBack && admin_menu != null) DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
+	return 0;
 }
 
-public Action Menu_CreateWeaponMenu(int client, int args)
+public void Menu_CreateWeaponMenu(int client)
 {
-	Handle menu = CreateMenu(Menu_SpawnWeaponHandler);
-	SetMenuTitle(menu, "创建 武器");
+	Menu menu = new Menu(Menu_SpawnWeaponHandler);
+	menu.SetTitle("创建 武器");
 	SetMenuExitBackButton(menu, true);
 	SetMenuExitButton(menu, true);
-	AddMenuItem(menu, "sp", "创建 手枪");
-	AddMenuItem(menu, "sg", "创建 沙鹰");
-	AddMenuItem(menu, "ss", "创建 霰弹枪");
-	AddMenuItem(menu, "sa", "创建 自动霰弹枪");
-	AddMenuItem(menu, "sm", "创建 冲锋枪");
-	AddMenuItem(menu, "s3", "创建 消声冲锋枪");
-	AddMenuItem(menu, "sr", "创建 突击步枪");
-	AddMenuItem(menu, "s1", "创建 AK74");
-	AddMenuItem(menu, "s2", "创建 沙漠步枪");
-	AddMenuItem(menu, "sh", "创建 猎枪");
-	AddMenuItem(menu, "s4", "创建 军用狙击");
-	AddMenuItem(menu, "s5", "创建 榴弹发射器");
-	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
-	return Plugin_Handled;
+	menu.AddItem("sp", "创建 手枪");
+	menu.AddItem("sg", "创建 沙鹰");
+	menu.AddItem("ss", "创建 霰弹枪");
+	menu.AddItem("sa", "创建 自动霰弹枪");
+	menu.AddItem("sm", "创建 冲锋枪");
+	menu.AddItem("s3", "创建 消声冲锋枪");
+	menu.AddItem("sr", "创建 突击步枪");
+	menu.AddItem("s1", "创建 AK74");
+	menu.AddItem("s2", "创建 沙漠步枪");
+	menu.AddItem("sh", "创建 猎枪");
+	menu.AddItem("s4", "创建 军用狙击");
+	menu.AddItem("s5", "创建 榴弹发射器");
+	menu.Display(client, MENU_DISPLAY_TIME);
 }
 
-public int Menu_SpawnWeaponHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_SpawnWeaponHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
 		switch (itempos)
 		{
@@ -596,38 +600,37 @@ public int Menu_SpawnWeaponHandler(Handle menu, MenuAction action, int cindex, i
 			case 10: Do_SpawnItem(cindex, "sniper_military");
 			case 11: Do_SpawnItem(cindex, "grenade_launcher");
 		}
-		Menu_CreateWeaponMenu(cindex, false);
+		Menu_CreateWeaponMenu(cindex);
 	}
-	else if (action == MenuAction_End)
-		CloseHandle(menu);
 	else if (action == MenuAction_Cancel)
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
+	return 0;
 }
 
-public Action Menu_CreateMeleeWeaponMenu(int client, int args)
+public void Menu_CreateMeleeWeaponMenu(int client)
 {
-	Handle menu = CreateMenu(Menu_SpawnMeleeWeaponHandler);
-	SetMenuTitle(menu, "创建 近战武器");
+	Menu menu = new Menu(Menu_SpawnMeleeWeaponHandler);
+	menu.SetTitle("创建 近战武器");
 	SetMenuExitBackButton(menu, true);
 	SetMenuExitButton(menu, true);
-	AddMenuItem(menu, "ma", "创建 棒球棒");
-	AddMenuItem(menu, "mb", "创建 电锯");
-	AddMenuItem(menu, "mc", "创建 板球拍");
-	AddMenuItem(menu, "md", "创建 撬棍");
-	AddMenuItem(menu, "me", "创建 电吉他");
-	AddMenuItem(menu, "mf", "创建 消防斧");
-	AddMenuItem(menu, "mg", "创建 平底锅");
-	AddMenuItem(menu, "mh", "创建 武士刀");
-	AddMenuItem(menu, "mi", "创建 砍刀");
-	AddMenuItem(menu, "mj", "创建 警棍");
-	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
-	return Plugin_Handled;
+	menu.AddItem("ma", "创建 棒球棒");
+	menu.AddItem("mb", "创建 电锯");
+	menu.AddItem("mc", "创建 板球拍");
+	menu.AddItem("md", "创建 撬棍");
+	menu.AddItem("me", "创建 电吉他");
+	menu.AddItem("mf", "创建 消防斧");
+	menu.AddItem("mg", "创建 平底锅");
+	menu.AddItem("mh", "创建 武士刀");
+	menu.AddItem("mi", "创建 砍刀");
+	menu.AddItem("mj", "创建 警棍");
+	menu.Display(client, MENU_DISPLAY_TIME);
 }
 
-public int Menu_SpawnMeleeWeaponHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_SpawnMeleeWeaponHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
 		switch (itempos)
 		{
@@ -642,24 +645,23 @@ public int Menu_SpawnMeleeWeaponHandler(Handle menu, MenuAction action, int cind
 			case 8: Do_SpawnItem(cindex, "machete");
 			case 9: Do_SpawnItem(cindex, "tonfa");
 		}
-		Menu_CreateMeleeWeaponMenu(cindex, false);
+		Menu_CreateMeleeWeaponMenu(cindex);
 	}
-	else if (action == MenuAction_End)
-		CloseHandle(menu);
 	else if (action == MenuAction_Cancel)
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
+	return 0;
 }
 
-public Action Menu_CreateTeleportMenu(int client, int args)
+public void Menu_CreateTeleportMenu(int client)
 {
 	g_originClient = -1;
 	
-	Handle hMenu = CreateMenu(Menu_TPMenuHandler);
-	SetMenuTitle(hMenu, "你想传送谁?");
+	Menu hMenu = new Menu(Menu_TPMenuHandler);
+	hMenu.SetTitle("你想传送谁?");
 	SetMenuExitBackButton(hMenu, true);
 	SetMenuExitButton(hMenu, true);
-	AddMenuItem(hMenu, "0", "所有生还者");
+	hMenu.AddItem("0", "所有生还者");
 	int userid;
 	char name[MAX_NAME_LENGTH], number[10];
 	for (int i = 1; i <= MaxClients; i++)
@@ -671,17 +673,18 @@ public Action Menu_CreateTeleportMenu(int client, int args)
 		Format(name, sizeof(name)-13, "%N", i);
 		Format(name, sizeof(name), "%s (%i)", name, userid);
 		
-		AddMenuItem(hMenu, number, name);
+		hMenu.AddItem(number, name);
     }
-	DisplayMenu(hMenu, client, MENU_DISPLAY_TIME);
+	hMenu.Display(client, MENU_DISPLAY_TIME);
 }
 
-public int Menu_TPMenuHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_TPMenuHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
-		Handle hMenu = CreateMenu(Menu_TPMenuHandler2);
-		SetMenuTitle(hMenu, "传送到谁身边?");
+		Menu hMenu = new Menu(Menu_TPMenuHandler2);
+		hMenu.SetTitle("传送到谁身边?");
 		SetMenuExitBackButton(hMenu, true);
 		SetMenuExitButton(hMenu, true);
 		int userid;
@@ -690,7 +693,7 @@ public int Menu_TPMenuHandler(Handle menu, MenuAction action, int cindex, int it
 		if (itempos != 0)
 		{
 			char sInfo[64];
-			GetMenuItem(menu, itempos, sInfo, sizeof(sInfo));
+			menu.GetItem(itempos, sInfo, sizeof(sInfo));
 			g_originClient = GetClientOfUserId(StringToInt(sInfo));
 			alltp = false;
 		}
@@ -708,27 +711,25 @@ public int Menu_TPMenuHandler(Handle menu, MenuAction action, int cindex, int it
 			Format(number, sizeof(number), "%i", userid);
 			Format(name, sizeof(name)-13, "%N", i);
 			Format(name, sizeof(name), "%s (%i)", name, userid);
-			AddMenuItem(hMenu, number, name);
+			hMenu.AddItem(number, name);
 		}
-		DisplayMenu(hMenu, cindex, MENU_DISPLAY_TIME);
-	}
-	else if (action == MenuAction_End)
-	{
-		CloseHandle(menu);
+		hMenu.Display(cindex, MENU_DISPLAY_TIME);
 	}
 	else if (action == MenuAction_Cancel)
 	{
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
+	return 0;
 }
 
-public int Menu_TPMenuHandler2(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_TPMenuHandler2(Menu menu, MenuAction action, int cindex, int itempos)
 {
-	if (action == MenuAction_Select)
+	if (action == MenuAction_End) delete menu;
+	else if (action == MenuAction_Select)
 	{
 		char sInfo[64];
-		GetMenuItem(menu, itempos, sInfo, sizeof(sInfo));
+		menu.GetItem(itempos, sInfo, sizeof(sInfo));
 		int targetClient = GetClientOfUserId(StringToInt(sInfo));
 		if (!alltp)
 		{
@@ -747,18 +748,15 @@ public int Menu_TPMenuHandler2(Handle menu, MenuAction action, int cindex, int i
 	}
 	else if (action == MenuAction_Cancel)
 	{
-		Menu_CreateTeleportMenu(cindex, false);
+		Menu_CreateTeleportMenu(cindex);
 	}
-	else if (action == MenuAction_End)
-	{
-		CloseHandle(menu);
-	}
+	return 0;
 }
 
-public Action Menu_CreateRespawnMenu(int client, int args)
+public void Menu_CreateRespawnMenu(int client)
 {
-	Handle hMenu = CreateMenu(Menu_RespawnMenuHandler);
-	SetMenuTitle(hMenu, "你想复活谁?");
+	Menu hMenu = new Menu(Menu_RespawnMenuHandler);
+	hMenu.SetTitle("你想复活谁?");
 	SetMenuExitBackButton(hMenu, true);
 	SetMenuExitButton(hMenu, true);
 	
@@ -770,41 +768,42 @@ public Action Menu_CreateRespawnMenu(int client, int args)
 		{
 			IntToString(GetClientUserId(i), userid, sizeof(userid));
 			GetClientName(i, name, sizeof(name));
-			AddMenuItem(hMenu, userid, name);
+			hMenu.AddItem(userid, name);
 		}
 	}
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Menu_RespawnMenuHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_RespawnMenuHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if (action == MenuAction_Select)
 	{
 		char sInfo[64], name[MAX_NAME_LENGTH];
-		GetMenuItem(menu, itempos, sInfo, sizeof(sInfo));
+		menu.GetItem(itempos, sInfo, sizeof(sInfo));
 		int client = GetClientOfUserId(StringToInt(sInfo));
 		Format(name, sizeof(name)-13, "%N", client);
 		
-		if (GetClientTeam(client) != 2 || IsPlayerAlive(client)) return;
+		if (GetClientTeam(client) != 2 || IsPlayerAlive(client)) return 0;
 		RespawnPlayer(client);
 		ShowActivity2(cindex, "[SM] ", "Respawned target '%s'", name);
-		Menu_CreateRespawnMenu(cindex, false);
+		Menu_CreateRespawnMenu(cindex);
 	}
 	else if (action == MenuAction_Cancel)
 	{
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
+	return 0;
 }
 
-public Action Menu_CreateTankMenu(int client, int args)
+public void Menu_CreateTankMenu(int client)
 {
-	Handle hMenu = CreateMenu(Menu_CreateTankMenuHandler);
-	SetMenuTitle(hMenu, "你想把坦克交给谁?");
+	Menu hMenu = new Menu(Menu_CreateTankMenuHandler);
+	hMenu.SetTitle("你想把坦克交给谁?");
 	SetMenuExitBackButton(hMenu, true);
 	SetMenuExitButton(hMenu, true);
 	
@@ -816,39 +815,39 @@ public Action Menu_CreateTankMenu(int client, int args)
 		{
 			IntToString(GetClientUserId(i), userid, sizeof(userid));
 			GetClientName(i, name, sizeof(name));
-			AddMenuItem(hMenu, userid, name);
+			hMenu.AddItem(userid, name);
 		}
 	}
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int Menu_CreateTankMenuHandler(Handle menu, MenuAction action, int cindex, int itempos)
+public int Menu_CreateTankMenuHandler(Menu menu, MenuAction action, int cindex, int itempos)
 {
 	if (action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if (action == MenuAction_Select)
 	{
 		char sInfo[64];
 		GetMenuItem(menu, itempos, sInfo, sizeof(sInfo));
 		int client = GetClientOfUserId(StringToInt(sInfo));
-		if (!IsValidInfected(client) || GetInfectedClass(client) == L4D2Infected_Tank) return;
+		if (!IsValidInfected(client) || GetInfectedClass(client) == L4D2Infected_Tank) return 0;
 		
 		TakeTank(client);
-		//Menu_CreateTankMenu(cindex, false);
+		//Menu_CreateTankMenu(cindex);
 	}
 	else if (action == MenuAction_Cancel)
 	{
 		if (itempos == MenuCancel_ExitBack && admin_menu != null)
 			DisplayTopMenu(admin_menu, cindex, TopMenuPosition_LastCategory);
 	}
+	return 0;
 }
 
-public Action Menu_CreateSwapTeamsMenu(int client, int args)
+public void Menu_CreateSwapTeamsMenu(int client)
 {
 	FakeClientCommand(client, "sm_swapteams");
-	return Plugin_Handled;
 }
 
 void TakeTank(int client)
@@ -971,7 +970,7 @@ bool BuiltinVotes_StartVoteAllTeam(int client, char[] sArgument)
 	}
 	if (!IsBuiltinVoteInProgress())
 	{
-		int iNumPlayers;
+		int iNumPlayers = 0;
 		int[] iPlayers = new int[MaxClients];
 		for (int i = 1; i <= MaxClients; i++)
 		{
@@ -1008,6 +1007,7 @@ public int VoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, 
 			DisplayBuiltinVoteFail(vote, view_as<BuiltinVoteFailReason>(param1));
 		}
 	}
+	return 0;
 }
 
 public int VoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -1020,9 +1020,10 @@ public int VoteResultHandler(Handle vote, int num_votes, int num_clients, const 
 			{
 				DisplayBuiltinVotePass(vote, " ");
 				BuiltinVotes_VoteResult();
-				return;
+				return 0;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
