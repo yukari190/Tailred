@@ -1,6 +1,6 @@
 /*
 *	Left 4 DHooks Direct
-*	Copyright (C) 2023 Silvers
+*	Copyright (C) 2024 Silvers
 *
 *	This program is free software: you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ void LoadGameData()
 	#endif
 
 	g_bLinuxOS = hGameData.GetOffset("OS") == 1;
-	Format(g_sSystem, sizeof(g_sSystem), "%s/%d/%s", g_bLinuxOS ? "NIX" : "WIN", g_bLeft4Dead2 ? 2 : 1, PLUGIN_VERSION);
+	FormatEx(g_sSystem, sizeof(g_sSystem), "%s/%d/%s", g_bLinuxOS ? "NIX" : "WIN", g_bLeft4Dead2 ? 2 : 1, PLUGIN_VERSION);
 
 
 
@@ -122,6 +122,24 @@ void LoadGameData()
 		g_hSDK_CTerrorGameRules_GetMissionInfo = EndPrepSDKCall();
 		if( g_hSDK_CTerrorGameRules_GetMissionInfo == null )
 			LogError("Failed to create SDKCall: \"CTerrorGameRules::GetMissionInfo\" (%s)", g_sSystem);
+	}
+
+
+
+	// =========================
+	// ANIMATION NATIVES
+	// =========================
+	if( g_bLeft4Dead2 )
+	{
+		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CMultiPlayerAnimState::ResetMainActivity") == false )
+		{
+			LogError("Failed to find signature: \"CMultiPlayerAnimState::ResetMainActivity\" (%s)", g_sSystem);
+		} else {
+			g_hSDK_CMultiPlayerAnimState_ResetMainActivity = EndPrepSDKCall();
+			if( g_hSDK_CMultiPlayerAnimState_ResetMainActivity == null )
+				LogError("Failed to create SDKCall: \"CMultiPlayerAnimState::ResetMainActivity\" (%s)", g_sSystem);
+		}
 	}
 
 
@@ -326,6 +344,18 @@ void LoadGameData()
 			LogError("Failed to create SDKCall: \"CDirector::HasAnySurvivorLeftSafeArea\" (%s)", g_sSystem);
 	}
 
+	StartPrepSDKCall(SDKCall_Entity);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CBaseTrigger::IsTouching") == false )
+	{
+		LogError("Failed to find signature: \"CBaseTrigger::IsTouching\" (%s)", g_sSystem);
+	} else {
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_CBaseTrigger_IsTouching = EndPrepSDKCall();
+		if( g_hSDK_CBaseTrigger_IsTouching == null )
+			LogError("Failed to create SDKCall: \"CBaseTrigger::IsTouching\" (%s)", g_sSystem);
+	}
+
 	/*
 	StartPrepSDKCall(SDKCall_Raw);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirector::IsAnySurvivorInStartArea") == false )
@@ -383,7 +413,7 @@ void LoadGameData()
 		if( g_hSDK_TerrorNavMesh_GetLastCheckpoint == null )
 			LogError("Failed to create SDKCall: \"TerrorNavMesh::GetLastCheckpoint\" (%s)", g_sSystem);
 	}
-	*/
+	// */
 
 	if( g_bLeft4Dead2 )
 	{
@@ -411,7 +441,7 @@ void LoadGameData()
 			if( g_hSDK_TerrorNavMesh_IsInExitCheckpoint_NoLandmark == null )
 				LogError("Failed to create SDKCall: \"TerrorNavMesh::IsInExitCheckpoint_NoLandmark\" (%s)", g_sSystem);
 		}
-		*/
+		// */
 	}
 
 	StartPrepSDKCall(SDKCall_Static);
@@ -519,7 +549,7 @@ void LoadGameData()
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD|VDECODE_FLAG_ALLOWNULL);
 		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
 		PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 		g_hSDK_CPipeBombProjectile_Create = EndPrepSDKCall();
@@ -560,18 +590,130 @@ void LoadGameData()
 			patches[3] = hGameData.GetAddress("Realism_StrFind");
 		}
 
-
 		// Write custom gamedata with found addresses from literal strings
 		BuildPath(Path_SM, sPath, sizeof(sPath), "gamedata/%s.txt", GAMEDATA_TEMP);
 		File hFile = OpenFile(sPath, "w", false);
+		if( hFile == null )
+		{
+			SetFailState("Failed to create file: \"%s\". Check your folder permissions allow writing.", sPath);
+		}
 
 		char sAddress[512];
 		char sHexAddr[32];
 
+		// Dynamically generated projectile Create detours:
 		hFile.WriteLine("\"Games\"");
 		hFile.WriteLine("{");
 		hFile.WriteLine("	\"#default\"");
 		hFile.WriteLine("	{");
+		hFile.WriteLine("		\"Functions\"");
+		hFile.WriteLine("		{");
+		hFile.WriteLine("			\"L4DD::CMolotovProjectile::Create\"");
+		hFile.WriteLine("			{");
+		hFile.WriteLine("				\"signature\"		\"FindAddress_0\"");
+		hFile.WriteLine("				\"callconv\"		\"cdecl\"");
+		hFile.WriteLine("				\"return\"		\"cbaseentity\"");
+		hFile.WriteLine("				\"arguments\"");
+		hFile.WriteLine("				{");
+		hFile.WriteLine("					\"origin\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"angles\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"velocity\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"rotation\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"owner\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"cbaseentity\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"duration\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"float\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("				}");
+		hFile.WriteLine("			}");
+		if( g_bLeft4Dead2 )
+		{
+		hFile.WriteLine("			\"L4DD::CVomitJarProjectile::Create\"");
+		hFile.WriteLine("			{");
+		hFile.WriteLine("				\"signature\"		\"FindAddress_1\"");
+		hFile.WriteLine("				\"callconv\"		\"cdecl\"");
+		hFile.WriteLine("				\"return\"		\"cbaseentity\"");
+		hFile.WriteLine("				\"arguments\"");
+		hFile.WriteLine("				{");
+		hFile.WriteLine("					\"origin\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"angles\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"velocity\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"rotation\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"owner\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"cbaseentity\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"duration\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"float\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("				}");
+		hFile.WriteLine("			}");
+		hFile.WriteLine("			\"L4DD::CGrenadeLauncher_Projectile::Create\"");
+		hFile.WriteLine("			{");
+		hFile.WriteLine("				\"signature\"		\"FindAddress_2\"");
+		hFile.WriteLine("				\"callconv\"		\"cdecl\"");
+		hFile.WriteLine("				\"return\"		\"cbaseentity\"");
+		hFile.WriteLine("				\"arguments\"");
+		hFile.WriteLine("				{");
+		hFile.WriteLine("					\"origin\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"angles\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"velocity\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"rotation\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"vectorptr\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"owner\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"cbaseentity\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("					\"bIncendiary\"");
+		hFile.WriteLine("					{");
+		hFile.WriteLine("						\"type\"		\"int\"");
+		hFile.WriteLine("					}");
+		hFile.WriteLine("				}");
+		hFile.WriteLine("			}");
+		}
+		hFile.WriteLine("		}");
+
+		// Dynamically generated addresses
+		hFile.WriteLine("");
 		hFile.WriteLine("		\"Addresses\"");
 		hFile.WriteLine("		{");
 
@@ -601,6 +743,8 @@ void LoadGameData()
 
 		hFile.WriteLine("		}");
 		hFile.WriteLine("");
+
+		// Dynamically generated signatures
 		hFile.WriteLine("		\"Signatures\"");
 		hFile.WriteLine("		{");
 
@@ -646,11 +790,10 @@ void LoadGameData()
 				StrCat(sAddress, sizeof(sAddress), sHexAddr);
 				if( i == 3 ) StrCat(sAddress, sizeof(sAddress), "\\x68"); // Match byte after for "CTerrorGameRules::IsRealismMode", otherwise its not unique signature
 
-
 				// Write lines
 				hFile.WriteLine("			\"FindAddress_%d\"", i);
 				hFile.WriteLine("			{");
-				// hFile.WriteLine("				\"library\"	\"server\""); // Server is default.
+				hFile.WriteLine("				\"library\"	\"server\""); // Server is default.
 				if( g_bLinuxOS )
 				{
 					hFile.WriteLine("				\"linux\"	\"%s\"", sAddress);
@@ -702,8 +845,9 @@ void LoadGameData()
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
-		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD|VDECODE_FLAG_ALLOWNULL);
+		if( !g_bLeft4Dead2 )
+			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
 		PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 		g_hSDK_CMolotovProjectile_Create = EndPrepSDKCall();
 		if( g_hSDK_CMolotovProjectile_Create == null )
@@ -721,8 +865,7 @@ void LoadGameData()
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-			PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
-			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+			PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD|VDECODE_FLAG_ALLOWNULL);
 			PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 			g_hSDK_CVomitJarProjectile_Create = EndPrepSDKCall();
 			if( g_hSDK_CVomitJarProjectile_Create == null )
@@ -738,8 +881,8 @@ void LoadGameData()
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-			PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
-			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+			PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD|VDECODE_FLAG_ALLOWNULL);
+			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 			PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 			g_hSDK_CGrenadeLauncher_Projectile_Create = EndPrepSDKCall();
 			if( g_hSDK_CGrenadeLauncher_Projectile_Create == null )
@@ -751,7 +894,7 @@ void LoadGameData()
 		{
 			LogError("Failed to find signature: \"CTerrorGameRules::IsRealismMode\" (%s)", g_sSystem);
 		} else {
-			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+			PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
 			g_hSDK_CTerrorGameRules_IsRealismMode = EndPrepSDKCall();
 			if( g_hSDK_CTerrorGameRules_IsRealismMode == null )
 				LogError("Failed to create SDKCall: \"CTerrorGameRules::IsRealismMode\" (%s)", g_sSystem);
@@ -1326,6 +1469,16 @@ void LoadGameData()
 		}
 
 		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirector::SpawnAllScavengeItems") == false )
+		{
+			LogError("Failed to find signature: \"CDirector::SpawnAllScavengeItems\" (%s)", g_sSystem);
+		} else {
+			g_hSDK_CDirector_SpawnAllScavengeItems = EndPrepSDKCall();
+			if( g_hSDK_CDirector_SpawnAllScavengeItems == null )
+				LogError("Failed to create SDKCall: \"CDirector::SpawnAllScavengeItems\" (%s)", g_sSystem);
+		}
+
+		StartPrepSDKCall(SDKCall_Raw);
 		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirectorScriptedEventManager::ChangeFinaleStage") == false )
 		{
 			LogError("Failed to find signature: \"CDirectorScriptedEventManager::ChangeFinaleStage\" (%s)", g_sSystem);
@@ -1577,6 +1730,17 @@ void LoadGameData()
 	}
 
 	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorPlayer::StopBeingRevived") == false )
+	{
+		LogError("Failed to find signature: \"CTerrorPlayer::StopBeingRevived\" (%s)", g_sSystem);
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_CTerrorPlayer_StopBeingRevived = EndPrepSDKCall();
+		if( g_hSDK_CTerrorPlayer_StopBeingRevived == null )
+			LogError("Failed to create SDKCall: \"CTerrorPlayer::StopBeingRevived\" (%s)", g_sSystem);
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorPlayer::OnRevived") == false )
 	{
 		LogError("Failed to find signature: \"CTerrorPlayer::OnRevived\" (%s)", g_sSystem);
@@ -1738,6 +1902,18 @@ void LoadGameData()
 			LogError("Failed to create SDKCall: \"CDirector::UnregisterForbiddenTarget\" (%s)", g_sSystem);
 	}
 
+	StartPrepSDKCall(SDKCall_Raw);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirectorVersusMode::EndVersusModeRound") == false )
+	{
+	LogError("Failed to find signature: \"CDirectorVersusMode::EndVersusModeRound\"");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_CDirectorVersusMode_EndVersusModeRound = EndPrepSDKCall();
+		if( g_hSDK_CDirectorVersusMode_EndVersusModeRound == null )
+			LogError("Failed to create SDKCall: \"CDirectorVersusMode::EndVersusModeRound\"");
+	}
+
 
 
 	if( g_bLeft4Dead2 )
@@ -1813,6 +1989,16 @@ void LoadGameData()
 				LogError("Failed to create SDKCall: \"CDirector::AreTeamsFlipped\" (%s)", g_sSystem);
 		}
 		*/
+
+		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirector::Rematch") == false )
+		{
+			LogError("Failed to find signature: \"CDirector::Rematch\" (%s)", g_sSystem);
+		} else {
+			g_hSDK_CDirector_Rematch = EndPrepSDKCall();
+			if( g_hSDK_CDirector_Rematch == null )
+				LogError("Failed to create SDKCall: \"CDirector::Rematch\" (%s)", g_sSystem);
+		}
 
 		StartPrepSDKCall(SDKCall_Raw);
 		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirector::StartRematchVote") == false )
@@ -1924,6 +2110,9 @@ void LoadGameData()
 		g_pVersusMode = hGameData.GetOffset("VersusModePtr");
 		ValidateOffset(g_pVersusMode, "VersusModePtr");
 
+		g_pSurvivalMode = hGameData.GetOffset("SurvivalModePtr");
+		ValidateOffset(g_pSurvivalMode, "SurvivalModePtr");
+
 		g_pScriptedEventManager = hGameData.GetOffset("ScriptedEventManagerPtr");
 		ValidateOffset(g_pScriptedEventManager, "ScriptedEventManagerPtr");
 
@@ -1974,6 +2163,9 @@ void LoadGameData()
 	g_iOff_LobbyReservation = hGameData.GetOffset("LobbyReservationOffset");
 	ValidateOffset(g_iOff_LobbyReservation, "LobbyReservationOffset");
 
+	g_pAmmoDef = hGameData.GetAddress("ammoDef");
+	ValidateAddress(g_pAmmoDef, "AmmoDef", true);
+
 	g_pDirector = hGameData.GetAddress("CDirector");
 	ValidateAddress(g_pDirector, "CDirector", true);
 
@@ -2004,9 +2196,14 @@ void LoadGameData()
 
 		g_pScavengeMode =					LoadFromAddress(g_pDirector + view_as<Address>(g_pScavengeMode), NumberType_Int32);
 		ValidateAddress(g_pScavengeMode, "ScavengeModePtr", true);
+
+		g_pSurvivalMode = LoadFromAddress(g_pDirector + view_as<Address>(g_pSurvivalMode), NumberType_Int32);
+		ValidateAddress(g_pSurvivalMode, "g_pSurvivalMode", true);
 	} else {
 		// L4D1: g_pDirector is also g_pVersusMode.
 		g_pVersusMode = view_as<int>(g_pDirector);
+
+		g_pSurvivalMode = view_as<int>(g_pDirector);
 	}
 
 	#if defined DEBUG
@@ -2039,13 +2236,28 @@ void LoadGameData()
 	// ====================================================================================================
 	//									OFFSETS
 	// ====================================================================================================
-	// Various
 	#if defined DEBUG
 	#if DEBUG
 	PrintToServer("Various Offsets:");
 	#endif
 	#endif
 
+	// Animation offsets
+	if( g_bLeft4Dead2 )
+	{
+		g_iOff_m_PlayerAnimState = hGameData.GetOffset("CTerrorPlayer::m_PlayerAnimState");
+		ValidateOffset(g_iOff_m_PlayerAnimState, "CTerrorPlayer::m_PlayerAnimState");
+
+		g_iOff_m_eCurrentMainSequenceActivity = hGameData.GetOffset("CMultiPlayerAnimState::m_eCurrentMainSequenceActivity");
+		ValidateOffset(g_iOff_m_eCurrentMainSequenceActivity, "CMultiPlayerAnimState::m_eCurrentMainSequenceActivity");
+
+		g_iOff_m_bIsCustomSequence = hGameData.GetOffset("CTerrorPlayerAnimState::m_bIsCustomSequence");
+		ValidateOffset(g_iOff_m_bIsCustomSequence, "CTerrorPlayerAnimState::m_bIsCustomSequence");
+	}
+
+
+
+	// Various offsets
 	g_iOff_m_iCampaignScores = hGameData.GetOffset("m_iCampaignScores");
 	ValidateOffset(g_iOff_m_iCampaignScores, "m_iCampaignScores");
 
@@ -2077,11 +2289,17 @@ void LoadGameData()
 
 		g_iOff_m_bFirstSurvivorLeftStartArea = hGameData.GetOffset("m_bFirstSurvivorLeftStartArea");
 		ValidateOffset(g_iOff_m_bFirstSurvivorLeftStartArea, "m_bFirstSurvivorLeftStartArea");
+
+		g_iOff_m_bInIntro = hGameData.GetOffset("m_bInIntro");
+		ValidateOffset(g_iOff_m_bInIntro, "m_bInIntro");
 	}
 	else
 	{
 		g_iOff_m_nFirstClassIndex = hGameData.GetOffset("CDirector::m_nFirstClassIndex");
 		ValidateOffset(g_iOff_m_nFirstClassIndex, "CDirector::m_nFirstClassIndex");
+
+		g_iOff_m_iSetupNotifyTime = hGameData.GetOffset("CDirectorSurvivalMode::m_iSetupNotifyTime");
+		ValidateOffset(g_iOff_m_iSetupNotifyTime, "CDirectorSurvivalMode::m_iSetupNotifyTime");
 	}
 
 	g_iOff_m_flow = hGameData.GetOffset("m_flow");
@@ -2143,7 +2361,7 @@ void LoadGameData()
 	}
 	else if( byte != 0x90 )
 	{
-		LogError("CTerrorPlayer::CanBecomeGhost patch: byte mis-match. %X", LoadFromAddress(g_pCTerrorPlayer_CanBecomeGhost + view_as<Address>(g_iCanBecomeGhostOffset), NumberType_Int8));
+		LogError("CTerrorPlayer::CanBecomeGhost patch: byte mismatch. %X", LoadFromAddress(g_pCTerrorPlayer_CanBecomeGhost + view_as<Address>(g_iCanBecomeGhostOffset), NumberType_Int8));
 	}
 	// ====================
 
@@ -2196,6 +2414,7 @@ void LoadGameData()
 		L4D2CountdownTimer_Offsets[6] = hGameData.GetOffset("L4D2CountdownTimer_ChargerSpawnTimer") + view_as<int>(g_pDirector);
 		L4D2CountdownTimer_Offsets[7] = hGameData.GetOffset("L4D2CountdownTimer_VersusStartTimer") + g_pVersusMode;
 		L4D2CountdownTimer_Offsets[8] = hGameData.GetOffset("L4D2CountdownTimer_UpdateMarkersTimer") + view_as<int>(g_pDirector);
+		L4D2CountdownTimer_Offsets[9] = hGameData.GetOffset("L4D2CountdownTimer_SurvivalSetupTimer") + g_pSurvivalMode;
 		L4D2IntervalTimer_Offsets[0] = hGameData.GetOffset("L4D2IntervalTimer_SmokerDeathTimer") + view_as<int>(g_pDirector);
 		L4D2IntervalTimer_Offsets[1] = hGameData.GetOffset("L4D2IntervalTimer_BoomerDeathTimer") + view_as<int>(g_pDirector);
 		L4D2IntervalTimer_Offsets[2] = hGameData.GetOffset("L4D2IntervalTimer_HunterDeathTimer") + view_as<int>(g_pDirector);
@@ -2228,6 +2447,7 @@ void LoadGameData()
 	L4D2IntWeapon_Offsets[3] = hGameData.GetOffset("L4D2IntWeapon_Bucket");
 	L4D2IntWeapon_Offsets[4] = hGameData.GetOffset("L4D2IntWeapon_Tier");
 	L4D2IntWeapon_Offsets[5] = hGameData.GetOffset("L4D2IntWeapon_DefaultSize");
+	L4D2IntWeapon_Offsets[6] = hGameData.GetOffset("L4D2IntWeapon_Type");
 	L4D2FloatWeapon_Offsets[0] = hGameData.GetOffset("L4D2FloatWeapon_MaxPlayerSpeed");
 	L4D2FloatWeapon_Offsets[1] = hGameData.GetOffset("L4D2FloatWeapon_SpreadPerShot");
 	L4D2FloatWeapon_Offsets[2] = hGameData.GetOffset("L4D2FloatWeapon_MaxSpread");
@@ -2270,6 +2490,7 @@ void LoadGameData()
 	PrintToServer("VersusMaxCompletionScore = %d", g_iOff_VersusMaxCompletionScore);
 	PrintToServer("m_iTankCount = %d", g_iOff_m_iTankCount);
 	PrintToServer("MobSpawnTimer = %d", g_iOff_MobSpawnTimer);
+	PrintToServer("SetupNotifyTime = %d", g_iOff_m_iSetupNotifyTime);
 
 	for( int i = 0; i < sizeof(L4D2CountdownTimer_Offsets); i++ )		PrintToServer("L4D2CountdownTimer_Offsets[%d] == %d", i, L4D2CountdownTimer_Offsets[i]);
 	for( int i = 0; i < sizeof(L4D2IntervalTimer_Offsets); i++ )		PrintToServer("L4D2IntervalTimer_Offsets[%d] == %d", i, L4D2IntervalTimer_Offsets[i]);
@@ -2295,6 +2516,14 @@ void LoadGameData()
 		PrintToServer("m_preIncapacitatedHealthBuffer = %d", g_iOff_m_preIncapacitatedHealthBuffer);
 		PrintToServer("m_maxFlames = %d", g_iOff_m_maxFlames);
 		PrintToServer("");
+		PrintToServer("g_iOff_m_PlayerAnimState = %d", g_iOff_m_PlayerAnimState);
+		PrintToServer("g_iOff_m_eCurrentMainSequenceActivity = %d", g_iOff_m_eCurrentMainSequenceActivity);
+		PrintToServer("g_iOff_m_bIsCustomSequence = %d", g_iOff_m_bIsCustomSequence);
+		PrintToServer("");
+	}
+	else
+	{
+		PrintToServer("m_bInIntro = %d", g_iOff_m_bInIntro);
 	}
 	#endif
 	#endif
@@ -2305,6 +2534,5 @@ void LoadGameData()
 	//									END
 	// ====================================================================================================
 	g_hGameData = hGameData;
-
-	delete hTempGameData;
+	g_hTempGameData = hTempGameData;
 }

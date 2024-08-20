@@ -6,10 +6,10 @@
 		{
 			"CTerrorWeapon::CanDeployFor__movetype_patch"
 			{
-				"signature"			"CTerrorWeapon::CanDeployFor"
+				"signature"			"CTerrorWeapon::CanDeploy"
 				"linux"
 				{
-					"offset"		"149"
+					"offset"		"161"
 					"verify"		"\x09"
 					"patch"			"\xFF"
 					
@@ -26,7 +26,7 @@
 				"signature"			"CTerrorPlayer::PreThink"
 				"linux"
 				{
-					"offset"		"161"
+					"offset"		"187"
 					"verify"		"\x09"
 					"patch"			"\xFF"
 					
@@ -43,9 +43,9 @@
 				"signature"			"CTerrorPlayer::OnLadderMount"
 				"linux"
 				{
-					"offset"		"73"
-					"verify"		"\x74"
-					"patch"			"\x90\x90" //nop
+					"offset"		"114"
+					"verify"		"\x0F\x84"
+					"patch"			"\x90\x90\x90\x90\x90\x90" //nop
 					
 				}
 				"windows"
@@ -60,9 +60,9 @@
 				"signature"			"CTerrorPlayer::OnLadderDismount"
 				"linux"
 				{
-					"offset"		"61"
-					"verify"		"\x8B\x10\x89\x04\x24\xFF\x92\xD4\x03\x00\x00"
-					"patch"			"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90" //lots of nops
+					"offset"		"32"
+					"verify"		"\74"
+					"patch"			"\x90\x90" //lots of nops
 					
 				}
 				"windows"
@@ -75,7 +75,7 @@
 		}
 		"Signatures"
 		{
-			"CTerrorWeapon::CanDeployFor"
+			"CTerrorWeapon::CanDeploy"
 			{
 				"library"	"server"
 				"linux"		"@_ZN13CTerrorWeapon9CanDeployEv"
@@ -158,10 +158,9 @@
 				}
 				"windows"
 				{
-					"signature"		"CTerrorPlayer::PlayerRunCommand"
-					"offset"		"778"
+					"offset"		"47"
 					"verify"		"\x74"
-					"patch"			"\xEB" //Jumpy
+					"patch"			"\x5E\xC3" //pop and ret at jnz
 				}
 			}
 			"CTerrorPlayer::OnLadderDismount__WeaponDeploy_patch" //stops the WeaponDeploy call
@@ -203,7 +202,9 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN13CTerrorPlayer13OnLadderMountEv"
-						/* Windows got inlined */
+				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x6A\x2A\x8B"
+						/* ? ? ? ? ? ? 8B F1 E8 ? ? ? ? 8B CE E8 ? ? ? ? 6A ? 8B */
+						/* XREF from function CTerrorPlayer::PlayerRunCommand search string "CTerrorPlayer::PlayerRunCommand" */
 			}
 			"CTerrorPlayer::OnLadderDismount"
 			{
@@ -212,14 +213,6 @@
 				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x50\xE8\x2A\x2A\x2A\x2A\x83\xC4\x04\x84\xC0\x74\x2A\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x8B\x2A\xE8\x2A\x2A\x2A\x2A\x8B\x2A\x8B\x2A\x8B\x82\x2A\x2A\x2A\x2A\xFF"
 						/* ? ? ? ? ? ? ? ? 50 E8 ? ? ? ? 83 C4 04 84 C0 74 ? 8B CE E8 ? ? ? ? 85 C0 74 ? 8B ? E8 ? ? ? ? 8B ? 8B ? 8B 82 ? ? ? ? FF */
 						/* XREF from function CTerrorPlayer::PlayerRunCommand search string "CTerrorPlayer::PlayerRunCommand" */
-			}
-			"CTerrorPlayer::PlayerRunCommand"
-			{
-				"library"	"server"
-				"linux"		"@_ZN13CTerrorPlayer16PlayerRunCommandEP8CUserCmdP11IMoveHelper"
-				"windows"	"\x2A\x2A\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x33\xFF\x89\x7D\xF4\x89\x7D\xF8\x8B\xF1\x39\x78\x08\x74\x2A\x8B\x40\x08\x68\x2A\x2A\x2A\x2A\x8B\x50\x50\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x2A\x2A\x2A\x2A\x68\x06\x07\x00\x00"
-						/* ? ? ? ? ? ? A1 ? ? ? ? 53 56 57 33 FF 89 7D F4 89 7D F8 8B F1 39 78 08 74 ? 8B 40 08 68 ? ? ? ? 8B 50 50 68 ? ? ? ? 68 ? ? ? ? 68 ? ? ? ? 68 06 07 00 00 */
-						/* Search string "CTerrorPlayer::PlayerRunCommand" */
 			}
 		}
 	}
